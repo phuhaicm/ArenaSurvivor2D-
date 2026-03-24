@@ -1,65 +1,122 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Collider2D))]
 public class PlayerMovement : HaiMonoBehaviour
 {
-    [Header("Move Settings")]
-    [SerializeField] protected float moveSpeed = 5f;
+    [Header("Movement Settings")]
+    [SerializeField] private float moveSpeed = 5f;
 
     [Header("Bounds")]
-    [SerializeField] protected Collider2D playAreaBounds;
+    [SerializeField] private Collider2D playAreaBounds;
 
-    protected Rigidbody2D rb;
-    protected Collider2D playerCollider;
+    private Rigidbody2D rb;
+    private Collider2D playerCollider;
 
-    protected Vector2 moveInput;
-    protected Vector2 moveDirection;
+    private Vector2 moveInput;
+    private Vector2 moveDirection;
 
-    protected void Awake()
+    protected override void LoadComponents()
     {
-        rb = GetComponent<Rigidbody2D>();
-        playerCollider = GetComponent<Collider2D>();
+        base.LoadComponents();
+        LoadRigidbody();
+        LoadPlayerCollider();
+        LoadPlayAreaBounds();
     }
 
-    protected void Update()
+    protected override void ResetValues()
+    {
+        base.ResetValues();
+        moveSpeed = 5f;
+    }
+
+    private void Update()
     {
         ReadInput();
     }
-    protected void ReadInput()
+
+    private void FixedUpdate()
+    {
+        Move();
+        ClampInsideBounds();
+    }
+
+    protected virtual void LoadRigidbody()
+    {
+        if (rb != null) return;
+
+        rb = GetComponent<Rigidbody2D>();
+        LogLoad(nameof(LoadRigidbody));
+    }
+
+    protected virtual void LoadPlayerCollider()
+    {
+        if (playerCollider != null) return;
+
+        playerCollider = GetComponent<Collider2D>();
+        LogLoad(nameof(LoadPlayerCollider));
+    }
+
+    protected virtual void LoadPlayAreaBounds()
+    {
+        if (playAreaBounds != null) return;
+
+        PlayAreaBoundsMarker boundsMarker = FindFirstObjectByType<PlayAreaBoundsMarker>();
+
+        if (boundsMarker == null)
+        {
+            Debug.LogWarning($"{name}: PlayAreaBoundsMarker not found.", gameObject);
+            return;
+        }
+
+        playAreaBounds = boundsMarker.GetComponent<Collider2D>();
+
+        if (playAreaBounds == null)
+        {
+            Debug.LogError($"{name}: PlayAreaBoundsMarker is missing Collider2D.", boundsMarker.gameObject);
+            return;
+        }
+
+        LogLoad(nameof(LoadPlayAreaBounds));
+    }
+
+    private void ReadInput()
     {
         moveInput = new Vector2(
             Input.GetAxisRaw("Horizontal"),
             Input.GetAxisRaw("Vertical")
-            );
+        );
+
         moveDirection = moveInput.normalized;
     }
-    protected void FixedUpdate()
+
+    private void Move()
     {
-        Move();
-        ClapInsideBounds();
-    }
-    protected void Move()
-    {
+        if (rb == null) return;
+
         rb.velocity = moveDirection * moveSpeed;
     }
-    protected void ClapInsideBounds()
-    {
-        if (playAreaBounds == null || playerCollider == null) return;
-        Bounds areaBounds = playAreaBounds.bounds;
-        Bounds curretnPlayerBounds = playerCollider.bounds;
 
-        float halfPlayerWidth = curretnPlayerBounds.extents.x;
-        float halfPlayerHeight = curretnPlayerBounds.extents.y;
+    private void ClampInsideBounds()
+    {
+        if (rb == null || playerCollider == null || playAreaBounds == null)
+        {
+            return;
+        }
+
+        Bounds areaBounds = playAreaBounds.bounds;
+        Bounds currentPlayerBounds = playerCollider.bounds;
+
+        float halfPlayerWidth = currentPlayerBounds.extents.x;
+        float halfPlayerHeight = currentPlayerBounds.extents.y;
 
         Vector2 clampedPosition = rb.position;
 
         clampedPosition.x = Mathf.Clamp(
             clampedPosition.x,
-            areaBounds.min.x + halfPlayerHeight,
+            areaBounds.min.x + halfPlayerWidth,
             areaBounds.max.x - halfPlayerWidth
-    );
+        );
 
         clampedPosition.y = Mathf.Clamp(
             clampedPosition.y,
@@ -68,6 +125,5 @@ public class PlayerMovement : HaiMonoBehaviour
         );
 
         rb.position = clampedPosition;
-
     }
 }
