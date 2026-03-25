@@ -2352,6 +2352,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 50
   currentHealth: 50
+  disableObjectOnDeath: 1
+  disableDelay: 0
 --- !u!1 &8238463080751849756
 GameObject:
   m_ObjectHideFlags: 0
@@ -2444,7 +2446,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 100
-  isDead: 0
 --- !u!114 &8339259309623271322
 MonoBehaviour:
   m_ObjectHideFlags: 0

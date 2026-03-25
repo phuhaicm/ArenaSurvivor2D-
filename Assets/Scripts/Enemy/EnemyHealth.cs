@@ -1,30 +1,33 @@
+using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D))]
-public class EnemyHealth : HaiMonoBehaviour
+[RequireComponent(typeof(Collider2D))]
+public class EnemyHealth : HealthBase
 {
-    [Header("Chase Settings")]
-    [SerializeField] protected int maxHealth = 50;
-    [SerializeField] protected int currentHealth = 50;
+    [Header("Death Settings")]
+    [SerializeField] private bool disableObjectOnDeath = true;
+    [SerializeField] private float disableDelay = 0f;
 
-    protected EnemyChase enemyChase;
-    protected PlayerContactDamage contactDamage;
+    private EnemyChase enemyChase;
+    private EnemyContactDamage enemyContactDamage;
+    private Collider2D enemyCollider;
 
-    protected bool isDead;
-    public bool IsDead => isDead;
     protected override void LoadComponents()
     {
         base.LoadComponents();
         LoadEnemyChase();
         LoadEnemyContactDamage();
+        LoadEnemyCollider();
     }
 
-    protected override void ResetValues()
+    protected override void ResetHealthDefaults()
     {
-        base.ResetValues();
         maxHealth = 50;
         currentHealth = maxHealth;
         isDead = false;
+
+        disableObjectOnDeath = true;
+        disableDelay = 0f;
     }
 
     protected virtual void LoadEnemyChase()
@@ -34,59 +37,62 @@ public class EnemyHealth : HaiMonoBehaviour
         enemyChase = GetComponent<EnemyChase>();
         LogLoad(nameof(LoadEnemyChase));
     }
+
     protected virtual void LoadEnemyContactDamage()
     {
-        if (contactDamage != null) return;
+        if (enemyContactDamage != null) return;
 
-        contactDamage = GetComponent<PlayerContactDamage>();
+        enemyContactDamage = GetComponent<EnemyContactDamage>();
         LogLoad(nameof(LoadEnemyContactDamage));
     }
-    protected override void Awake()
+
+    protected virtual void LoadEnemyCollider()
     {
-        base.Awake();
-        InitializeHealth();
-    }
-    protected void InitializeHealth()
-    {
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-        isDead = currentHealth <= 0;
-    }
-    public void TakeDamage(int damageAmount)
-    {
-        if (isDead) return;
-        if (damageAmount <= 0) return;
+        if (enemyCollider != null) return;
 
-        currentHealth -= damageAmount;
-        currentHealth = Mathf.Max(currentHealth, 0);
+        enemyCollider = GetComponent<Collider2D>();
 
-
-        Debug.Log($"{name}: Took {damageAmount} damage", gameObject);
-
-        if (currentHealth == 0)
+        if (enemyCollider == null)
         {
-            Die();
+            Debug.LogWarning($"{name}: Collider2D not found.", gameObject);
+            return;
         }
+
+        LogLoad(nameof(LoadEnemyCollider));
     }
-    protected void Die()
+
+    protected override void OnDeath()
     {
-        if (isDead) return;
-
-        isDead = true;
-
         if (enemyChase != null)
         {
             enemyChase.enabled = false;
         }
-        if (contactDamage != null)
+
+        if (enemyContactDamage != null)
         {
-            contactDamage.enabled = false;
+            enemyContactDamage.enabled = false;
         }
 
-        Debug.Log($"{name}: Enemies died.", gameObject);
+        if (enemyCollider != null)
+        {
+            enemyCollider.enabled = false;
+        }
+
+        Debug.Log($"{name}: Enemy died.", gameObject);
+
+        if (disableObjectOnDeath)
+        {
+            StartCoroutine(DisableAfterDelay());
+        }
     }
 
+    protected IEnumerator DisableAfterDelay()
+    {
+        if (disableDelay > 0f)
+        {
+            yield return new WaitForSeconds(disableDelay);
+        }
 
-
-
-
+        gameObject.SetActive(false);
+    }
 }

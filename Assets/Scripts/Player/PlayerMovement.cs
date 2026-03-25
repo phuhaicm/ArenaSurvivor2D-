@@ -30,12 +30,12 @@ public class PlayerMovement : HaiMonoBehaviour
         moveSpeed = 5f;
     }
 
-    private void Update()
+    protected void Update()
     {
         ReadInput();
     }
 
-    private void FixedUpdate()
+    protected void FixedUpdate()
     {
         Move();
         ClampInsideBounds();
@@ -80,7 +80,7 @@ public class PlayerMovement : HaiMonoBehaviour
         LogLoad(nameof(LoadPlayAreaBounds));
     }
 
-    private void ReadInput()
+    protected void ReadInput()
     {
         moveInput = new Vector2(
             Input.GetAxisRaw("Horizontal"),
@@ -90,14 +90,14 @@ public class PlayerMovement : HaiMonoBehaviour
         moveDirection = moveInput.normalized;
     }
 
-    private void Move()
+    protected void Move()
     {
         if (rb == null) return;
 
         rb.velocity = moveDirection * moveSpeed;
     }
 
-    private void ClampInsideBounds()
+    protected void ClampInsideBounds()
     {
         if (rb == null || playerCollider == null || playAreaBounds == null)
         {
