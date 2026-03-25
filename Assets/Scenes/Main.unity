@@ -2257,6 +2257,7 @@ GameObject:
   - component: {fileID: 929294762742045910}
   - component: {fileID: 5433407798492527305}
   - component: {fileID: 1235783756}
+  - component: {fileID: 5433407798492527307}
   - component: {fileID: 5433407798492527306}
   m_Layer: 0
   m_Name: BasicEnemy
@@ -2280,6 +2281,7 @@ GameObject:
   - component: {fileID: 8339259309623271319}
   - component: {fileID: 8339259309623271320}
   - component: {fileID: 8339259309623271321}
+  - component: {fileID: 8339259309623271322}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2331,11 +2333,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 4231708742965602456}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e689fa22c6e0f894aa787640a8f61d4e, type: 3}
+  m_Script: {fileID: 11500000, guid: d039769dfd9ecad4c91b2d74d7b8e2dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   damageAmount: 10
   damageInterval: 1
+--- !u!114 &5433407798492527307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4231708742965602456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22ef20b2366aae34aa1460b5db8ecfb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 50
+  currentHealth: 50
 --- !u!1 &8238463080751849756
 GameObject:
   m_ObjectHideFlags: 0
@@ -2429,6 +2445,20 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 100
   isDead: 0
+--- !u!114 &8339259309623271322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4964081948106663748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e689fa22c6e0f894aa787640a8f61d4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damageAmount: 20
+  damageInterval: 0.5
 --- !u!212 &9076241929853449359
 SpriteRenderer:
   m_ObjectHideFlags: 0
