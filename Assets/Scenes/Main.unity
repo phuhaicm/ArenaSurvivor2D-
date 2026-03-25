@@ -1720,7 +1720,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 3
-  stoppingDistance: 0.6
+  stoppingDistance: 0.1
   target: {fileID: 2409890263459209929}
 --- !u!1 &1239021268
 GameObject:
@@ -2257,6 +2257,7 @@ GameObject:
   - component: {fileID: 929294762742045910}
   - component: {fileID: 5433407798492527305}
   - component: {fileID: 1235783756}
+  - component: {fileID: 5433407798492527306}
   m_Layer: 0
   m_Name: BasicEnemy
   m_TagString: Untagged
@@ -2278,6 +2279,7 @@ GameObject:
   - component: {fileID: 8339259309623271318}
   - component: {fileID: 8339259309623271319}
   - component: {fileID: 8339259309623271320}
+  - component: {fileID: 8339259309623271321}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2320,6 +2322,20 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.8
+--- !u!114 &5433407798492527306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4231708742965602456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e689fa22c6e0f894aa787640a8f61d4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damageAmount: 10
+  damageInterval: 1
 --- !u!1 &8238463080751849756
 GameObject:
   m_ObjectHideFlags: 0
@@ -2398,6 +2414,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b616454ddfd7c7e478fe54d698575500, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &8339259309623271321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4964081948106663748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08247f2214c17644dbbec56d8ba24f63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  currentHealth: 100
+  isDead: 0
 --- !u!212 &9076241929853449359
 SpriteRenderer:
   m_ObjectHideFlags: 0
