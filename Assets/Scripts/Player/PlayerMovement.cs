@@ -4,15 +4,11 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class PlayerMovement : HaiMonoBehaviour
 {
-    [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
-
-    [Header("Bounds")]
     [SerializeField] private Collider2D playAreaBounds;
 
     private Rigidbody2D rb;
     private Collider2D playerCollider;
-
     private Vector2 moveInput;
     private Vector2 moveDirection;
 
@@ -30,100 +26,65 @@ public class PlayerMovement : HaiMonoBehaviour
         moveSpeed = 5f;
     }
 
-    protected void Update()
+    private void Update()
     {
         ReadInput();
     }
 
-    protected void FixedUpdate()
+    private void FixedUpdate()
     {
         Move();
         ClampInsideBounds();
     }
 
-    protected virtual void LoadRigidbody()
+    private void LoadRigidbody()
     {
         if (rb != null) return;
-
         rb = GetComponent<Rigidbody2D>();
         LogLoad(nameof(LoadRigidbody));
     }
 
-    protected virtual void LoadPlayerCollider()
+    private void LoadPlayerCollider()
     {
         if (playerCollider != null) return;
-
         playerCollider = GetComponent<Collider2D>();
         LogLoad(nameof(LoadPlayerCollider));
     }
 
-    protected virtual void LoadPlayAreaBounds()
+    private void LoadPlayAreaBounds()
     {
         if (playAreaBounds != null) return;
 
-        PlayAreaBoundsMarker boundsMarker = FindFirstObjectByType<PlayAreaBoundsMarker>();
+        PlayAreaBoundsMarker marker = FindFirstObjectByType<PlayAreaBoundsMarker>();
+        if (marker == null) return;
 
-        if (boundsMarker == null)
-        {
-            Debug.LogWarning($"{name}: PlayAreaBoundsMarker not found.", gameObject);
-            return;
-        }
-
-        playAreaBounds = boundsMarker.GetComponent<Collider2D>();
-
-        if (playAreaBounds == null)
-        {
-            Debug.LogError($"{name}: PlayAreaBoundsMarker is missing Collider2D.", boundsMarker.gameObject);
-            return;
-        }
-
+        playAreaBounds = marker.GetComponent<Collider2D>();
         LogLoad(nameof(LoadPlayAreaBounds));
     }
 
-    protected void ReadInput()
+    private void ReadInput()
     {
-        moveInput = new Vector2(
-            Input.GetAxisRaw("Horizontal"),
-            Input.GetAxisRaw("Vertical")
-        );
-
+        moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         moveDirection = moveInput.normalized;
     }
 
-    protected void Move()
+    private void Move()
     {
         if (rb == null) return;
-
         rb.velocity = moveDirection * moveSpeed;
     }
 
-    protected void ClampInsideBounds()
+    private void ClampInsideBounds()
     {
-        if (rb == null || playerCollider == null || playAreaBounds == null)
-        {
-            return;
-        }
+        if (rb == null || playerCollider == null || playAreaBounds == null) return;
 
-        Bounds areaBounds = playAreaBounds.bounds;
-        Bounds currentPlayerBounds = playerCollider.bounds;
+        Bounds area = playAreaBounds.bounds;
+        Bounds current = playerCollider.bounds;
 
-        float halfPlayerWidth = currentPlayerBounds.extents.x;
-        float halfPlayerHeight = currentPlayerBounds.extents.y;
+        Vector2 clamped = rb.position;
+        clamped.x = Mathf.Clamp(clamped.x, area.min.x + current.extents.x, area.max.x - current.extents.x);
+        clamped.y = Mathf.Clamp(clamped.y, area.min.y + current.extents.y, area.max.y - current.extents.y);
 
-        Vector2 clampedPosition = rb.position;
-
-        clampedPosition.x = Mathf.Clamp(
-            clampedPosition.x,
-            areaBounds.min.x + halfPlayerWidth,
-            areaBounds.max.x - halfPlayerWidth
-        );
-
-        clampedPosition.y = Mathf.Clamp(
-            clampedPosition.y,
-            areaBounds.min.y + halfPlayerHeight,
-            areaBounds.max.y - halfPlayerHeight
-        );
-
-        rb.position = clampedPosition;
+        rb.position = clamped;
     }
 }

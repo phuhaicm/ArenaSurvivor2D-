@@ -3,10 +3,8 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class EnemyContactDamage : ContactDamageDealer
 {
-    protected override void ResetValues()
+    protected override void ResetDamageDefaults()
     {
-        base.ResetValues();
-
         damageAmount = 10;
         damageInterval = 1f;
     }

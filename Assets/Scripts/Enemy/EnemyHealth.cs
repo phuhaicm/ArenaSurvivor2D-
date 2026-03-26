@@ -4,7 +4,6 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class EnemyHealth : HealthBase
 {
-    [Header("Death Settings")]
     [SerializeField] private bool disableObjectOnDeath = true;
     [SerializeField] private float disableDelay = 0f;
 
@@ -25,60 +24,36 @@ public class EnemyHealth : HealthBase
         maxHealth = 50;
         currentHealth = maxHealth;
         isDead = false;
-
         disableObjectOnDeath = true;
         disableDelay = 0f;
     }
 
-    protected virtual void LoadEnemyChase()
+    private void LoadEnemyChase()
     {
         if (enemyChase != null) return;
-
         enemyChase = GetComponent<EnemyChase>();
         LogLoad(nameof(LoadEnemyChase));
     }
 
-    protected virtual void LoadEnemyContactDamage()
+    private void LoadEnemyContactDamage()
     {
         if (enemyContactDamage != null) return;
-
         enemyContactDamage = GetComponent<EnemyContactDamage>();
         LogLoad(nameof(LoadEnemyContactDamage));
     }
 
-    protected virtual void LoadEnemyCollider()
+    private void LoadEnemyCollider()
     {
         if (enemyCollider != null) return;
-
         enemyCollider = GetComponent<Collider2D>();
-
-        if (enemyCollider == null)
-        {
-            Debug.LogWarning($"{name}: Collider2D not found.", gameObject);
-            return;
-        }
-
         LogLoad(nameof(LoadEnemyCollider));
     }
 
     protected override void OnDeath()
     {
-        if (enemyChase != null)
-        {
-            enemyChase.enabled = false;
-        }
-
-        if (enemyContactDamage != null)
-        {
-            enemyContactDamage.enabled = false;
-        }
-
-        if (enemyCollider != null)
-        {
-            enemyCollider.enabled = false;
-        }
-
-        Debug.Log($"{name}: Enemy died.", gameObject);
+        if (enemyChase != null) enemyChase.enabled = false;
+        if (enemyContactDamage != null) enemyContactDamage.enabled = false;
+        if (enemyCollider != null) enemyCollider.enabled = false;
 
         if (disableObjectOnDeath)
         {
@@ -86,7 +61,7 @@ public class EnemyHealth : HealthBase
         }
     }
 
-    protected IEnumerator DisableAfterDelay()
+    private IEnumerator DisableAfterDelay()
     {
         if (disableDelay > 0f)
         {

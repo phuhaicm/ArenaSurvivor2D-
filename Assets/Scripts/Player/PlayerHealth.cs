@@ -17,19 +17,15 @@ public class PlayerHealth : HealthBase
         isDead = false;
     }
 
-    protected virtual void LoadPlayerMovement()
+    private void LoadPlayerMovement()
     {
         if (playerMovement != null) return;
 
         playerMovement = GetComponent<PlayerMovement>();
-
-        if (playerMovement == null)
+        if (playerMovement != null)
         {
-            Debug.LogWarning($"{name}: PlayerMovement not found.", gameObject);
-            return;
+            LogLoad(nameof(LoadPlayerMovement));
         }
-
-        LogLoad(nameof(LoadPlayerMovement));
     }
 
     protected override void OnDeath()

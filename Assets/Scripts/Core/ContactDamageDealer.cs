@@ -8,6 +8,18 @@ public abstract class ContactDamageDealer : HaiMonoBehaviour
 
     protected float lastDamageTime = float.NegativeInfinity;
 
+    protected override void ResetValues()
+    {
+        base.ResetValues();
+        ResetDamageDefaults();
+    }
+
+    protected virtual void ResetDamageDefaults()
+    {
+        damageAmount = 10;
+        damageInterval = 1f;
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         TryDealDamage(collision);
@@ -20,24 +32,12 @@ public abstract class ContactDamageDealer : HaiMonoBehaviour
 
     protected virtual void TryDealDamage(Collision2D collision)
     {
-        if (!CanDealDamage())
-        {
-            return;
-        }
-
-        if (!TryGetDamageable(collision, out IDamageable damageable))
-        {
-            return;
-        }
-
-        if (damageable.IsDead)
-        {
-            return;
-        }
+        if (!CanDealDamage()) return;
+        if (!TryGetDamageable(collision, out IDamageable damageable)) return;
+        if (damageable.IsDead) return;
 
         damageable.TakeDamage(damageAmount);
         lastDamageTime = Time.time;
-
         OnDamageDealt(damageable);
     }
 
@@ -48,7 +48,5 @@ public abstract class ContactDamageDealer : HaiMonoBehaviour
 
     protected abstract bool TryGetDamageable(Collision2D collision, out IDamageable damageable);
 
-    protected virtual void OnDamageDealt(IDamageable damageable)
-    {
-    }
+    protected virtual void OnDamageDealt(IDamageable damageable) { }
 }

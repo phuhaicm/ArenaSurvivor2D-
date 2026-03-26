@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public abstract class HealthBase : HaiMonoBehaviour, IDamageable
@@ -11,6 +12,8 @@ public abstract class HealthBase : HaiMonoBehaviour, IDamageable
     public int MaxHealth => maxHealth;
     public int CurrentHealth => currentHealth;
     public bool IsDead => isDead;
+
+    public event Action Died;
 
     protected override void Awake()
     {
@@ -39,8 +42,7 @@ public abstract class HealthBase : HaiMonoBehaviour, IDamageable
 
     public virtual void TakeDamage(int damageAmount)
     {
-        if (isDead) return;
-        if (damageAmount <= 0) return;
+        if (isDead || damageAmount <= 0) return;
 
         currentHealth -= damageAmount;
         currentHealth = Mathf.Max(currentHealth, 0);
@@ -55,8 +57,7 @@ public abstract class HealthBase : HaiMonoBehaviour, IDamageable
 
     public virtual void Heal(int healAmount)
     {
-        if (isDead) return;
-        if (healAmount <= 0) return;
+        if (isDead || healAmount <= 0) return;
 
         currentHealth += healAmount;
         currentHealth = Mathf.Min(currentHealth, maxHealth);
@@ -69,18 +70,11 @@ public abstract class HealthBase : HaiMonoBehaviour, IDamageable
         if (isDead) return;
 
         isDead = true;
+        Died?.Invoke();
         OnDeath();
     }
 
-    protected virtual void OnDamaged(int damageAmount)
-    {
-    }
-
-    protected virtual void OnHealed(int healAmount)
-    {
-    }
-
-    protected virtual void OnDeath()
-    {
-    }
+    protected virtual void OnDamaged(int damageAmount) { }
+    protected virtual void OnHealed(int healAmount) { }
+    protected virtual void OnDeath() { }
 }
