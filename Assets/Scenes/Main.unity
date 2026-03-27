@@ -2149,7 +2149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d91dfbef73c84d4a96e447247de080d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentExperience: 0
+  totalExperience: 0
 --- !u!1 &651874087012690449
 GameObject:
   m_ObjectHideFlags: 0
@@ -2167,6 +2167,7 @@ GameObject:
   - component: {fileID: 7374289719088258570}
   - component: {fileID: 2394639806927603364}
   - component: {fileID: 629327305859891464}
+  - component: {fileID: 7948328523874753559}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2545,8 +2546,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08247f2214c17644dbbec56d8ba24f63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 100
+  maxHealth: 1000
+  currentHealth: 1000
 --- !u!4 &7729257460317830876
 Transform:
   m_ObjectHideFlags: 0
@@ -2616,6 +2617,21 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &7948328523874753559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 651874087012690449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2661771f660d84740a2c7c786e2a862c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentLevel: 1
+  currentLevelExperience: 0
+  requiredExperience: 10
 --- !u!212 &7955959117131998915
 SpriteRenderer:
   m_ObjectHideFlags: 0

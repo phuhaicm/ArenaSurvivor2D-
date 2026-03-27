@@ -1,22 +1,27 @@
 using UnityEngine;
+using System;
 
 public class PlayerExperience : HaiMonoBehaviour
 {
-    [SerializeField] private int currentExperience = 0;
+    [SerializeField] private int totalExperience = 0;
 
-    public int CurrentExperience => currentExperience;
+    public int CurrentExperience => totalExperience;
+
+    public event Action<int> ExperienceGained;
 
     protected override void ResetValues()
     {
         base.ResetValues();
-        currentExperience = 0;
+        totalExperience = 0;
     }
 
     public void GainExperience(int amount)
     {
         if (amount <= 0) return;
 
-        currentExperience += amount;
-        Debug.Log($"{name}: Gained {amount} XP. Total XP = {currentExperience}", gameObject);
+        totalExperience += amount;
+        ExperienceGained?.Invoke(amount);
+
+        Debug.Log($"{name}: Gained {amount} XP. Total XP = {totalExperience}", gameObject);
     }
 }
