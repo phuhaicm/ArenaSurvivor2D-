@@ -13,8 +13,10 @@ public class PlayerLevelSystem : HaiMonoBehaviour
     public int CurrentLevel => currentLevel;
     public int CurrentLevelExperience => currentLevelExperience;
     public int RequiredExperience => requiredExperience;
+    public float ProgressNormalized => requiredExperience <= 0 ? 0f : (float)currentLevelExperience / requiredExperience;
 
     public event Action<int> LeveledUp;
+    public event Action LevelStateChanged;
 
     protected override void Awake()
     {
@@ -90,18 +92,11 @@ public class PlayerLevelSystem : HaiMonoBehaviour
 
     private void HandleExperienceGained(int amount)
     {
-        AddExperience(amount);
-    }
-
-    private void AddExperience(int amount)
-    {
-        if (amount <= 0)
-        {
-            return;
-        }
+        if (amount <= 0) return;
 
         currentLevelExperience += amount;
         ProcessPendingLevelUps();
+        NotifyLevelStateChanged();
     }
 
     private void ProcessPendingLevelUps()
@@ -119,7 +114,11 @@ public class PlayerLevelSystem : HaiMonoBehaviour
         requiredExperience = ExperienceProgressionCalculator.GetRequiredExperienceForLevel(currentLevel);
 
         LeveledUp?.Invoke(currentLevel);
-
         Debug.Log($"{name}: Leveled up to Level {currentLevel}", gameObject);
+    }
+
+    private void NotifyLevelStateChanged()
+    {
+        LevelStateChanged?.Invoke();
     }
 }
