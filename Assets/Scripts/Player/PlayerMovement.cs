@@ -87,4 +87,9 @@ public class PlayerMovement : HaiMonoBehaviour
 
         rb.position = clamped;
     }
+    public void AddMoveSpeed(float amount)
+    {
+        if (amount <= 0f) return;
+        moveSpeed += amount;
+    }
 }

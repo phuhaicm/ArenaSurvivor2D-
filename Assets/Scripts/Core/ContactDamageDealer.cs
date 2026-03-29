@@ -49,4 +49,9 @@ public abstract class ContactDamageDealer : HaiMonoBehaviour
     protected abstract bool TryGetDamageable(Collision2D collision, out IDamageable damageable);
 
     protected virtual void OnDamageDealt(IDamageable damageable) { }
+    public void AddDamage(int amount)
+    {
+        if (amount <= 0) return;
+        damageAmount += amount;
+    }
 }

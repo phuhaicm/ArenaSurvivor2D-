@@ -38,4 +38,20 @@ public class PlayerHealth : HealthBase
 
         Debug.Log($"{name}: Player died.", gameObject);
     }
+    public void AddMaxHealth(int amount, bool healBonus)
+    {
+        if (amount <= 0) return;
+
+        maxHealth += amount;
+
+        if (healBonus)
+        {
+            currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        }
+        else
+        {
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        }
+    }
+
 }
