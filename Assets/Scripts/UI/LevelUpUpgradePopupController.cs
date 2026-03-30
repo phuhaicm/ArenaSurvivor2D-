@@ -7,6 +7,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
     private PlayerLevelSystem playerLevelSystem;
     private PlayerUpgradeApplier playerUpgradeApplier;
     private GamePauseController gamePauseController;
+    private LevelUpPopupRoot popupRoot;
 
     private GameObject popupRootObject;
     private TextMeshProUGUI titleText;
@@ -21,6 +22,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
         LoadPlayerLevelSystem();
         LoadPlayerUpgradeApplier();
         LoadGamePauseController();
+        LoadPopupRoot();
         LoadPopupRootObject();
         LoadTitleText();
         LoadBodyText();
@@ -64,35 +66,48 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
         gamePauseController = FindFirstObjectByType<GamePauseController>();
     }
 
+    private void LoadPopupRoot()
+    {
+        if (popupRoot != null) return;
+        popupRoot = UIRootLookup.FindRootInCanvas<LevelUpPopupRoot>(this);
+    }
+
     private void LoadPopupRootObject()
     {
         if (popupRootObject != null) return;
-        LevelUpPopupRoot marker = UIHierarchyLookup.FindInParentCanvas<LevelUpPopupRoot>(this);
-        if (marker == null) return;
-        popupRootObject = marker.gameObject;
+        if (popupRoot == null) return;
+
+        popupRootObject = popupRoot.gameObject;
     }
 
     private void LoadTitleText()
     {
         if (titleText != null) return;
-        LevelUpPopupTitleUI marker = UIHierarchyLookup.FindInParentCanvas<LevelUpPopupTitleUI>(this);
+        if (popupRoot == null) return;
+
+        LevelUpPopupTitleUI marker = popupRoot.GetComponentInChildren<LevelUpPopupTitleUI>(true);
         if (marker == null) return;
+
         titleText = marker.GetComponent<TextMeshProUGUI>();
     }
 
     private void LoadBodyText()
     {
         if (bodyText != null) return;
-        LevelUpPopupBodyTextUI marker = UIHierarchyLookup.FindInParentCanvas<LevelUpPopupBodyTextUI>(this);
+        if (popupRoot == null) return;
+
+        LevelUpPopupBodyTextUI marker = popupRoot.GetComponentInChildren<LevelUpPopupBodyTextUI>(true);
         if (marker == null) return;
+
         bodyText = marker.GetComponent<TextMeshProUGUI>();
     }
 
     private void LoadUpgradeButtons()
     {
         if (upgradeButtons != null && upgradeButtons.Length > 0) return;
+        if (popupRoot == null) return;
 
-        UpgradeButtonsRoot root = UIHierarchyLookup.FindInParentCanvas<UpgradeButtonsRoot>(this);
+        UpgradeButtonsRoot root = popupRoot.GetComponentInChildren<UpgradeButtonsRoot>(true);
         if (root == null) return;
 
         upgradeButtons = root.GetComponentsInChildren<UpgradeChoiceButtonUI>(true);
@@ -166,7 +181,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
 
     private void RefreshTexts()
     {
-        if (titleText != null)
+        if (titleText != null && playerLevelSystem != null)
         {
             titleText.text = $"LEVEL {playerLevelSystem.CurrentLevel}";
         }

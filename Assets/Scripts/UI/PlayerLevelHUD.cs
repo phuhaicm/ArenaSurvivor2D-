@@ -1,105 +1,132 @@
-//using TMPro;
-//using UnityEngine;
-//using UnityEngine.UI;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
-//public class PlayerLevelHUD : HaiMonoBehaviour
-//{
-//    private PlayerLevelSystem playerLevelSystem;
-//    private TextMeshProUGUI levelText;
-//    private TextMeshProUGUI experienceText;
-//    private Image experienceFillImage;
+public class PlayerLevelHUD : HaiMonoBehaviour
+{
+    private PlayerLevelSystem playerLevelSystem;
+    private HUDRoot hudRoot;
 
-//    protected override void LoadComponents()
-//    {
-//        base.LoadComponents();
-//        LoadPlayerLevelSystem();
-//        LoadLevelText();
-//        LoadExperienceText();
-//        LoadExperienceFillImage();
-//    }
+    private TextMeshProUGUI levelText;
+    private TextMeshProUGUI experienceText;
+    private Image experienceFillImage;
 
-//    protected override void OnEnable()
-//    {
-//        base.OnEnable();
-//        SubscribeEvents();
-//        RefreshUI();
-//    }
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadPlayerLevelSystem();
+        LoadHUDRoot();
+        LoadLevelText();
+        LoadExperienceText();
+        LoadExperienceFillImage();
+    }
 
-//    protected override void OnDisable()
-//    {
-//        base.OnDisable();
-//        UnsubscribeEvents();
-//    }
+    protected override void Start()
+    {
+        base.Start();
+        RefreshUI();
+    }
 
-//    private void LoadPlayerLevelSystem()
-//    {
-//        if (playerLevelSystem != null) return;
-//        playerLevelSystem = FindFirstObjectByType<PlayerLevelSystem>();
-//    }
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        SubscribeEvents();
+        RefreshUI();
+    }
 
-//    private void LoadLevelText()
-//    {
-//        if (levelText != null) return;
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        UnsubscribeEvents();
+    }
 
-//        LevelTextUI marker = UIHierarchyLookup.FindInParentCanvas<LevelTextUI>(this);
-//        if (marker == null) return;
+    private void LoadPlayerLevelSystem()
+    {
+        if (playerLevelSystem != null) return;
 
-//        levelText = marker.GetComponent<TextMeshProUGUI>();
-//    }
+        playerLevelSystem = FindFirstObjectByType<PlayerLevelSystem>();
 
-//    private void LoadExperienceText()
-//    {
-//        if (experienceText != null) return;
+        if (playerLevelSystem != null)
+        {
+            LogLoad(nameof(LoadPlayerLevelSystem));
+        }
+    }
 
-//        ExperienceTextUI marker = UIHierarchyLookup.FindInParentCanvas<ExperienceTextUI>(this);
-//        if (marker == null) return;
+    private void LoadHUDRoot()
+    {
+        if (hudRoot != null) return;
 
-//        experienceText = marker.GetComponent<TextMeshProUGUI>();
-//    }
+        hudRoot = UIRootLookup.FindRootInCanvas<HUDRoot>(this);
 
-//    private void LoadExperienceFillImage()
-//    {
-//        if (experienceFillImage != null) return;
+        if (hudRoot != null)
+        {
+            LogLoad(nameof(LoadHUDRoot));
+        }
+    }
 
-//        ExperienceFillUI marker = UIHierarchyLookup.FindInParentCanvas<ExperienceFillUI>(this);
-//        if (marker == null) return;
+    private void LoadLevelText()
+    {
+        if (levelText != null) return;
 
-//        experienceFillImage = marker.GetComponent<Image>();
-//    }
+        LevelTextUI marker = UIRootLookup.FindInRoot<HUDRoot, LevelTextUI>(this);
+        if (marker == null) return;
 
-//    private void SubscribeEvents()
-//    {
-//        if (playerLevelSystem != null)
-//        {
-//            playerLevelSystem.LevelStateChanged += RefreshUI;
-//        }
-//    }
+        levelText = marker.GetComponent<TextMeshProUGUI>();
+    }
 
-//    private void UnsubscribeEvents()
-//    {
-//        if (playerLevelSystem != null)
-//        {
-//            playerLevelSystem.LevelStateChanged -= RefreshUI;
-//        }
-//    }
+    private void LoadExperienceText()
+    {
+        if (experienceText != null) return;
 
-//    private void RefreshUI()
-//    {
-//        if (playerLevelSystem == null) return;
+        ExperienceTextUI marker = UIRootLookup.FindInRoot<HUDRoot, ExperienceTextUI>(this);
+        if (marker == null) return;
 
-//        if (levelText != null)
-//        {
-//            levelText.text = $"Level {playerLevelSystem.CurrentLevel}";
-//        }
+        experienceText = marker.GetComponent<TextMeshProUGUI>();
+    }
 
-//        if (experienceText != null)
-//        {
-//            experienceText.text = $"{playerLevelSystem.CurrentLevelExperience} / {playerLevelSystem.RequiredExperience}";
-//        }
+    private void LoadExperienceFillImage()
+    {
+        if (experienceFillImage != null) return;
 
-//        if (experienceFillImage != null)
-//        {
-//            experienceFillImage.fillAmount = playerLevelSystem.ProgressNormalized;
-//        }
-//    }
-//}
+        ExperienceFillUI marker = UIRootLookup.FindInRoot<HUDRoot, ExperienceFillUI>(this);
+        if (marker == null) return;
+
+        experienceFillImage = marker.GetComponent<Image>();
+    }
+
+    private void SubscribeEvents()
+    {
+        if (playerLevelSystem != null)
+        {
+            playerLevelSystem.LevelStateChanged += RefreshUI;
+        }
+    }
+
+    private void UnsubscribeEvents()
+    {
+        if (playerLevelSystem != null)
+        {
+            playerLevelSystem.LevelStateChanged -= RefreshUI;
+        }
+    }
+
+    private void RefreshUI()
+    {
+        if (playerLevelSystem == null) return;
+
+        if (levelText != null)
+        {
+            levelText.text = $"Level {playerLevelSystem.CurrentLevel}";
+        }
+
+        if (experienceText != null)
+        {
+            experienceText.text = $"{playerLevelSystem.CurrentLevelExperience} / {playerLevelSystem.RequiredExperience}";
+        }
+
+        if (experienceFillImage != null)
+        {
+            experienceFillImage.fillAmount = playerLevelSystem.ProgressNormalized;
+        }
+    }
+}

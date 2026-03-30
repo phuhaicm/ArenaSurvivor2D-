@@ -24,6 +24,12 @@ public class PlayerLevelSystem : HaiMonoBehaviour
         InitializeLevelState();
     }
 
+    protected override void Start()
+    {
+        base.Start();
+        NotifyLevelStateChanged();
+    }
+
     protected override void LoadComponents()
     {
         base.LoadComponents();
@@ -114,6 +120,8 @@ public class PlayerLevelSystem : HaiMonoBehaviour
         requiredExperience = ExperienceProgressionCalculator.GetRequiredExperienceForLevel(currentLevel);
 
         LeveledUp?.Invoke(currentLevel);
+        NotifyLevelStateChanged();
+
         Debug.Log($"{name}: Leveled up to Level {currentLevel}", gameObject);
     }
 

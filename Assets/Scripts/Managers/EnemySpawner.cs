@@ -103,4 +103,13 @@ public class EnemySpawner : HaiMonoBehaviour
         Vector2 pos = BoundsEdgePositionUtility.RandomPointOnEdge(spawnBounds.bounds, spawnPadding);
         Instantiate(enemyPrefab, pos, Quaternion.identity, enemyContainerRoot.transform);
     }
+    public void SetSpawnInterval(float value)
+    {
+        spawnInterval = Mathf.Max(0.1f, value);
+    }
+
+    public void SetMaxAliveEnemies(int value)
+    {
+        maxAliveEnemies = Mathf.Max(1, value);
+    }
 }
