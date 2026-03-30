@@ -57,13 +57,7 @@ public class PlayerLevelSystem : HaiMonoBehaviour
     private void LoadPlayerExperience()
     {
         if (playerExperience != null) return;
-
         playerExperience = GetComponent<PlayerExperience>();
-
-        if (playerExperience != null)
-        {
-            LogLoad(nameof(LoadPlayerExperience));
-        }
     }
 
     private void ResetLevelDefaults()
@@ -121,8 +115,6 @@ public class PlayerLevelSystem : HaiMonoBehaviour
 
         LeveledUp?.Invoke(currentLevel);
         NotifyLevelStateChanged();
-
-        Debug.Log($"{name}: Leveled up to Level {currentLevel}", gameObject);
     }
 
     private void NotifyLevelStateChanged()

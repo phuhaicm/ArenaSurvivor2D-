@@ -43,25 +43,13 @@ public class PlayerLevelHUD : HaiMonoBehaviour
     private void LoadPlayerLevelSystem()
     {
         if (playerLevelSystem != null) return;
-
         playerLevelSystem = FindFirstObjectByType<PlayerLevelSystem>();
-
-        if (playerLevelSystem != null)
-        {
-            LogLoad(nameof(LoadPlayerLevelSystem));
-        }
     }
 
     private void LoadHUDRoot()
     {
         if (hudRoot != null) return;
-
         hudRoot = UIRootLookup.FindRootInCanvas<HUDRoot>(this);
-
-        if (hudRoot != null)
-        {
-            LogLoad(nameof(LoadHUDRoot));
-        }
     }
 
     private void LoadLevelText()

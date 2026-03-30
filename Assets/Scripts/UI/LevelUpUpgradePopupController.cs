@@ -181,14 +181,14 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
 
     private void RefreshTexts()
     {
-        if (titleText != null && playerLevelSystem != null)
+        if (titleText != null)
         {
-            titleText.text = $"LEVEL {playerLevelSystem.CurrentLevel}";
+            titleText.text = "LEVEL UP!";
         }
 
-        if (bodyText != null)
+        if (bodyText != null && playerLevelSystem != null)
         {
-            bodyText.text = "Choose 1 upgrade";
+            bodyText.text = $"You reached Level {playerLevelSystem.CurrentLevel}\nChoose 1 upgrade";
         }
     }
 
