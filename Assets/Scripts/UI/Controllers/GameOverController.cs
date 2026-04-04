@@ -17,6 +17,8 @@ public class GameOverController : HaiMonoBehaviour
     private TextMeshProUGUI statsText;
     private Button retryButton;
     private Button menuButton;
+    private AudioManager audioManager;
+
 
     protected override void LoadComponents()
     {
@@ -32,6 +34,7 @@ public class GameOverController : HaiMonoBehaviour
         LoadStatsText();
         LoadRetryButton();
         LoadMenuButton();
+        LoadAudioManager();
     }
 
     protected override void Start()
@@ -58,6 +61,11 @@ public class GameOverController : HaiMonoBehaviour
     {
         if (playerHealth != null) return;
         playerHealth = FindFirstObjectByType<PlayerHealth>();
+    }
+    private void LoadAudioManager()
+    {
+        if (audioManager != null) return;
+        audioManager = FindFirstObjectByType<AudioManager>();
     }
 
     private void LoadPlayerLevelSystem()
@@ -186,6 +194,7 @@ public class GameOverController : HaiMonoBehaviour
 
     private void HandlePlayerDied()
     {
+        audioManager?.PlaySfx(AudioCueKey.GameOver);
         SaveBestRunStats();
         ShowGameOver();
         PauseGame();

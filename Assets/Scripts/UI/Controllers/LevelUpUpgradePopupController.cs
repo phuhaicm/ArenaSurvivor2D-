@@ -13,6 +13,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
     private TextMeshProUGUI titleText;
     private TextMeshProUGUI bodyText;
     private UpgradeChoiceButtonUI[] upgradeButtons;
+    private AudioManager audioManager;
 
     private int pendingLevelUpCount;
 
@@ -27,6 +28,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
         LoadTitleText();
         LoadBodyText();
         LoadUpgradeButtons();
+        LoadAudioManager();
     }
 
     protected override void Start()
@@ -52,6 +54,11 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
     {
         if (playerLevelSystem != null) return;
         playerLevelSystem = FindFirstObjectByType<PlayerLevelSystem>();
+    }
+    private void LoadAudioManager()
+    {
+        if (audioManager != null) return;
+        audioManager = FindFirstObjectByType<AudioManager>();
     }
 
     private void LoadPlayerUpgradeApplier()
@@ -131,6 +138,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
 
     private void HandleLeveledUp(int newLevel)
     {
+        audioManager?.PlaySfx(AudioCueKey.UpgradePick);
         pendingLevelUpCount++;
 
         if (pendingLevelUpCount == 1)

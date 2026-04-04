@@ -10,6 +10,7 @@ public class MainMenuController : HaiMonoBehaviour
     private GameObject levelUpPopupRootObject;
     private GameObject gameOverRootObject;
     private Button startButton;
+    private AudioManager audioManager;
 
     protected override void LoadComponents()
     {
@@ -20,6 +21,7 @@ public class MainMenuController : HaiMonoBehaviour
         LoadLevelUpPopupRootObject();
         LoadGameOverRootObject();
         LoadStartButton();
+        LoadAudioManager();
     }
 
     protected override void Start()
@@ -44,6 +46,12 @@ public class MainMenuController : HaiMonoBehaviour
     {
         if (gamePauseController != null) return;
         gamePauseController = FindFirstObjectByType<GamePauseController>();
+    }
+
+    private void LoadAudioManager()
+    {
+        if (audioManager != null) return;
+        audioManager = FindFirstObjectByType<AudioManager>();
     }
 
     private void LoadMainMenuRootObject()
@@ -130,6 +138,8 @@ public class MainMenuController : HaiMonoBehaviour
 
     private void HandleStartClicked()
     {
+        audioManager?.PlaySfx(AudioCueKey.ButtonClick);
+        audioManager?.PlayMusic(AudioCueKey.GameplayBgm);
         CloseMainMenu();
         ShowHUD();
         HideLevelUpPopup();
@@ -148,7 +158,7 @@ public class MainMenuController : HaiMonoBehaviour
         {
             hudRootObject.SetActive(false);
         }
-
+        audioManager?.PlayMusic(AudioCueKey.MenuBgm);
         PauseGame();
     }
 
