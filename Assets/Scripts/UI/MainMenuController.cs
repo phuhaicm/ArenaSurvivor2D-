@@ -8,6 +8,7 @@ public class MainMenuController : HaiMonoBehaviour
     private GameObject mainMenuRootObject;
     private GameObject hudRootObject;
     private GameObject levelUpPopupRootObject;
+    private GameObject gameOverRootObject;
     private Button startButton;
 
     protected override void LoadComponents()
@@ -17,13 +18,14 @@ public class MainMenuController : HaiMonoBehaviour
         LoadMainMenuRootObject();
         LoadHUDRootObject();
         LoadLevelUpPopupRootObject();
+        LoadGameOverRootObject();
         LoadStartButton();
     }
 
     protected override void Start()
     {
         base.Start();
-        OpenMainMenu();
+        HandleInitialBootState();
     }
 
     protected override void OnEnable()
@@ -48,7 +50,7 @@ public class MainMenuController : HaiMonoBehaviour
     {
         if (mainMenuRootObject != null) return;
 
-        MainMenuRoot marker = UIHierarchyLookup.FindInParentCanvas<MainMenuRoot>(this);
+        MainMenuRoot marker = UIRootLookup.FindRootInCanvas<MainMenuRoot>(this);
         if (marker == null) return;
 
         mainMenuRootObject = marker.gameObject;
@@ -58,7 +60,7 @@ public class MainMenuController : HaiMonoBehaviour
     {
         if (hudRootObject != null) return;
 
-        HUDRoot marker = UIHierarchyLookup.FindInParentCanvas<HUDRoot>(this);
+        HUDRoot marker = UIRootLookup.FindRootInCanvas<HUDRoot>(this);
         if (marker == null) return;
 
         hudRootObject = marker.gameObject;
@@ -68,17 +70,27 @@ public class MainMenuController : HaiMonoBehaviour
     {
         if (levelUpPopupRootObject != null) return;
 
-        LevelUpPopupRoot marker = UIHierarchyLookup.FindInParentCanvas<LevelUpPopupRoot>(this);
+        LevelUpPopupRoot marker = UIRootLookup.FindRootInCanvas<LevelUpPopupRoot>(this);
         if (marker == null) return;
 
         levelUpPopupRootObject = marker.gameObject;
+    }
+
+    private void LoadGameOverRootObject()
+    {
+        if (gameOverRootObject != null) return;
+
+        GameOverRoot marker = UIRootLookup.FindRootInCanvas<GameOverRoot>(this);
+        if (marker == null) return;
+
+        gameOverRootObject = marker.gameObject;
     }
 
     private void LoadStartButton()
     {
         if (startButton != null) return;
 
-        StartGameButtonUI marker = UIHierarchyLookup.FindInParentCanvas<StartGameButtonUI>(this);
+        StartGameButtonUI marker = UIRootLookup.FindInRoot<MainMenuRoot, StartGameButtonUI>(this);
         if (marker == null) return;
 
         startButton = marker.GetComponent<Button>();
@@ -88,6 +100,7 @@ public class MainMenuController : HaiMonoBehaviour
     {
         if (startButton != null)
         {
+            startButton.onClick.RemoveListener(HandleStartClicked);
             startButton.onClick.AddListener(HandleStartClicked);
         }
     }
@@ -100,13 +113,27 @@ public class MainMenuController : HaiMonoBehaviour
         }
     }
 
+    private void HandleInitialBootState()
+    {
+        HideLevelUpPopup();
+        HideGameOver();
+
+        if (GameBootFlow.StartIntoGameplay)
+        {
+            GameBootFlow.StartIntoGameplay = false;
+            StartGameplayImmediately();
+            return;
+        }
+
+        OpenMainMenu();
+    }
+
     private void HandleStartClicked()
     {
-        Debug.Log("Start Game clicked", gameObject);
-
         CloseMainMenu();
         ShowHUD();
         HideLevelUpPopup();
+        HideGameOver();
         ResumeGame();
     }
 
@@ -122,8 +149,18 @@ public class MainMenuController : HaiMonoBehaviour
             hudRootObject.SetActive(false);
         }
 
-        HideLevelUpPopup();
         PauseGame();
+    }
+
+    private void StartGameplayImmediately()
+    {
+        if (mainMenuRootObject != null)
+        {
+            mainMenuRootObject.SetActive(false);
+        }
+
+        ShowHUD();
+        ResumeGame();
     }
 
     private void CloseMainMenu()
@@ -147,6 +184,14 @@ public class MainMenuController : HaiMonoBehaviour
         if (levelUpPopupRootObject != null)
         {
             levelUpPopupRootObject.SetActive(false);
+        }
+    }
+
+    private void HideGameOver()
+    {
+        if (gameOverRootObject != null)
+        {
+            gameOverRootObject.SetActive(false);
         }
     }
 
