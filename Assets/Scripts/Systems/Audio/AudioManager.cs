@@ -7,6 +7,15 @@ public class AudioManager : HaiMonoBehaviour
 
     private AudioCueKey? currentMusicKey;
 
+    public float MusicVolume => musicSource != null ? musicSource.volume : 0f;
+    public float SfxVolume => sfxSource != null ? sfxSource.volume : 0f;
+
+    protected override void Awake()
+    {
+        base.Awake();
+        ApplySavedVolumes();
+    }
+
     protected override void LoadComponents()
     {
         base.LoadComponents();
@@ -56,6 +65,37 @@ public class AudioManager : HaiMonoBehaviour
         if (clip == null) return;
 
         sfxSource.PlayOneShot(clip);
+    }
+
+    public void SetMusicVolume(float value)
+    {
+        if (musicSource == null) return;
+
+        float finalValue = Mathf.Clamp01(value);
+        musicSource.volume = finalValue;
+        AudioSettingsData.SaveMusicVolume(finalValue);
+    }
+
+    public void SetSfxVolume(float value)
+    {
+        if (sfxSource == null) return;
+
+        float finalValue = Mathf.Clamp01(value);
+        sfxSource.volume = finalValue;
+        AudioSettingsData.SaveSfxVolume(finalValue);
+    }
+
+    private void ApplySavedVolumes()
+    {
+        if (musicSource != null)
+        {
+            musicSource.volume = AudioSettingsData.MusicVolume;
+        }
+
+        if (sfxSource != null)
+        {
+            sfxSource.volume = AudioSettingsData.SfxVolume;
+        }
     }
 
     private AudioClip LoadClip(AudioCueKey key)
