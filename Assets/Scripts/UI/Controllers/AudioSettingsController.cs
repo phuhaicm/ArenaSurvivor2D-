@@ -7,10 +7,15 @@ public class AudioSettingsController : HaiMonoBehaviour
     private AudioSettingsPanelRoot settingsRoot;
 
     private GameObject settingsRootObject;
+    private GameObject pauseMenuRootObject;
+    private GameObject mainMenuRootObject;
+
     private Slider musicSlider;
     private Slider sfxSlider;
     private Button[] openButtons;
     private Button closeButton;
+
+    private bool openedFromPauseMenu;
 
     protected override void LoadComponents()
     {
@@ -18,6 +23,8 @@ public class AudioSettingsController : HaiMonoBehaviour
         LoadAudioManager();
         LoadSettingsRoot();
         LoadSettingsRootObject();
+        LoadPauseMenuRootObject();
+        LoadMainMenuRootObject();
         LoadMusicSlider();
         LoadSfxSlider();
         LoadOpenButtons();
@@ -63,6 +70,26 @@ public class AudioSettingsController : HaiMonoBehaviour
         if (settingsRoot == null) return;
 
         settingsRootObject = settingsRoot.gameObject;
+    }
+
+    private void LoadPauseMenuRootObject()
+    {
+        if (pauseMenuRootObject != null) return;
+
+        PauseMenuRoot marker = UIRootLookup.FindRootInCanvas<PauseMenuRoot>(this);
+        if (marker == null) return;
+
+        pauseMenuRootObject = marker.gameObject;
+    }
+
+    private void LoadMainMenuRootObject()
+    {
+        if (mainMenuRootObject != null) return;
+
+        MainMenuRoot marker = UIRootLookup.FindRootInCanvas<MainMenuRoot>(this);
+        if (marker == null) return;
+
+        mainMenuRootObject = marker.gameObject;
     }
 
     private void LoadMusicSlider()
@@ -183,6 +210,13 @@ public class AudioSettingsController : HaiMonoBehaviour
 
     private void HandleOpenClicked()
     {
+        openedFromPauseMenu = pauseMenuRootObject != null && pauseMenuRootObject.activeSelf;
+
+        if (openedFromPauseMenu && pauseMenuRootObject != null)
+        {
+            pauseMenuRootObject.SetActive(false);
+        }
+
         ShowSettings();
         SyncSlidersFromAudio();
     }
@@ -190,6 +224,13 @@ public class AudioSettingsController : HaiMonoBehaviour
     private void HandleCloseClicked()
     {
         HideSettings();
+
+        if (openedFromPauseMenu && pauseMenuRootObject != null)
+        {
+            pauseMenuRootObject.SetActive(true);
+        }
+
+        openedFromPauseMenu = false;
     }
 
     private void HandleMusicVolumeChanged(float value)
@@ -222,6 +263,7 @@ public class AudioSettingsController : HaiMonoBehaviour
         if (settingsRootObject != null)
         {
             settingsRootObject.SetActive(true);
+            settingsRootObject.transform.SetAsLastSibling();
         }
     }
 
