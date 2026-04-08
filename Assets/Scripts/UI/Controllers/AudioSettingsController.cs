@@ -1,43 +1,240 @@
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class BestRunStatsController : HaiMonoBehaviour
+public class AudioSettingsController : HaiMonoBehaviour
 {
-    private TextMeshProUGUI bestStatsText;
+    private AudioManager audioManager;
+    private AudioSettingsPanelRoot settingsRoot;
+
+    private GameObject settingsRootObject;
+    private Slider musicSlider;
+    private Slider sfxSlider;
+    private Button[] openButtons;
+    private Button closeButton;
 
     protected override void LoadComponents()
     {
         base.LoadComponents();
-        LoadBestStatsText();
+        LoadAudioManager();
+        LoadSettingsRoot();
+        LoadSettingsRootObject();
+        LoadMusicSlider();
+        LoadSfxSlider();
+        LoadOpenButtons();
+        LoadCloseButton();
     }
 
     protected override void Start()
     {
         base.Start();
-        RefreshUI();
+        HideSettingsInstant();
+        SyncSlidersFromAudio();
     }
 
-    private void LoadBestStatsText()
+    protected override void OnEnable()
     {
-        if (bestStatsText != null) return;
+        base.OnEnable();
+        SubscribeButtons();
+        SubscribeSliders();
+    }
 
-        BestRunStatsDisplayTextUI marker = UIHierarchyLookup.FindInParentCanvas<BestRunStatsDisplayTextUI>(this);
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+        UnsubscribeButtons();
+        UnsubscribeSliders();
+    }
+
+    private void LoadAudioManager()
+    {
+        if (audioManager != null) return;
+        audioManager = FindFirstObjectByType<AudioManager>();
+    }
+
+    private void LoadSettingsRoot()
+    {
+        if (settingsRoot != null) return;
+        settingsRoot = UIRootLookup.FindRootInCanvas<AudioSettingsPanelRoot>(this);
+    }
+
+    private void LoadSettingsRootObject()
+    {
+        if (settingsRootObject != null) return;
+        if (settingsRoot == null) return;
+
+        settingsRootObject = settingsRoot.gameObject;
+    }
+
+    private void LoadMusicSlider()
+    {
+        if (musicSlider != null) return;
+        if (settingsRoot == null) return;
+
+        MusicVolumeSliderUI marker = settingsRoot.GetComponentInChildren<MusicVolumeSliderUI>(true);
         if (marker == null) return;
 
-        bestStatsText = marker.GetComponent<TextMeshProUGUI>();
+        musicSlider = marker.GetComponent<Slider>();
     }
 
-    public void RefreshUI()
+    private void LoadSfxSlider()
     {
-        if (bestStatsText == null) return;
+        if (sfxSlider != null) return;
+        if (settingsRoot == null) return;
 
-        int totalSeconds = Mathf.FloorToInt(BestRunStats.BestTime);
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
+        SfxVolumeSliderUI marker = settingsRoot.GetComponentInChildren<SfxVolumeSliderUI>(true);
+        if (marker == null) return;
 
-        bestStatsText.text =
-            $"Best Time: {minutes:00}:{seconds:00}\n" +
-            $"Best Level: {BestRunStats.BestLevel}\n" +
-            $"Best XP: {BestRunStats.BestXP}";
+        sfxSlider = marker.GetComponent<Slider>();
+    }
+
+    private void LoadOpenButtons()
+    {
+        if (openButtons != null && openButtons.Length > 0) return;
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        AudioSettingsOpenButtonUI[] markers = canvas.GetComponentsInChildren<AudioSettingsOpenButtonUI>(true);
+        if (markers == null || markers.Length == 0) return;
+
+        openButtons = new Button[markers.Length];
+
+        for (int i = 0; i < markers.Length; i++)
+        {
+            openButtons[i] = markers[i].GetComponent<Button>();
+        }
+    }
+
+    private void LoadCloseButton()
+    {
+        if (closeButton != null) return;
+        if (settingsRoot == null) return;
+
+        AudioSettingsCloseButtonUI marker = settingsRoot.GetComponentInChildren<AudioSettingsCloseButtonUI>(true);
+        if (marker == null) return;
+
+        closeButton = marker.GetComponent<Button>();
+    }
+
+    private void SubscribeButtons()
+    {
+        if (openButtons != null)
+        {
+            for (int i = 0; i < openButtons.Length; i++)
+            {
+                if (openButtons[i] == null) continue;
+
+                openButtons[i].onClick.RemoveListener(HandleOpenClicked);
+                openButtons[i].onClick.AddListener(HandleOpenClicked);
+            }
+        }
+
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveListener(HandleCloseClicked);
+            closeButton.onClick.AddListener(HandleCloseClicked);
+        }
+    }
+
+    private void UnsubscribeButtons()
+    {
+        if (openButtons != null)
+        {
+            for (int i = 0; i < openButtons.Length; i++)
+            {
+                if (openButtons[i] == null) continue;
+                openButtons[i].onClick.RemoveListener(HandleOpenClicked);
+            }
+        }
+
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveListener(HandleCloseClicked);
+        }
+    }
+
+    private void SubscribeSliders()
+    {
+        if (musicSlider != null)
+        {
+            musicSlider.onValueChanged.RemoveListener(HandleMusicVolumeChanged);
+            musicSlider.onValueChanged.AddListener(HandleMusicVolumeChanged);
+        }
+
+        if (sfxSlider != null)
+        {
+            sfxSlider.onValueChanged.RemoveListener(HandleSfxVolumeChanged);
+            sfxSlider.onValueChanged.AddListener(HandleSfxVolumeChanged);
+        }
+    }
+
+    private void UnsubscribeSliders()
+    {
+        if (musicSlider != null)
+        {
+            musicSlider.onValueChanged.RemoveListener(HandleMusicVolumeChanged);
+        }
+
+        if (sfxSlider != null)
+        {
+            sfxSlider.onValueChanged.RemoveListener(HandleSfxVolumeChanged);
+        }
+    }
+
+    private void HandleOpenClicked()
+    {
+        ShowSettings();
+        SyncSlidersFromAudio();
+    }
+
+    private void HandleCloseClicked()
+    {
+        HideSettings();
+    }
+
+    private void HandleMusicVolumeChanged(float value)
+    {
+        audioManager?.SetMusicVolume(value);
+    }
+
+    private void HandleSfxVolumeChanged(float value)
+    {
+        audioManager?.SetSfxVolume(value);
+    }
+
+    private void SyncSlidersFromAudio()
+    {
+        if (audioManager == null) return;
+
+        if (musicSlider != null)
+        {
+            musicSlider.SetValueWithoutNotify(audioManager.MusicVolume);
+        }
+
+        if (sfxSlider != null)
+        {
+            sfxSlider.SetValueWithoutNotify(audioManager.SfxVolume);
+        }
+    }
+
+    private void ShowSettings()
+    {
+        if (settingsRootObject != null)
+        {
+            settingsRootObject.SetActive(true);
+        }
+    }
+
+    private void HideSettings()
+    {
+        if (settingsRootObject != null)
+        {
+            settingsRootObject.SetActive(false);
+        }
+    }
+
+    private void HideSettingsInstant()
+    {
+        HideSettings();
     }
 }
