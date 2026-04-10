@@ -2,16 +2,15 @@ using UnityEngine;
 
 public class EnemySpawner : HaiMonoBehaviour
 {
-    [SerializeField] private string enemyPrefabPath = GameResourcePaths.BasicEnemy;
     [SerializeField] private float initialDelay = 0.5f;
     [SerializeField] private float spawnInterval = 2f;
     [SerializeField] private int maxAliveEnemies = 5;
     [SerializeField] private float spawnPadding = 0.5f;
 
-    [SerializeField] private EnemyHealth enemyPrefab;
     [SerializeField] private Collider2D spawnBounds;
     [SerializeField] private EnemyContainerRoot enemyContainerRoot;
     [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private SurvivalTimer survivalTimer;
 
     private float nextSpawnTime;
 
@@ -24,16 +23,15 @@ public class EnemySpawner : HaiMonoBehaviour
     protected override void LoadComponents()
     {
         base.LoadComponents();
-        LoadEnemyPrefab();
         LoadSpawnBounds();
         LoadEnemyContainerRoot();
         LoadPlayerHealth();
+        LoadSurvivalTimer();
     }
 
     protected override void ResetValues()
     {
         base.ResetValues();
-        enemyPrefabPath = GameResourcePaths.BasicEnemy;
         initialDelay = 0.5f;
         spawnInterval = 2f;
         maxAliveEnemies = 5;
@@ -44,14 +42,8 @@ public class EnemySpawner : HaiMonoBehaviour
     {
         if (!CanSpawn()) return;
 
-        SpawnEnemy();
+        SpawnEnemyVariant();
         nextSpawnTime = Time.time + spawnInterval;
-    }
-
-    private void LoadEnemyPrefab()
-    {
-        if (enemyPrefab != null) return;
-        enemyPrefab = ResourcePrefabLoader.LoadPrefab<EnemyHealth>(enemyPrefabPath);
     }
 
     private void LoadSpawnBounds()
@@ -76,9 +68,15 @@ public class EnemySpawner : HaiMonoBehaviour
         playerHealth = FindFirstObjectByType<PlayerHealth>();
     }
 
+    private void LoadSurvivalTimer()
+    {
+        if (survivalTimer != null) return;
+        survivalTimer = FindFirstObjectByType<SurvivalTimer>();
+    }
+
     private bool CanSpawn()
     {
-        if (enemyPrefab == null || spawnBounds == null || enemyContainerRoot == null || playerHealth == null) return false;
+        if (spawnBounds == null || enemyContainerRoot == null || playerHealth == null || survivalTimer == null) return false;
         if (playerHealth.IsDead) return false;
         if (Time.time < nextSpawnTime) return false;
         if (CountAliveEnemies() >= maxAliveEnemies) return false;
@@ -92,17 +90,28 @@ public class EnemySpawner : HaiMonoBehaviour
 
         for (int i = 0; i < container.childCount; i++)
         {
-            if (container.GetChild(i).gameObject.activeInHierarchy) count++;
+            if (container.GetChild(i).gameObject.activeInHierarchy)
+            {
+                count++;
+            }
         }
 
         return count;
     }
 
-    private void SpawnEnemy()
+    private void SpawnEnemyVariant()
     {
-        Vector2 pos = BoundsEdgePositionUtility.RandomPointOnEdge(spawnBounds.bounds, spawnPadding);
-        Instantiate(enemyPrefab, pos, Quaternion.identity, enemyContainerRoot.transform);
+        float survivalTime = survivalTimer.ElapsedTime;
+        EnemyVariantType variantType = EnemyVariantCatalog.GetRandomVariant(survivalTime);
+        string resourcePath = EnemyVariantCatalog.GetResourcePath(variantType);
+
+        EnemyHealth prefab = ResourcePrefabLoader.LoadPrefab<EnemyHealth>(resourcePath);
+        if (prefab == null) return;
+
+        Vector2 spawnPosition = BoundsEdgePositionUtility.RandomPointOnEdge(spawnBounds.bounds, spawnPadding);
+        Instantiate(prefab, spawnPosition, Quaternion.identity, enemyContainerRoot.transform);
     }
+
     public void SetSpawnInterval(float value)
     {
         spawnInterval = Mathf.Max(0.1f, value);

@@ -2287,16 +2287,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0023cb604b16f6c42b83925b27da4b19, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyPrefabPath: Prefabs/Enemies/BasicEnemy
   initialDelay: 0.5
   spawnInterval: 2
   maxAliveEnemies: 5
   spawnPadding: 0.5
-  enemyPrefab: {fileID: 2681425276554842137, guid: 7f5af0ea20ab72040986df4601337996,
-    type: 3}
   spawnBounds: {fileID: 902202647}
   enemyContainerRoot: {fileID: 932477336}
   playerHealth: {fileID: 7374289719088258570}
+  survivalTimer: {fileID: 0}
 --- !u!1 &437291040
 GameObject:
   m_ObjectHideFlags: 0
@@ -10256,8 +10254,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08247f2214c17644dbbec56d8ba24f63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 100
+  maxHealth: 1000
+  currentHealth: 1000
 --- !u!58 &7690086875609752538
 CircleCollider2D:
   m_ObjectHideFlags: 0

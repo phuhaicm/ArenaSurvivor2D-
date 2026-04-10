@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 6354178922587231387}
   - component: {fileID: 7424010755113347155}
   m_Layer: 0
-  m_Name: BasicEnemy
+  m_Name: Enemy_Tank
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -33,7 +33,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 4, y: 3, z: 0}
-  m_LocalScale: {x: 0.8, y: 0.8, z: 1}
+  m_LocalScale: {x: 1.1, y: 1.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -81,7 +81,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6,
     type: 3}
-  m_Color: {r: 0.97735846, g: 0.3578606, b: 0.07191872, a: 1}
+  m_Color: {r: 0.7254902, g: 0.54901963, b: 0.27450982, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -165,8 +165,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea5c7f03673b2e94e8e56f6dee3f89b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3
-  stoppingDistance: 0.1
+  moveSpeed: 2.1
+  stoppingDistance: 0.6
   target: {fileID: 0}
 --- !u!114 &2681425276554842137
 MonoBehaviour:
@@ -180,8 +180,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22ef20b2366aae34aa1460b5db8ecfb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 50
-  currentHealth: 50
+  maxHealth: 120
+  currentHealth: 120
   disableObjectOnDeath: 1
   disableDelay: 0
 --- !u!114 &6354178922587231387
@@ -196,8 +196,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d039769dfd9ecad4c91b2d74d7b8e2dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damageAmount: 10
-  damageInterval: 1
+  damageAmount: 20
+  damageInterval: 1.2
 --- !u!114 &7424010755113347155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -210,9 +210,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fef28a0bb122a2f43a352cd6acc31700, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  xpOrbPrefabPath: Prefabs/Drops/XPOrb
-  xpValue: 10
+  xpValue: 30
   enemyHealth: {fileID: 2681425276554842137}
-  xpOrbPrefab: {fileID: 43697710732806648, guid: 547765b1a8ec50741bfff5e166e9f420,
-    type: 3}
   dropContainerRoot: {fileID: 0}
