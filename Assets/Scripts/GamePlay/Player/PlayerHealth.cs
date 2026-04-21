@@ -4,6 +4,8 @@ using UnityEngine;
 public class PlayerHealth : HealthBase
 {
     private PlayerMovement playerMovement;
+    public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
 
     protected override void LoadComponents()
     {

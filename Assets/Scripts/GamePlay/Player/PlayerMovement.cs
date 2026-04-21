@@ -11,6 +11,8 @@ public class PlayerMovement : HaiMonoBehaviour
     private Collider2D playerCollider;
     private Vector2 moveInput;
     private Vector2 moveDirection;
+    public float MoveSpeed => moveSpeed;
+
 
     protected override void LoadComponents()
     {

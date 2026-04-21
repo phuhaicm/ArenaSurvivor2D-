@@ -13,6 +13,9 @@ public class PlayerAutoShooter : HaiMonoBehaviour
     private PlayerHealth playerHealth;
 
     private float nextShootTime;
+    public int BulletDamage => bulletDamage;
+    public float ShootInterval => shootInterval;
+    public int ProjectileCount => projectileCount;
 
     protected override void Awake()
     {
