@@ -4,14 +4,14 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
 {
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
-    private PlayerContactDamage playerContactDamage;
+    private PlayerAutoShooter playerAutoShooter;
 
     protected override void LoadComponents()
     {
         base.LoadComponents();
         LoadPlayerMovement();
         LoadPlayerHealth();
-        LoadPlayerContactDamage();
+        LoadPlayerAutoShooter();
     }
 
     private void LoadPlayerMovement()
@@ -26,10 +26,10 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
         playerHealth = GetComponent<PlayerHealth>();
     }
 
-    private void LoadPlayerContactDamage()
+    private void LoadPlayerAutoShooter()
     {
-        if (playerContactDamage != null) return;
-        playerContactDamage = GetComponent<PlayerContactDamage>();
+        if (playerAutoShooter != null) return;
+        playerAutoShooter = GetComponentInChildren<PlayerAutoShooter>(true);
     }
 
     public void ApplyUpgrade(UpgradeOptionData option)
@@ -44,8 +44,16 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
                 ApplyMaxHealthUpgrade();
                 break;
 
-            case PlayerUpgradeType.ContactDamage:
-                ApplyContactDamageUpgrade();
+            case PlayerUpgradeType.BulletDamage:
+                ApplyBulletDamageUpgrade();
+                break;
+
+            case PlayerUpgradeType.FireRate:
+                ApplyFireRateUpgrade();
+                break;
+
+            case PlayerUpgradeType.MultiShot:
+                ApplyMultiShotUpgrade();
                 break;
         }
 
@@ -68,11 +76,27 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
         }
     }
 
-    private void ApplyContactDamageUpgrade()
+    private void ApplyBulletDamageUpgrade()
     {
-        if (playerContactDamage != null)
+        if (playerAutoShooter != null)
         {
-            playerContactDamage.AddDamage(5);
+            playerAutoShooter.AddBulletDamage(5);
+        }
+    }
+
+    private void ApplyFireRateUpgrade()
+    {
+        if (playerAutoShooter != null)
+        {
+            playerAutoShooter.ReduceShootInterval(0.08f);
+        }
+    }
+
+    private void ApplyMultiShotUpgrade()
+    {
+        if (playerAutoShooter != null)
+        {
+            playerAutoShooter.AddProjectileCount(1);
         }
     }
 }
