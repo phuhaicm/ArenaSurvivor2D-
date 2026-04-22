@@ -11,6 +11,7 @@ public abstract class HealthBase : HaiMonoBehaviour, IDamageable
 
     public int MaxHealth => maxHealth;
     public int CurrentHealth => currentHealth;
+    public event System.Action<int> Damaged;
     public bool IsDead => isDead;
 
     public event Action Died;
@@ -45,6 +46,7 @@ public abstract class HealthBase : HaiMonoBehaviour, IDamageable
         if (isDead || damageAmount <= 0) return;
 
         currentHealth -= damageAmount;
+        Damaged?.Invoke(damageAmount);
         currentHealth = Mathf.Max(currentHealth, 0);
 
         OnDamaged(damageAmount);

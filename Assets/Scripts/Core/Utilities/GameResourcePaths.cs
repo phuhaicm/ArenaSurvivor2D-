@@ -8,5 +8,6 @@ public static class GameResourcePaths
     public const string XPMediumOrb = "Prefabs/Drops/XPOrb_Medium";
     public const string XPLargeOrb = "Prefabs/Drops/XPOrb_Large";
 
+    public const string FloatingDamageText = "Prefabs/UI/FloatingDamageText";
     public const string PlayerBullet = "Prefabs/Bullets/PlayerBullet";
 }
