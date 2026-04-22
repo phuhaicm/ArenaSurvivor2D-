@@ -104,9 +104,13 @@ public class EnemyDamageFeedback : HaiMonoBehaviour
     private void SpawnDamageText(int damageAmount)
     {
         FloatingDamageText prefab = ResourcePrefabLoader.LoadPrefab<FloatingDamageText>(GameResourcePaths.FloatingDamageText);
-        if (prefab == null) return;
+        if (prefab == null)
+        {
+            Debug.LogWarning("FloatingDamageText prefab not found. Check Resources path.");
+            return;
+        }
 
-        Vector3 spawnPosition = transform.position + Vector3.up * 0.4f;
+        Vector3 spawnPosition = transform.position + Vector3.up * 0.45f;
         Transform parent = damageTextContainerRoot != null ? damageTextContainerRoot.transform : null;
 
         FloatingDamageText damageText = Instantiate(prefab, spawnPosition, Quaternion.identity, parent);

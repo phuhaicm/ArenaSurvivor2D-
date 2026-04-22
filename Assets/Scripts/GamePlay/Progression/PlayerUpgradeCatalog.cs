@@ -49,6 +49,15 @@ public static class PlayerUpgradeCatalog
                     "+1 Projectile"
                 ),
                 GetMultiShotWeight(survivalTime)
+            ),
+
+            new WeightedUpgradeOption(
+                new UpgradeOptionData(
+                    PlayerUpgradeType.MagnetRadius,
+                    "Magnet Core",
+                    "+0.75 Pickup Radius"
+                ),
+                GetMagnetRadiusWeight(survivalTime)
             )
         };
     }
@@ -69,8 +78,6 @@ public static class PlayerUpgradeCatalog
 
     private static int GetBulletDamageWeight(float survivalTime)
     {
-        if (survivalTime < 60f) return 3;
-        if (survivalTime < 120f) return 3;
         return 3;
     }
 
@@ -84,6 +91,13 @@ public static class PlayerUpgradeCatalog
     private static int GetMultiShotWeight(float survivalTime)
     {
         if (survivalTime < 60f) return 1;
+        if (survivalTime < 120f) return 2;
+        return 3;
+    }
+
+    private static int GetMagnetRadiusWeight(float survivalTime)
+    {
+        if (survivalTime < 60f) return 2;
         if (survivalTime < 120f) return 2;
         return 3;
     }

@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class XPMagnetAttract : HaiMonoBehaviour
 {
-    [SerializeField] private float attractMoveSpeed = 7f;
+    [SerializeField] private float minAttractSpeed = 5f;
+    [SerializeField] private float maxAttractSpeed = 14f;
 
     private PlayerPickupMagnet playerPickupMagnet;
     private Transform playerTransform;
@@ -17,7 +18,8 @@ public class XPMagnetAttract : HaiMonoBehaviour
     protected override void ResetValues()
     {
         base.ResetValues();
-        attractMoveSpeed = 7f;
+        minAttractSpeed = 5f;
+        maxAttractSpeed = 14f;
     }
 
     private void Update()
@@ -59,7 +61,19 @@ public class XPMagnetAttract : HaiMonoBehaviour
 
     private void AttractTowardsPlayer()
     {
-        Vector3 direction = (playerTransform.position - transform.position).normalized;
-        transform.position += direction * attractMoveSpeed * Time.deltaTime;
+        Vector3 currentPosition = transform.position;
+        Vector3 targetPosition = playerTransform.position;
+
+        float radius = Mathf.Max(0.01f, playerPickupMagnet.AttractRadius);
+        float distance = Vector2.Distance(currentPosition, targetPosition);
+
+        float normalized = 1f - Mathf.Clamp01(distance / radius);
+        float currentSpeed = Mathf.Lerp(minAttractSpeed, maxAttractSpeed, normalized);
+
+        transform.position = Vector3.MoveTowards(
+            currentPosition,
+            targetPosition,
+            currentSpeed * Time.deltaTime
+        );
     }
 }

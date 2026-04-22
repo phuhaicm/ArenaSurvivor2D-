@@ -4,5 +4,6 @@ public enum PlayerUpgradeType
     MaxHealth,
     BulletDamage,
     FireRate,
-    MultiShot
+    MultiShot,
+    MagnetRadius
 }

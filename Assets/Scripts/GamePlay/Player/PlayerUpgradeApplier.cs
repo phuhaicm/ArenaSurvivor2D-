@@ -5,6 +5,7 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
     private PlayerAutoShooter playerAutoShooter;
+    private PlayerPickupMagnet playerPickupMagnet;
 
     protected override void LoadComponents()
     {
@@ -12,6 +13,7 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
         LoadPlayerMovement();
         LoadPlayerHealth();
         LoadPlayerAutoShooter();
+        LoadPlayerPickupMagnet();
     }
 
     private void LoadPlayerMovement()
@@ -30,6 +32,12 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
     {
         if (playerAutoShooter != null) return;
         playerAutoShooter = GetComponentInChildren<PlayerAutoShooter>(true);
+    }
+
+    private void LoadPlayerPickupMagnet()
+    {
+        if (playerPickupMagnet != null) return;
+        playerPickupMagnet = GetComponent<PlayerPickupMagnet>();
     }
 
     public void ApplyUpgrade(UpgradeOptionData option)
@@ -54,6 +62,10 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
 
             case PlayerUpgradeType.MultiShot:
                 ApplyMultiShotUpgrade();
+                break;
+
+            case PlayerUpgradeType.MagnetRadius:
+                ApplyMagnetRadiusUpgrade();
                 break;
         }
 
@@ -97,6 +109,14 @@ public class PlayerUpgradeApplier : HaiMonoBehaviour
         if (playerAutoShooter != null)
         {
             playerAutoShooter.AddProjectileCount(1);
+        }
+    }
+
+    private void ApplyMagnetRadiusUpgrade()
+    {
+        if (playerPickupMagnet != null)
+        {
+            playerPickupMagnet.AddAttractRadius(0.75f);
         }
     }
 }

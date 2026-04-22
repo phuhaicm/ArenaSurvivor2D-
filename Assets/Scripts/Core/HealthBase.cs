@@ -11,10 +11,11 @@ public abstract class HealthBase : HaiMonoBehaviour, IDamageable
 
     public int MaxHealth => maxHealth;
     public int CurrentHealth => currentHealth;
-    public event System.Action<int> Damaged;
+    
     public bool IsDead => isDead;
 
     public event Action Died;
+    public event System.Action<int> Damaged;
 
     protected override void Awake()
     {

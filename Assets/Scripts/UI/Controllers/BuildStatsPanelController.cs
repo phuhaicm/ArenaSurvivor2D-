@@ -11,6 +11,7 @@ public class BuildStatsPanelController : HaiMonoBehaviour
     private PlayerAutoShooter playerAutoShooter;
     private SurvivalTimer survivalTimer;
     private AudioManager audioManager;
+    private PlayerPickupMagnet playerPickupMagnet;
 
     private GameObject panelRootObject;
     private GameObject mainMenuRootObject;
@@ -40,6 +41,7 @@ public class BuildStatsPanelController : HaiMonoBehaviour
         LoadStatsText();
         LoadOpenButtons();
         LoadCloseButton();
+        LoadPlayerPickupMagnet();
     }
 
     protected override void Start()
@@ -84,7 +86,11 @@ public class BuildStatsPanelController : HaiMonoBehaviour
         if (playerExperience != null) return;
         playerExperience = FindFirstObjectByType<PlayerExperience>();
     }
-
+    private void LoadPlayerPickupMagnet()
+    {
+        if (playerPickupMagnet != null) return;
+        playerPickupMagnet = FindFirstObjectByType<PlayerPickupMagnet>();
+    }
     private void LoadPlayerMovement()
     {
         if (playerMovement != null) return;
@@ -311,15 +317,17 @@ public class BuildStatsPanelController : HaiMonoBehaviour
         float shootInterval = playerAutoShooter != null ? playerAutoShooter.ShootInterval : 0f;
         int projectileCount = playerAutoShooter != null ? playerAutoShooter.ProjectileCount : 0;
         float survivalTime = survivalTimer != null ? survivalTimer.ElapsedTime : 0f;
+        float pickupRadius = playerPickupMagnet != null ? playerPickupMagnet.AttractRadius : 0f;
 
         statsText.text =
-            $"Level: {level}\n" +
-            $"Total XP: {totalXP}\n" +
-            $"Move Speed: {moveSpeed:0.00}\n" +
-            $"Health: {currentHealth} / {maxHealth}\n" +
-            $"Bullet Damage: {bulletDamage}\n" +
-            $"Fire Rate: {BuildStatsFormatter.FormatFireRate(shootInterval)}\n" +
-            $"Projectile Count: {projectileCount}\n" +
-            $"Survival Time: {BuildStatsFormatter.FormatTime(survivalTime)}";
+    $"Level: {level}\n" +
+    $"Total XP: {totalXP}\n" +
+    $"Move Speed: {moveSpeed:0.00}\n" +
+    $"Health: {currentHealth} / {maxHealth}\n" +
+    $"Bullet Damage: {bulletDamage}\n" +
+    $"Fire Rate: {BuildStatsFormatter.FormatFireRate(shootInterval)}\n" +
+    $"Projectile Count: {projectileCount}\n" +
+    $"Pickup Radius: {pickupRadius:0.00}\n" +
+    $"Survival Time: {BuildStatsFormatter.FormatTime(survivalTime)}";
     }
 }
