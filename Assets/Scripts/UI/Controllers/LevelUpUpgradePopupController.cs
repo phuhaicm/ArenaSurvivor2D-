@@ -13,6 +13,8 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
     private LevelUpPopupRoot popupRoot;
 
     private GameObject popupRootObject;
+    private GameObject mainMenuRootObject;
+
     private TextMeshProUGUI titleText;
     private TextMeshProUGUI bodyText;
     private UpgradeChoiceButtonUI[] upgradeButtons;
@@ -31,6 +33,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
         LoadSurvivalTimer();
         LoadPopupRoot();
         LoadPopupRootObject();
+        LoadMainMenuRootObject();
         LoadTitleText();
         LoadBodyText();
         LoadUpgradeButtons();
@@ -100,6 +103,16 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
         if (popupRoot == null) return;
 
         popupRootObject = popupRoot.gameObject;
+    }
+
+    private void LoadMainMenuRootObject()
+    {
+        if (mainMenuRootObject != null) return;
+
+        MainMenuRoot marker = UIRootLookup.FindRootInCanvas<MainMenuRoot>(this);
+        if (marker == null) return;
+
+        mainMenuRootObject = marker.gameObject;
     }
 
     private void LoadTitleText()
@@ -209,6 +222,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
     {
         remainingRerolls = 1;
 
+        HideMainMenuDefensively();
         ShowPopup();
         PauseGame();
         RefreshTexts();
@@ -247,6 +261,7 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
         }
 
         HidePopup();
+        HideMainMenuDefensively();
         ResumeGame();
     }
 
@@ -308,6 +323,14 @@ public class LevelUpUpgradePopupController : HaiMonoBehaviour
     private void HidePopupInstant()
     {
         HidePopup();
+    }
+
+    private void HideMainMenuDefensively()
+    {
+        if (mainMenuRootObject != null)
+        {
+            mainMenuRootObject.SetActive(false);
+        }
     }
 
     private void PauseGame()

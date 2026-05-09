@@ -10,15 +10,15 @@ public class GameOverController : HaiMonoBehaviour
     private PlayerExperience playerExperience;
     private SurvivalTimer survivalTimer;
     private GamePauseController gamePauseController;
+    private AudioManager audioManager;
 
     private GameOverRoot gameOverRoot;
     private GameObject gameOverRootObject;
     private TextMeshProUGUI titleText;
-    private TextMeshProUGUI statsText;
+    private TextMeshProUGUI currentRunStatsText;
+    private TextMeshProUGUI bestRunStatsText;
     private Button retryButton;
     private Button menuButton;
-    private AudioManager audioManager;
-
 
     protected override void LoadComponents()
     {
@@ -28,13 +28,14 @@ public class GameOverController : HaiMonoBehaviour
         LoadPlayerExperience();
         LoadSurvivalTimer();
         LoadGamePauseController();
+        LoadAudioManager();
         LoadGameOverRoot();
         LoadGameOverRootObject();
         LoadTitleText();
-        LoadStatsText();
+        LoadCurrentRunStatsText();
+        LoadBestRunStatsText();
         LoadRetryButton();
         LoadMenuButton();
-        LoadAudioManager();
     }
 
     protected override void Start()
@@ -62,11 +63,6 @@ public class GameOverController : HaiMonoBehaviour
         if (playerHealth != null) return;
         playerHealth = FindFirstObjectByType<PlayerHealth>();
     }
-    private void LoadAudioManager()
-    {
-        if (audioManager != null) return;
-        audioManager = FindFirstObjectByType<AudioManager>();
-    }
 
     private void LoadPlayerLevelSystem()
     {
@@ -90,6 +86,12 @@ public class GameOverController : HaiMonoBehaviour
     {
         if (gamePauseController != null) return;
         gamePauseController = FindFirstObjectByType<GamePauseController>();
+    }
+
+    private void LoadAudioManager()
+    {
+        if (audioManager != null) return;
+        audioManager = FindFirstObjectByType<AudioManager>();
     }
 
     private void LoadGameOverRoot()
@@ -117,15 +119,26 @@ public class GameOverController : HaiMonoBehaviour
         titleText = marker.GetComponent<TextMeshProUGUI>();
     }
 
-    private void LoadStatsText()
+    private void LoadCurrentRunStatsText()
     {
-        if (statsText != null) return;
+        if (currentRunStatsText != null) return;
         if (gameOverRoot == null) return;
 
-        GameOverStatsTextUI marker = gameOverRoot.GetComponentInChildren<GameOverStatsTextUI>(true);
+        CurrentRunStatsTextUI marker = gameOverRoot.GetComponentInChildren<CurrentRunStatsTextUI>(true);
         if (marker == null) return;
 
-        statsText = marker.GetComponent<TextMeshProUGUI>();
+        currentRunStatsText = marker.GetComponent<TextMeshProUGUI>();
+    }
+
+    private void LoadBestRunStatsText()
+    {
+        if (bestRunStatsText != null) return;
+        if (gameOverRoot == null) return;
+
+        BestRunStatsTextUI marker = gameOverRoot.GetComponentInChildren<BestRunStatsTextUI>(true);
+        if (marker == null) return;
+
+        bestRunStatsText = marker.GetComponent<TextMeshProUGUI>();
     }
 
     private void LoadRetryButton()
@@ -170,11 +183,13 @@ public class GameOverController : HaiMonoBehaviour
     {
         if (retryButton != null)
         {
+            retryButton.onClick.RemoveListener(HandleRetryClicked);
             retryButton.onClick.AddListener(HandleRetryClicked);
         }
 
         if (menuButton != null)
         {
+            menuButton.onClick.RemoveListener(HandleMenuClicked);
             menuButton.onClick.AddListener(HandleMenuClicked);
         }
     }
@@ -202,12 +217,14 @@ public class GameOverController : HaiMonoBehaviour
 
     private void HandleRetryClicked()
     {
+        audioManager?.PlaySfx(AudioCueKey.ButtonClick);
         GameBootFlow.StartIntoGameplay = true;
         ReloadCurrentScene();
     }
 
     private void HandleMenuClicked()
     {
+        audioManager?.PlaySfx(AudioCueKey.ButtonClick);
         GameBootFlow.StartIntoGameplay = false;
         ReloadCurrentScene();
     }
@@ -224,23 +241,37 @@ public class GameOverController : HaiMonoBehaviour
             titleText.text = "GAME OVER";
         }
 
-        if (statsText != null)
-        {
-            statsText.text = BuildStatsText();
-        }
+        RefreshSummaryTexts();
     }
 
-    private string BuildStatsText()
+    private void RefreshSummaryTexts()
     {
         int level = playerLevelSystem != null ? playerLevelSystem.CurrentLevel : 1;
         int totalXP = playerExperience != null ? playerExperience.TotalExperience : 0;
         float time = survivalTimer != null ? survivalTimer.ElapsedTime : 0f;
 
-        int totalSeconds = Mathf.FloorToInt(time);
-        int minutes = totalSeconds / 60;
-        int seconds = totalSeconds % 60;
+        if (currentRunStatsText != null)
+        {
+            currentRunStatsText.text =
+                "CURRENT RUN\n" +
+                RunSummaryFormatter.FormatRunStats(level, totalXP, time);
+        }
 
-        return $"Level Reached: {level}\nXP Collected: {totalXP}\nTime Survived: {minutes:00}:{seconds:00}";
+        if (bestRunStatsText != null)
+        {
+            bestRunStatsText.text =
+                "BEST RUN\n" +
+                RunSummaryFormatter.FormatBestStats();
+        }
+    }
+
+    private void SaveBestRunStats()
+    {
+        int level = playerLevelSystem != null ? playerLevelSystem.CurrentLevel : 1;
+        int totalXP = playerExperience != null ? playerExperience.TotalExperience : 0;
+        float time = survivalTimer != null ? survivalTimer.ElapsedTime : 0f;
+
+        BestRunStats.SaveIfBetter(time, level, totalXP);
     }
 
     private void HideGameOverInstant()
@@ -260,13 +291,5 @@ public class GameOverController : HaiMonoBehaviour
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-    private void SaveBestRunStats()
-    {
-        int level = playerLevelSystem != null ? playerLevelSystem.CurrentLevel : 1;
-        int totalXP = playerExperience != null ? playerExperience.TotalExperience : 0;
-        float time = survivalTimer != null ? survivalTimer.ElapsedTime : 0f;
-
-        BestRunStats.SaveIfBetter(time, level, totalXP);
     }
 }
