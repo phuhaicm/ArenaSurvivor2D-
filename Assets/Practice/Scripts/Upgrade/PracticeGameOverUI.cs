@@ -20,7 +20,8 @@ public class PracticeGameOverUI : HaiMonoBehaviour
 
     [SerializeField]
     private Button quitButton;
-
+    [SerializeField]
+    private Button mainMenuButton;
     private bool isGameOverHandled;
 
     protected override void LoadComponents()
@@ -175,6 +176,10 @@ public class PracticeGameOverUI : HaiMonoBehaviour
                 HandleQuitButtonClicked
             );
         }
+        if(mainMenuButton != null)
+        {
+            mainMenuButton.onClick.AddListener(HandleMainMenuClicked);
+        }
     }
 
     private void UnsubscribeButtonEvents()
@@ -191,6 +196,10 @@ public class PracticeGameOverUI : HaiMonoBehaviour
             quitButton.onClick.RemoveListener(
                 HandleQuitButtonClicked
             );
+        }
+        if(mainMenuButton != null)
+        {
+            mainMenuButton.onClick.RemoveListener(HandleMainMenuClicked);
         }
     }
     protected void SubscribeGameStateEvents()
@@ -217,6 +226,12 @@ public class PracticeGameOverUI : HaiMonoBehaviour
         if(gameOverPanel == null) return;
 
         gameOverPanel.SetActive(isPause);
+    }
+    protected void HandleMainMenuClicked()
+    {
+        Time.timeScale = 1f;
+
+        SceneManager.LoadScene(PracticeSceneNames.MainMenu);
     }
 
     private void HandleRestartButtonClicked()

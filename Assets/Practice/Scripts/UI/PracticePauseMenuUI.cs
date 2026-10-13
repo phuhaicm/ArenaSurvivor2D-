@@ -14,6 +14,8 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
 
     [SerializeField]
     private Button resumeButton;
+    [SerializeField]
+    private Button mainMenuButton;
 
     [SerializeField]
     private Button restartButton;
@@ -188,6 +190,10 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
                 HandleQuitButtonClicked
             );
         }
+        if(mainMenuButton != null)
+        {
+            mainMenuButton.onClick.AddListener(HandleMainMenuClicked);
+        }
     }
     protected void SubscribeGameStateEvents()
     {
@@ -237,6 +243,16 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
                 HandleQuitButtonClicked
             );
         }
+        if(mainMenuButton != null)
+        {
+            mainMenuButton.onClick.RemoveListener(HandleMainMenuClicked);
+        }
+    }
+    protected void HandleMainMenuClicked()
+    {
+        Time.timeScale = 1f;
+        
+        SceneManager.LoadScene(PracticeSceneNames.MainMenu);
     }
 
     private void HandleResumeButtonClicked()
