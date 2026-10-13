@@ -18,7 +18,7 @@ public class PlayerBulletLifetime : HaiMonoBehaviour
         lifetime = 2f;
     }
 
-    private void Update()
+    protected void Update()
     {
         if (Time.time >= destroyTime)
         {
