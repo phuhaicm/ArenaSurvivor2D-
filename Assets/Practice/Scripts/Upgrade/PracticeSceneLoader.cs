@@ -10,6 +10,8 @@ public class PracticeSceneLoader : HaiMonoBehaviour
     [SerializeField] protected GameObject loadingPanel;
     [SerializeField] protected Slider progressSlider;
     [SerializeField] protected TextMeshProUGUI progressText;
+    [Header("Loading Setting")]
+    [SerializeField, Min(0f)] protected float miniumLoadingDuration = 1f;
     protected bool isLoading;
     protected bool IsLoading => isLoading;
     protected override void Start()
@@ -40,6 +42,8 @@ public class PracticeSceneLoader : HaiMonoBehaviour
         SetLoadingPanelActive(true);
         RefreshLoadingUI(0f);
 
+        float loadingStartTime = Time.unscaledTime;
+
         AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName);
 
         if(loadOperation == null)
@@ -53,15 +57,29 @@ public class PracticeSceneLoader : HaiMonoBehaviour
         loadOperation.allowSceneActivation = false;
         while (!loadOperation.isDone)
         {
-            float normalizedProgress = Mathf.Clamp01(loadOperation.progress / 0.9f);
+            float sceneProgress = Mathf.Clamp01(loadOperation.progress / 0.9f);
 
-            RefreshLoadingUI(normalizedProgress);
-            if(loadOperation.progress >= 0.9f)
+            float elapsedLoadingTime = Time.unscaledTime - loadingStartTime;
+            float timeProgress = 1f;
+
+            if(miniumLoadingDuration > 0f)
+            {
+                timeProgress = Mathf.Clamp01(elapsedLoadingTime / miniumLoadingDuration);
+            }
+
+            float displayProgress = Mathf.Min(sceneProgress, timeProgress);//ta ko muốn UI chạy nhanh hơn điều kiện còn chậm
+
+            RefreshLoadingUI(displayProgress);
+
+            bool sceneIsReady = loadOperation.progress >= 0.9f;
+            bool miniumTimeComplete = elapsedLoadingTime >= miniumLoadingDuration;
+
+            if(sceneIsReady && miniumTimeComplete)
             {
                 RefreshLoadingUI(1f);
                 loadOperation.allowSceneActivation = true;
             }
-        yield return null;//cái này mà nằm ngoài thì sẽ bị vòng lặp vô hạn
+            yield return null;//cái này mà nằm ngoài thì sẽ bị vòng lặp vô hạn
         }
     }
     protected void RefreshLoadingUI(float progress)
