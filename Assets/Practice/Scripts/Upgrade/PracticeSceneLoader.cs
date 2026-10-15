@@ -8,10 +8,13 @@ public class PracticeSceneLoader : HaiMonoBehaviour
 {
     [Header("Loading UI")]
     [SerializeField] protected GameObject loadingPanel;
+    [SerializeField] protected CanvasGroup loadingCanvasGroup;
     [SerializeField] protected Slider progressSlider;
     [SerializeField] protected TextMeshProUGUI progressText;
     [Header("Loading Setting")]
     [SerializeField, Min(0f)] protected float miniumLoadingDuration = 1f;
+    [Header("Fade Setting")]
+    [SerializeField, Min(0f)] protected float fadeDuration = 0.35f;
     protected bool isLoading;
     protected bool IsLoading => isLoading;
     protected override void Start()
@@ -19,8 +22,20 @@ public class PracticeSceneLoader : HaiMonoBehaviour
         base.Start();
 
         isLoading = false;
-        SetLoadingPanelActive(false);
+        
+        InitializeLoadingUI();
+    }
+    protected void InitializeLoadingUI()
+    {
         RefreshLoadingUI(0f);
+
+        if(loadingCanvasGroup != null)
+        {
+            loadingCanvasGroup.alpha = 0f;
+            loadingCanvasGroup.interactable = false;
+            loadingCanvasGroup.blocksRaycasts = false;
+        }
+        SetLoadingPanelActive(false);
     }
     public bool LoadScene(string sceneName)
     {
@@ -34,6 +49,33 @@ public class PracticeSceneLoader : HaiMonoBehaviour
         StartCoroutine(LoadSceneRoutine(sceneName));
         return true;
     }
+    protected IEnumerator FadeLoadingPanelIn()
+    {
+        if(loadingCanvasGroup == null)
+        {
+            yield break;
+        }
+        loadingCanvasGroup.alpha = 0f;
+        loadingCanvasGroup.interactable = true;
+        loadingCanvasGroup.blocksRaycasts = true;
+
+        if(fadeDuration <= 0f)
+        {
+            loadingCanvasGroup.alpha = 1f;
+            yield break;
+        }
+        float elapsedTime = 0f;
+
+        while(elapsedTime < fadeDuration)
+        {
+            elapsedTime += Time.unscaledDeltaTime;
+            float fadeProgress = Mathf.Clamp01(elapsedTime / fadeDuration);
+
+            loadingCanvasGroup.alpha = fadeProgress;
+            yield return null;
+        }
+        loadingCanvasGroup.alpha = 1f;
+    }
     protected IEnumerator LoadSceneRoutine(string sceneName)
     {
         isLoading = true;
@@ -41,6 +83,7 @@ public class PracticeSceneLoader : HaiMonoBehaviour
         Time.timeScale = 1f;
         SetLoadingPanelActive(true);
         RefreshLoadingUI(0f);
+        yield return FadeLoadingPanelIn();//chờ fade in hoàn thành sau đó mới tiếp tục load scene
 
         float loadingStartTime = Time.unscaledTime;
 
@@ -57,9 +100,9 @@ public class PracticeSceneLoader : HaiMonoBehaviour
         loadOperation.allowSceneActivation = false;
         while (!loadOperation.isDone)
         {
-            float sceneProgress = Mathf.Clamp01(loadOperation.progress / 0.9f);
+            float sceneProgress = Mathf.Clamp01(loadOperation.progress / 0.9f);//kẹp hoặc giới hạn 1 giá trị vào 1 khoảng nhất định
 
-            float elapsedLoadingTime = Time.unscaledTime - loadingStartTime;
+            float elapsedLoadingTime = Time.unscaledTime - loadingStartTime;//time.unscaledTime là số giây đã trôi qua kể từ khi game bắt đầu những ko ảnh hưởng bởi time.timescale 
             float timeProgress = 1f;
 
             if(miniumLoadingDuration > 0f)
@@ -68,6 +111,7 @@ public class PracticeSceneLoader : HaiMonoBehaviour
             }
 
             float displayProgress = Mathf.Min(sceneProgress, timeProgress);//ta ko muốn UI chạy nhanh hơn điều kiện còn chậm
+            
 
             RefreshLoadingUI(displayProgress);
 
