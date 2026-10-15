@@ -259,6 +259,7 @@ GameObject:
   - component: {fileID: 190598721}
   - component: {fileID: 190598723}
   - component: {fileID: 190598722}
+  - component: {fileID: 190598724}
   m_Layer: 5
   m_Name: LoadingPanel
   m_TagString: Untagged
@@ -326,6 +327,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 190598720}
   m_CullTransparentMesh: 1
+--- !u!225 &190598724
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190598720}
+  m_Enabled: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &311778817
 GameObject:
   m_ObjectHideFlags: 0
@@ -780,7 +793,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 744955310}
   m_FillRect: {fileID: 178791357}
   m_HandleRect: {fileID: 744955309}
@@ -841,8 +854,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   loadingPanel: {fileID: 190598720}
+  loadingCanvasGroup: {fileID: 190598724}
   progressSlider: {fileID: 710962851}
   progressText: {fileID: 1730199362}
+  miniumLoadingDuration: 1
+  fadeDuration: 0.35
 --- !u!1 &744955308
 GameObject:
   m_ObjectHideFlags: 0
