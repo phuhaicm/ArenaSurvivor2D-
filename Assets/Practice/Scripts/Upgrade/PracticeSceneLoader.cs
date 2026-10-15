@@ -11,12 +11,27 @@ public class PracticeSceneLoader : HaiMonoBehaviour
     [SerializeField] protected CanvasGroup loadingCanvasGroup;
     [SerializeField] protected Slider progressSlider;
     [SerializeField] protected TextMeshProUGUI progressText;
+    [SerializeField] protected static PracticeSceneLoader instance;
     [Header("Loading Setting")]
     [SerializeField, Min(0f)] protected float miniumLoadingDuration = 1f;
     [Header("Fade Setting")]
     [SerializeField, Min(0f)] protected float fadeDuration = 0.35f;
+    public static PracticeSceneLoader Instance => instance;
     protected bool isLoading;
     protected bool IsLoading => isLoading;
+    protected override void Awake()
+    {
+        base.Awake();
+
+        if(instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;// vì khi instance null thì nó chọn hiện tại nên là this và kể từ đó destroy những object sau
+
+        DontDestroyOnLoad(gameObject);
+    }
     protected override void Start()
     {
         base.Start();
@@ -76,6 +91,28 @@ public class PracticeSceneLoader : HaiMonoBehaviour
         }
         loadingCanvasGroup.alpha = 1f;
     }
+    protected IEnumerator FadeLoadingPanelOut()
+    {
+        if(loadingCanvasGroup == null) yield break;
+
+        loadingCanvasGroup.alpha = 1f;
+
+        if(fadeDuration <= 0f)
+        {
+            loadingCanvasGroup.alpha = 1f;
+            yield break;
+        }
+        float elapsedTime = 0f;
+        while(elapsedTime < fadeDuration)
+        {
+            elapsedTime += Time.unscaledDeltaTime;
+            float fadeProgress = Mathf.Clamp01(elapsedTime / fadeDuration);
+
+            loadingCanvasGroup.alpha = 1f - fadeProgress;// này là fade out nên cần ngược lại
+            yield return null;
+        }
+        loadingCanvasGroup.alpha = 0f;
+    }
     protected IEnumerator LoadSceneRoutine(string sceneName)
     {
         isLoading = true;
@@ -97,7 +134,9 @@ public class PracticeSceneLoader : HaiMonoBehaviour
             SetLoadingPanelActive(false);
             yield break;
         }
+
         loadOperation.allowSceneActivation = false;
+
         while (!loadOperation.isDone)
         {
             float sceneProgress = Mathf.Clamp01(loadOperation.progress / 0.9f);//kẹp hoặc giới hạn 1 giá trị vào 1 khoảng nhất định
@@ -125,6 +164,20 @@ public class PracticeSceneLoader : HaiMonoBehaviour
             }
             yield return null;//cái này mà nằm ngoài thì sẽ bị vòng lặp vô hạn
         }
+        yield return FadeLoadingPanelOut();
+        CompleteLoading();
+    }
+    protected void CompleteLoading()
+    {
+        isLoading = false;
+
+        if(loadingCanvasGroup != null)
+        {
+            loadingCanvasGroup.alpha = 0f;
+            loadingCanvasGroup.interactable = false;
+            loadingCanvasGroup.blocksRaycasts = false;
+        }
+        SetLoadingPanelActive(false);
     }
     protected void RefreshLoadingUI(float progress)
     {

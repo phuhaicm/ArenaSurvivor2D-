@@ -27,6 +27,12 @@ public class PracticeMainMenuUI : HaiMonoBehaviour
         {
             return;
         }
+        sceneLoader = PracticeSceneLoader.Instance;
+
+        if(sceneLoader != null)
+        {
+            return;
+        }
 
         sceneLoader =
             FindFirstObjectByType<PracticeSceneLoader>();
