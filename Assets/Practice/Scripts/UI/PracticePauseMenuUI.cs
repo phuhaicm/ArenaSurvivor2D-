@@ -11,6 +11,8 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
     [Header("Pause UI")]
     [SerializeField]
     private GameObject pausePanel;
+    [Header("Scene Loading")]
+    [SerializeField] protected PracticeSceneLoader sceneLoader;
 
     [SerializeField]
     private Button resumeButton;
@@ -27,7 +29,17 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
     {
         base.LoadComponents();
 
+        LoadSceneLoader();
         LoadGameStateController();
+    }
+    protected void LoadSceneLoader()
+    {
+        if(sceneLoader != null) return;
+
+        sceneLoader = PracticeSceneLoader.Instance;
+
+        if(sceneLoader != null) return;
+        sceneLoader = FindFirstObjectByType<PracticeSceneLoader>();
     }
 
     private void LoadGameStateController()
@@ -250,9 +262,12 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
     }
     protected void HandleMainMenuClicked()
     {
-        Time.timeScale = 1f;
-        
-        SceneManager.LoadScene(PracticeSceneNames.MainMenu);
+        if(sceneLoader == null)
+        {
+            LoadSceneLoader();
+            return;
+        }
+        sceneLoader.LoadScene(PracticeSceneNames.MainMenu);//UI chỉ gửi yêu cầu tải main menu
     }
 
     private void HandleResumeButtonClicked()
@@ -262,14 +277,14 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
 
     private void HandleRestartButtonClicked()
     {
-        Time.timeScale = 1f;
-
-        Scene currentScene =
-            SceneManager.GetActiveScene();
-
-        SceneManager.LoadScene(
-            currentScene.buildIndex
-        );
+        if(sceneLoader == null)
+        {
+            LoadSceneLoader();
+            return;
+        }
+        
+        string currentSceneName = SceneManager.GetActiveScene().name;//dòng này lấy scene hiện tại
+        sceneLoader.LoadScene(currentSceneName);
     }
 
     private void HandleQuitButtonClicked()

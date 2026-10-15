@@ -14,7 +14,8 @@ public class PracticeGameOverUI : HaiMonoBehaviour
     [Header("Game Over UI")]
     [SerializeField]
     private GameObject gameOverPanel;
-
+    [Header("Scene Loading")]
+    [SerializeField] protected PracticeSceneLoader sceneLoader;
     [SerializeField]
     private Button restartButton;
 
@@ -30,6 +31,16 @@ public class PracticeGameOverUI : HaiMonoBehaviour
 
         LoadPlayerHealth();
         LoadGameStateController();
+        LoadSceneLoader();
+    }
+    protected void LoadSceneLoader()
+    {
+        if(sceneLoader != null) return;
+
+        sceneLoader = PracticeSceneLoader.Instance;
+
+        if(sceneLoader != null) return;
+        sceneLoader = FindFirstObjectByType<PracticeSceneLoader>();
     }
 
     private void LoadPlayerHealth()
@@ -229,9 +240,14 @@ public class PracticeGameOverUI : HaiMonoBehaviour
     }
     protected void HandleMainMenuClicked()
     {
-        Time.timeScale = 1f;
-
-        SceneManager.LoadScene(PracticeSceneNames.MainMenu);
+        if(sceneLoader == null)
+        {
+            LoadSceneLoader();
+            return;
+        }
+        
+        string currentSceneName = SceneManager.GetActiveScene().name;//dòng này lấy scene hiện tại
+        sceneLoader.LoadScene(currentSceneName);
     }
 
     private void HandleRestartButtonClicked()
@@ -241,14 +257,14 @@ public class PracticeGameOverUI : HaiMonoBehaviour
             return;
         }
 
-        Time.timeScale = 1f;
-
-        Scene currentScene =
-            SceneManager.GetActiveScene();
-
-        SceneManager.LoadScene(
-            currentScene.buildIndex
-        );
+        if(sceneLoader == null)
+        {
+            LoadSceneLoader();
+            return;
+        }
+        
+        string currentSceneName = SceneManager.GetActiveScene().name;//dòng này lấy scene hiện tại
+        sceneLoader.LoadScene(currentSceneName);
     }
 
     private void HandleQuitButtonClicked()
