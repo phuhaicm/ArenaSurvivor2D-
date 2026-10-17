@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -6,7 +7,6 @@ public class PracticeEnemyChase : HaiMonoBehaviour
 {
     [Header("Chase Settings")]  
     [SerializeField, Min(0f)]
-
     private float moveSpeed = 2f;
     [SerializeField, Min(0f)]
     private float stoppingDistance = 0.8f;
