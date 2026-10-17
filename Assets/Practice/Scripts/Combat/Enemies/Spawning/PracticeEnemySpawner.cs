@@ -253,6 +253,7 @@ public class PracticeEnemySpawner : HaiMonoBehaviour
     }
     protected void HandleEnemyDied()
     {
+        PracticeAudioManager.Instance?.PlayEnemyDeathSfx();
         EnemyDefeated?.Invoke();
     }
     private bool TrySpawnSingleEnemy()

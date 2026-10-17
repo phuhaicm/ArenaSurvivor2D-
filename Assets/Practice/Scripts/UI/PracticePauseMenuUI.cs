@@ -122,7 +122,6 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
 
         PauseGame();
     }
-
     private void PauseGame()
     {
         if (gameStateController == null)
@@ -262,6 +261,8 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
     }
     protected void HandleMainMenuClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
         if(sceneLoader == null)
         {
             LoadSceneLoader();
@@ -272,11 +273,13 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
 
     private void HandleResumeButtonClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
         ResumeGame();
     }
 
     private void HandleRestartButtonClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
         if(sceneLoader == null)
         {
             LoadSceneLoader();

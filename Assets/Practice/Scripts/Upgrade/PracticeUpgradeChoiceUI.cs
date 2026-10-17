@@ -273,6 +273,7 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
 
     private void HandleLeveledUp(float newLevel)
     {
+        PracticeAudioManager.Instance?.PlayLevelUpSfx();
         pendingUpgradeChoices++;
 
         if(titleText != null)

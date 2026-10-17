@@ -109,7 +109,28 @@ public class PracticeMainMenuUI : HaiMonoBehaviour
     // =========================================================
     // BUTTON HANDLERS
     // =========================================================
+    private void HandlePlayButtonClicked()
+{
+    PracticeAudioManager.Instance?.
+        PlayButtonClickSfx();
 
+    if (sceneLoader == null)
+    {
+        return;
+    }
+
+    sceneLoader.LoadScene(
+        PracticeSceneNames.GamePlay
+    );
+}
+private void HandleQuitButtonClicked()
+{
+    PracticeAudioManager.Instance?.
+        PlayButtonClickSfx();
+
+    Time.timeScale = 1f;
+    Application.Quit();
+}
     private void HandlePlayClicked()
     {
         if (sceneLoader == null)

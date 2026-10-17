@@ -64,6 +64,7 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
 
             SpawnSingleProjectile(spawnPosition, direction);
         }
+        PracticeAudioManager.Instance?.PlayShootSfx();
 
         nextShootTime = Time.time + shootInterval;
     }
@@ -79,6 +80,7 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
         {
             dealer.SetDamage(bulletDamage);
         }
+        PracticeAudioManager.Instance?.PlayShootSfx();
 
     }
     private Vector2 RotationDirection(Vector2 baseDirection, float currentAngle)
