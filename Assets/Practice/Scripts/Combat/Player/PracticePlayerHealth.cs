@@ -1,39 +1,74 @@
 using System;
 using UnityEngine;
 
-public class PracticePlayerHealth : PracticeHealthBase   
+public class PracticePlayerHealth : PracticeHealthBase
 {
-    [SerializeField, Min(0f)] private float invulnerabilityDuration = 0.5f;
+    [Header("Invulnerability Settings")]
+    [SerializeField, Min(0f)]
+    private float invulnerabilityDuration = 0.5f;
+
     private float invulnerabilityEndTime;
-    //public event Action Died;
+
     public event Action<float, float> HealthChanged;
-    public event Action<float> damageTaken;
-    private bool isInvulnerable;// về mặt kĩ thuật là ko cần biến này nhưng muốn property rõ nghĩa và bool và tgian có thể mất đồng bộ
-    public bool IsInvulnerable => Time.time < invulnerabilityEndTime;// property này sẽ trả về true nếu player đang trong trạng thái bất tử, false nếu ko
-    public override void TakeDamage(float damageAmount)//như giờ player còn 5 máu nhưng lại nhận 10 dame thì nó sẽ chết và hp = 0, ko còn âm
+
+    public bool IsInvulnerable =>
+        Time.time < invulnerabilityEndTime;
+
+    public override void TakeDamage(float damageAmount)
     {
-        if(isDead) return;
-        if(damageAmount <= 0f) return;
-        if(IsInvulnerable) return;
+        if (isDead)
+        {
+            return;
+        }
 
-        float previousHealth = currentHealth;
+        if (damageAmount <= 0f)
+        {
+            return;
+        }
 
+        if (IsInvulnerable)
+        {
+            return;
+        }
+
+        float previousHealth =
+            currentHealth;
+
+        // HealthBase chịu trách nhiệm:
+        // - giảm Health
+        // - phát damageTaken
+        // - gọi Die nếu Health bằng 0
         base.TakeDamage(damageAmount);
 
-        float actualDamageTaken = previousHealth - currentHealth;
+        float actualDamageTaken =
+            previousHealth - currentHealth;
 
-        if(actualDamageTaken <= 0f) return;
+        if (actualDamageTaken <= 0f)
+        {
+            return;
+        }
 
-        invulnerabilityEndTime = Time.time + invulnerabilityDuration;
+        // Chỉ bắt đầu bất tử nếu Player vẫn còn sống.
+        if (!isDead)
+        {
+            invulnerabilityEndTime =
+                Time.time +
+                invulnerabilityDuration;
+        }
 
-        HealthChanged?.Invoke(currentHealth, maxHealth);
-        damageTaken?.Invoke(actualDamageTaken);// cái này tbao là player vừa nhận dmg, có thể dùng để trigger animation hoặc hiệu ứng
+        HealthChanged?.Invoke(
+            currentHealth,
+            maxHealth
+        );
     }
 
     protected override void Die()
     {
         base.Die();
-        Debug.Log("Game Over");
-    }
 
+        Debug.Log(
+            $"{name}: Game Over.",
+            this
+        );
+    }
 }

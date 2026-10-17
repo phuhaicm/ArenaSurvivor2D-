@@ -16,6 +16,8 @@ GameObject:
   - component: {fileID: 6684418186157247156}
   - component: {fileID: 2806366745314891576}
   - component: {fileID: 1019942089556460235}
+  - component: {fileID: 8205562967837412687}
+  - component: {fileID: 7538288770937977349}
   m_Layer: 7
   m_Name: Practice_Enemy_Tank
   m_TagString: Untagged
@@ -211,3 +213,33 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
+--- !u!114 &8205562967837412687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149481832146249845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4408e467af2b7624ca8bf479af3e878f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetSprite: {fileID: 1586223595833899841}
+  flashCount: 3
+  flashInterval: 0.08
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+--- !u!114 &7538288770937977349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149481832146249845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55bff5596d3d95e4188d4f12f7220e53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyHealth: {fileID: 6169112465887158619}
+  flashFeedback: {fileID: 8205562967837412687}

@@ -4208,6 +4208,7 @@ GameObject:
   - component: {fileID: 1142143052}
   - component: {fileID: 1142143053}
   - component: {fileID: 1142143055}
+  - component: {fileID: 1142143056}
   m_Layer: 3
   m_Name: Practice_Player
   m_TagString: Player
@@ -4435,9 +4436,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ed5cd453f142cd48837459d03a61f6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  flashCount: 3
-  flashInterval: 0.1
-  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  playerHealth: {fileID: 1142143051}
+  flashFeedback: {fileID: 1142143056}
 --- !u!114 &1142143053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4474,6 +4474,22 @@ MonoBehaviour:
   behavioursToDisable:
   - {fileID: 1142143050}
   - {fileID: 1142143053}
+--- !u!114 &1142143056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1142143041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4408e467af2b7624ca8bf479af3e878f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetSprite: {fileID: 1142143046}
+  flashCount: 3
+  flashInterval: 0.08
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
 --- !u!1 &1189056384
 GameObject:
   m_ObjectHideFlags: 0
