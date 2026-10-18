@@ -101,7 +101,7 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
 
         shootInterval = Mathf.Max(0, 0.1f, shootInterval - amount);
     }
-    public void AddProjecttileCount(int amount)
+    public void AddProjectileCount(int amount)
     {
         if (amount <= 0) return;
 

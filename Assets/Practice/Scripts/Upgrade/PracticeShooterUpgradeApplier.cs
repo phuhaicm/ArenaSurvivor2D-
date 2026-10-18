@@ -37,11 +37,27 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
                     break;
                 }
             case PracticeUpgradeType.ProjectileCount:
-                {
-                    int projectileBonus = Mathf.RoundToInt(value);//code này là chuyển từ float sang int 
-                    shooter.AddProjecttileCount(projectileBonus);
-                    break;
-                }
+{
+    int projectileBonus =
+        Mathf.RoundToInt(value);
+
+    int previousProjectileCount =
+        shooter.ProjectileCount;
+
+    shooter.AddProjectileCount(
+        projectileBonus
+    );
+
+    Debug.Log(
+        $"{name}: Projectile Count changed from " +
+        $"{previousProjectileCount} to " +
+        $"{shooter.ProjectileCount}. " +
+        $"Bonus = {projectileBonus}.",
+        this
+    );
+
+    break;
+}
             default:
             return false;
         }

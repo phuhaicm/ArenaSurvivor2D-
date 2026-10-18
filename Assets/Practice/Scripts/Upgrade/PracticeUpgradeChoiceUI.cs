@@ -318,7 +318,10 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
     } 
     private void ApplyChoice(int choiceIndex)
     {
-        if(!CanChooseUpgrade()) return;
+        if (!CanChooseUpgrade())
+        {
+            Debug.LogWarning($"{name}: Cannot choose upgrade. ", this);
+        }
         //if(upgradePool == null) return;
         if(choiceIndex < 0 || choiceIndex >= currentChoices.Count)
         {
