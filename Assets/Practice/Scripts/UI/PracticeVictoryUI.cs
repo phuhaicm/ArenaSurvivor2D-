@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
 
 public class PracticeVictoryUI : HaiMonoBehaviour
 {
@@ -20,6 +21,18 @@ public class PracticeVictoryUI : HaiMonoBehaviour
 
     [SerializeField]
     private Button mainMenuButton;
+    [Header("Result Text")]
+[SerializeField]
+private TextMeshProUGUI survivalTimeText;
+
+[SerializeField]
+private TextMeshProUGUI killCountText;
+
+[SerializeField]
+private TextMeshProUGUI finalScoreText;
+
+[SerializeField]
+private TextMeshProUGUI bestScoreText;
 
     protected override void LoadComponents()
     {
@@ -119,17 +132,22 @@ public class PracticeVictoryUI : HaiMonoBehaviour
     }
 
     private void HandleGameStateChanged(
-        PracticeGameStates newState
-    )
-    {
-        bool shouldShow =
-            newState ==
-            PracticeGameStates.Victory;
+    PracticeGameStates newState
+)
+{
+    bool shouldShow =
+        newState ==
+        PracticeGameStates.Victory;
 
-        SetVictoryPanelActive(
-            shouldShow
-        );
+    if (shouldShow)
+    {
+        RefreshVictoryResults();
     }
+
+    SetVictoryPanelActive(
+        shouldShow
+    );
+}
 
     private void RefreshPanelFromCurrentState()
     {
@@ -216,6 +234,28 @@ public class PracticeVictoryUI : HaiMonoBehaviour
             PracticeSceneNames.MainMenu
         );
     }
+    private void RefreshVictoryResults()
+{
+    if (survivalTimeText != null)
+    {
+        survivalTimeText.text = "10:00";
+    }
+
+    if (killCountText != null)
+    {
+        killCountText.text = "125";
+    }
+
+    if (finalScoreText != null)
+    {
+        finalScoreText.text = "15,250";
+    }
+
+    if (bestScoreText != null)
+    {
+        bestScoreText.text = "22,000";
+    }
+}
 
     // =========================================================
     // PANEL
