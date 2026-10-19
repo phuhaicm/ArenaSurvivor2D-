@@ -10,6 +10,8 @@ public class PracticeGameStateController : HaiMonoBehaviour
     public bool IsPaused => currentState == PracticeGameStates.Paused;
     public bool IsChoosingUpgrade => currentState == PracticeGameStates.UpgradeChoices;
     public bool IsGameOver => currentState == PracticeGameStates.GameOver;
+    public bool IsVictory => currentState == PracticeGameStates.Victory;
+
     protected override void Start()
     {
         base.Start();
@@ -60,6 +62,11 @@ public class PracticeGameStateController : HaiMonoBehaviour
                 {
                     return nextState == PracticeGameStates.Running;
                 }
+            case PracticeGameStates.GameOver:
+            case PracticeGameStates.Victory:
+                {
+                    return false;
+                }
             default:
             return false;
         }
@@ -76,6 +83,7 @@ public class PracticeGameStateController : HaiMonoBehaviour
             case PracticeGameStates.UpgradeChoices:
             case PracticeGameStates.Paused:
             case PracticeGameStates.GameOver:
+            case PracticeGameStates.Victory:
                 {
                     Time.timeScale = 0f;
                     break;
@@ -97,5 +105,9 @@ public class PracticeGameStateController : HaiMonoBehaviour
     public bool RequestGameOver()
     {
         return TryChangeState(PracticeGameStates.GameOver);
+    }
+    public bool RequestVictory()
+    {
+        return TryChangeState(PracticeGameStates.Victory);
     }
 }
