@@ -1,38 +1,53 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
 
 public class PracticeVictoryUI : HaiMonoBehaviour
 {
-    [Header("References")]
+    [Header("Core References")]
     [SerializeField]
     private PracticeGameStateController gameStateController;
 
     [SerializeField]
     private PracticeSceneLoader sceneLoader;
 
-    [Header("Victory UI")]
+    [Header("Run Data")]
+    [SerializeField]
+    private PracticeSurvivalTimer survivalTimer;
+
+    [SerializeField]
+    private PracticePlayerKillCounter killCounter;
+
+    [SerializeField]
+    private PracticeRunScore runScore;
+
+    [SerializeField]
+    private PracticeBestScore bestScore;
+
+    [Header("Victory Panel")]
     [SerializeField]
     private GameObject victoryPanel;
 
+    [Header("Result Text")]
+    [SerializeField]
+    private TextMeshProUGUI survivalTimeText;
+
+    [SerializeField]
+    private TextMeshProUGUI killCountText;
+
+    [SerializeField]
+    private TextMeshProUGUI finalScoreText;
+
+    [SerializeField]
+    private TextMeshProUGUI bestScoreText;
+
+    [Header("Buttons")]
     [SerializeField]
     private Button restartButton;
 
     [SerializeField]
     private Button mainMenuButton;
-    [Header("Result Text")]
-[SerializeField]
-private TextMeshProUGUI survivalTimeText;
-
-[SerializeField]
-private TextMeshProUGUI killCountText;
-
-[SerializeField]
-private TextMeshProUGUI finalScoreText;
-
-[SerializeField]
-private TextMeshProUGUI bestScoreText;
 
     protected override void LoadComponents()
     {
@@ -40,6 +55,7 @@ private TextMeshProUGUI bestScoreText;
 
         LoadGameStateController();
         LoadSceneLoader();
+        LoadRunSystems();
     }
 
     protected override void OnEnable()
@@ -48,6 +64,7 @@ private TextMeshProUGUI bestScoreText;
 
         LoadGameStateController();
         LoadSceneLoader();
+        LoadRunSystems();
 
         SubscribeGameStateEvents();
         SubscribeButtonEvents();
@@ -65,8 +82,12 @@ private TextMeshProUGUI bestScoreText;
     {
         base.Start();
 
-        RefreshPanelFromCurrentState();
+        RefreshFromCurrentState();
     }
+
+    // =========================================================
+    // LOAD REFERENCES
+    // =========================================================
 
     private void LoadGameStateController()
     {
@@ -102,8 +123,43 @@ private TextMeshProUGUI bestScoreText;
             >();
     }
 
+    private void LoadRunSystems()
+    {
+        if (survivalTimer == null)
+        {
+            survivalTimer =
+                FindFirstObjectByType<
+                    PracticeSurvivalTimer
+                >();
+        }
+
+        if (killCounter == null)
+        {
+            killCounter =
+                FindFirstObjectByType<
+                    PracticePlayerKillCounter
+                >();
+        }
+
+        if (runScore == null)
+        {
+            runScore =
+                FindFirstObjectByType<
+                    PracticeRunScore
+                >();
+        }
+
+        if (bestScore == null)
+        {
+            bestScore =
+                FindFirstObjectByType<
+                    PracticeBestScore
+                >();
+        }
+    }
+
     // =========================================================
-    // GAME STATE
+    // GAME STATE EVENTS
     // =========================================================
 
     private void SubscribeGameStateEvents()
@@ -132,24 +188,24 @@ private TextMeshProUGUI bestScoreText;
     }
 
     private void HandleGameStateChanged(
-    PracticeGameStates newState
-)
-{
-    bool shouldShow =
-        newState ==
-        PracticeGameStates.Victory;
-
-    if (shouldShow)
+        PracticeGameStates newState
+    )
     {
-        RefreshVictoryResults();
+        bool shouldShow =
+            newState ==
+            PracticeGameStates.Victory;
+
+        if (shouldShow)
+        {
+            RefreshVictoryResults();
+        }
+
+        SetVictoryPanelActive(
+            shouldShow
+        );
     }
 
-    SetVictoryPanelActive(
-        shouldShow
-    );
-}
-
-    private void RefreshPanelFromCurrentState()
+    private void RefreshFromCurrentState()
     {
         if (gameStateController == null)
         {
@@ -160,6 +216,111 @@ private TextMeshProUGUI bestScoreText;
         HandleGameStateChanged(
             gameStateController.CurrentState
         );
+    }
+
+    // =========================================================
+    // RESULT DATA
+    // =========================================================
+
+    private void RefreshVictoryResults()
+    {
+        RefreshSurvivalTime();
+        RefreshKillCount();
+        RefreshFinalScore();
+        RefreshBestScore();
+    }
+
+    private void RefreshSurvivalTime()
+    {
+        if (survivalTimeText == null)
+        {
+            return;
+        }
+
+        float elapsedTime = 0f;
+
+        if (survivalTimer != null)
+        {
+            elapsedTime =
+                survivalTimer.ElapsedTime;
+        }
+
+        survivalTimeText.text =
+            FormatTime(elapsedTime);
+    }
+
+    private void RefreshKillCount()
+    {
+        if (killCountText == null)
+        {
+            return;
+        }
+
+        int kills = 0;
+
+        if (killCounter != null)
+        {
+            kills =
+                killCounter.CurrentKills;
+        }
+
+        killCountText.text =
+            kills.ToString("N0");
+    }
+
+    private void RefreshFinalScore()
+    {
+        if (finalScoreText == null)
+        {
+            return;
+        }
+
+        int score = 0;
+
+        if (runScore != null)
+        {
+            score =
+                runScore.FinalScore;
+        }
+
+        finalScoreText.text =
+            score.ToString("N0");
+    }
+
+    private void RefreshBestScore()
+    {
+        if (bestScoreText == null)
+        {
+            return;
+        }
+
+        int score = 0;
+
+        if (bestScore != null)
+        {
+            score =
+                bestScore.BestScore;
+        }
+
+        bestScoreText.text =
+            score.ToString("N0");
+    }
+
+    private string FormatTime(float totalSeconds)
+    {
+        int validSeconds =
+            Mathf.Max(
+                0,
+                Mathf.FloorToInt(totalSeconds)
+            );
+
+        int minutes =
+            validSeconds / 60;
+
+        int seconds =
+            validSeconds % 60;
+
+        return $"{minutes:00}:{seconds:00}";
     }
 
     // =========================================================
@@ -212,6 +373,16 @@ private TextMeshProUGUI bestScoreText;
     {
         if (sceneLoader == null)
         {
+            LoadSceneLoader();
+        }
+
+        if (sceneLoader == null)
+        {
+            Debug.LogError(
+                $"{name}: Scene Loader đang null.",
+                this
+            );
+
             return;
         }
 
@@ -227,6 +398,16 @@ private TextMeshProUGUI bestScoreText;
     {
         if (sceneLoader == null)
         {
+            LoadSceneLoader();
+        }
+
+        if (sceneLoader == null)
+        {
+            Debug.LogError(
+                $"{name}: Scene Loader đang null.",
+                this
+            );
+
             return;
         }
 
@@ -234,28 +415,6 @@ private TextMeshProUGUI bestScoreText;
             PracticeSceneNames.MainMenu
         );
     }
-    private void RefreshVictoryResults()
-{
-    if (survivalTimeText != null)
-    {
-        survivalTimeText.text = "10:00";
-    }
-
-    if (killCountText != null)
-    {
-        killCountText.text = "125";
-    }
-
-    if (finalScoreText != null)
-    {
-        finalScoreText.text = "15,250";
-    }
-
-    if (bestScoreText != null)
-    {
-        bestScoreText.text = "22,000";
-    }
-}
 
     // =========================================================
     // PANEL
