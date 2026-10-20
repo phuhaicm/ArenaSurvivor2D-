@@ -10,11 +10,11 @@ public class PracticeFinalBossController : HaiMonoBehaviour
     [SerializeField] protected PracticeEnemyHealth activeBoss;
     protected bool bossSpawned;
     protected bool bossDefeated;
-
     public event Action BossSpawned;
     public event Action BossDefeated;
     public bool HasActiveBoss => activeBoss != null && !activeBoss.IsDead;
-    protected bool IsBossDefeated => bossDefeated;
+    public bool IsBossDefeated => bossDefeated;
+    public PracticeEnemyHealth ActiveBoss => activeBoss;
 
     protected override void OnDisable()
     {
