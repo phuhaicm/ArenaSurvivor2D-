@@ -52,15 +52,16 @@ public class PracticeGameStateController : HaiMonoBehaviour
         {
             case PracticeGameStates.Running:
                 {
-                    return nextState == PracticeGameStates.UpgradeChoices || nextState == PracticeGameStates.Paused;
+                    return nextState == PracticeGameStates.UpgradeChoices || nextState == PracticeGameStates.Paused
+                    || nextState == PracticeGameStates.GameOver || nextState == PracticeGameStates.Victory;
                 }
             case PracticeGameStates.UpgradeChoices:
                 {
-                    return nextState == PracticeGameStates.Running;
+                    return nextState == PracticeGameStates.Running || nextState == PracticeGameStates.GameOver;
                 }
             case PracticeGameStates.Paused:
                 {
-                    return nextState == PracticeGameStates.Running;
+                    return nextState == PracticeGameStates.Running || nextState == PracticeGameStates.GameOver;
                 }
             case PracticeGameStates.GameOver:
             case PracticeGameStates.Victory:
