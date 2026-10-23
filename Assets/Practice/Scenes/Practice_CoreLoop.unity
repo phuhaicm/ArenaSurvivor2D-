@@ -5691,7 +5691,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69c5a4010ccf78b4093ad1c2c8fa616a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bossPrefab: {fileID: 6169112465887158619, guid: 76f107c19fe4cf2488b054c2496c4a50,
+  bossPrefab: {fileID: 6169112465887158619, guid: f83be098621208c4994a8f552907441a,
     type: 3}
   bossSpawnPoint: {fileID: 99617676}
   bossContainer: {fileID: 918411211}

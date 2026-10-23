@@ -24,7 +24,7 @@ TagManager:
   - PlayerSensor
   - Enemy
   - Pickup
-  - 
+  - BossProjectile
   - 
   - 
   - 
@@ -71,4 +71,7 @@ TagManager:
     locked: 0
   - name: VFX
     uniqueID: 738997965
+    locked: 0
+  - name: BossProjectile
+    uniqueID: 716634019
     locked: 0
