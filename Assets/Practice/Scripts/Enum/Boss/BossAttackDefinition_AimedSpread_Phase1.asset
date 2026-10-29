@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72153ba0f284dae4cbcc2bd9623cd167, type: 3}
+  m_Name: BossAttackDefinition_AimedSpread_Phase1
+  m_EditorClassIdentifier: 
+  attackId: boss_aimed_spread_p1
+  displayName: Aim Spread P1
+  patternType: 1
+  initialDelay: 1
+  telegraphDuration: 0.65
+  attackCooldown: 1.8
+  projectilePrefab: {fileID: 7769510910710801178, guid: 7debd1d5a69fb9e48b02065f8124ff33,
+    type: 3}
+  projectileCount: 5
+  projectileSpeed: 7.5
+  projectileDamage: 10
+  projectileLifetime: 4
+  startingAngleOffset: 0
+  spreadAngle: 40
