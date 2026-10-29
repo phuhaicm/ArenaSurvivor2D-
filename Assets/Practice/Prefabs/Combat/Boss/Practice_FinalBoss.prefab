@@ -41,8 +41,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1012686010227363592}
   - component: {fileID: 1586223595833899841}
-  - component: {fileID: 3183020186760176956}
   - component: {fileID: 6169112465887158619}
+  - component: {fileID: 3183020186760176956}
   - component: {fileID: 8659378148005791084}
   - component: {fileID: 6684418186157247156}
   - component: {fileID: 2806366745314891576}
@@ -127,6 +127,20 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &6169112465887158619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149481832146249845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8afdec420a35eb042acb4cfd26519825, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 300
+  currentHealth: 0
 --- !u!114 &3183020186760176956
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -142,20 +156,6 @@ MonoBehaviour:
   moveSpeed: 1.2
   stoppingDistance: 1.5
   targetSearchInterval: 0.5
---- !u!114 &6169112465887158619
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3149481832146249845}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8afdec420a35eb042acb4cfd26519825, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 300
-  currentHealth: 0
 --- !u!114 &8659378148005791084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -293,8 +293,14 @@ MonoBehaviour:
   gameStateController: {fileID: 0}
   firePoint: {fileID: 8852815717400466492}
   telegraphRenderer: {fileID: 6789968873883337939}
+  bossBodyRenderer: {fileID: 1586223595833899841}
   projectileContainer: {fileID: 0}
-  attackDefinition: {fileID: 11400000, guid: 1f0fdbe1c3174204587506c9fa870940, type: 2}
+  initialCombatDelay: 1.25
+  phases:
+  - {fileID: 11400000, guid: b8bd13d7dbca26b48bf31d94a31099e6, type: 2}
+  - {fileID: 11400000, guid: 6e5bb25e13a19e44cb1428dac24fab88, type: 2}
+  fallbackAttackDefinition: {fileID: 11400000, guid: 1f0fdbe1c3174204587506c9fa870940,
+    type: 2}
 --- !u!1 &6211631058306351753
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,8 +1,9 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class PracticeBossAttackController
-    : HaiMonoBehaviour
+public class PracticeBossAttackController : HaiMonoBehaviour
 {
     [Header("References")]
     [SerializeField]
@@ -15,17 +16,50 @@ public class PracticeBossAttackController
     private Transform firePoint;
 
     [SerializeField]
-    private SpriteRenderer telegraphRenderer;//đây là visual cảnh báo trước attack
+    private SpriteRenderer telegraphRenderer;
+
+    [SerializeField]
+    private SpriteRenderer bossBodyRenderer;
 
     [SerializeField]
     private Transform projectileContainer;
 
-    [Header("Attack Data")]
+    [Header("Combat Timing")]
+    [Min(0f)]
     [SerializeField]
-    private PracticeBossAttackDefinition attackDefinition;
+    private float initialCombatDelay = 1.25f;
+
+    [Header("Phase Data")]
+    [SerializeField]
+    private List<PracticeBossPhaseDefinition> phases =
+        new List<PracticeBossPhaseDefinition>();
+
+    [Header("Fallback Single Attack (Optional)")]
+    [SerializeField]
+    private PracticeBossAttackDefinition fallbackAttackDefinition;
 
     private Coroutine attackLoopCoroutine;
     private bool attackInProgress;
+    private int currentPhaseIndex = -1;
+    private PracticeBossAttackDefinition lastSelectedAttack;
+
+    public event Action<int, PracticeBossPhaseDefinition> PhaseChanged;
+
+    public int CurrentPhaseIndex => currentPhaseIndex;
+    public bool IsAttackInProgress => attackInProgress;
+
+    public PracticeBossPhaseDefinition CurrentPhase
+    {
+        get
+        {
+            if (currentPhaseIndex < 0 || currentPhaseIndex >= phases.Count)
+            {
+                return null;
+            }
+
+            return phases[currentPhaseIndex];
+        }
+    }
 
     protected override void LoadComponents()
     {
@@ -33,6 +67,7 @@ public class PracticeBossAttackController
 
         LoadBossHealth();
         LoadGameStateController();
+        LoadBossBodyRenderer();
     }
 
     protected override void OnEnable()
@@ -41,7 +76,9 @@ public class PracticeBossAttackController
 
         LoadBossHealth();
         LoadGameStateController();
+        LoadBossBodyRenderer();
 
+        ResetRuntimePhaseState();
         SubscribeBossEvents();
         ResetAttackPresentation();
         StartAttackLoop();
@@ -63,8 +100,7 @@ public class PracticeBossAttackController
             return;
         }
 
-        bossHealth =
-            GetComponent<PracticeEnemyHealth>();
+        bossHealth = GetComponent<PracticeEnemyHealth>();
     }
 
     private void LoadGameStateController()
@@ -74,10 +110,17 @@ public class PracticeBossAttackController
             return;
         }
 
-        gameStateController =
-            FindFirstObjectByType<
-                PracticeGameStateController
-            >();
+        gameStateController = FindFirstObjectByType<PracticeGameStateController>();
+    }
+
+    private void LoadBossBodyRenderer()
+    {
+        if (bossBodyRenderer != null)
+        {
+            return;
+        }
+
+        bossBodyRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void SubscribeBossEvents()
@@ -87,11 +130,11 @@ public class PracticeBossAttackController
             return;
         }
 
-        bossHealth.Died -=
-            HandleBossDied;
+        bossHealth.Died -= HandleBossDied;
+        bossHealth.Died += HandleBossDied;
 
-        bossHealth.Died +=
-            HandleBossDied;
+        bossHealth.damageTaken -= HandleBossDamageTaken;
+        bossHealth.damageTaken += HandleBossDamageTaken;
     }
 
     private void UnsubscribeBossEvents()
@@ -101,8 +144,109 @@ public class PracticeBossAttackController
             return;
         }
 
-        bossHealth.Died -=
-            HandleBossDied;
+        bossHealth.Died -= HandleBossDied;
+        bossHealth.damageTaken -= HandleBossDamageTaken;
+    }
+
+    private void ResetRuntimePhaseState()
+    {
+        currentPhaseIndex = -1;
+        lastSelectedAttack = null;
+
+        if (phases != null && phases.Count > 0)
+        {
+            SetPhase(0);
+        }
+    }
+
+    private void HandleBossDamageTaken(float damageAmount)
+    {
+        if (!CanContinueAttacking())
+        {
+            return;
+        }
+
+        EvaluatePhaseTransition();
+    }
+
+    private void EvaluatePhaseTransition()
+    {
+        if (phases == null || phases.Count == 0)
+        {
+            return;
+        }
+
+        float normalizedHealth = GetNormalizedHealth();
+        int targetPhaseIndex = currentPhaseIndex;
+
+        for (int i = currentPhaseIndex + 1; i < phases.Count; i++)
+        {
+            PracticeBossPhaseDefinition candidatePhase = phases[i];
+
+            if (candidatePhase == null)
+            {
+                continue;
+            }
+
+            if (normalizedHealth <= candidatePhase.HealthThreshold)
+            {
+                targetPhaseIndex = i;
+            }
+        }
+
+        if (targetPhaseIndex != currentPhaseIndex && targetPhaseIndex >= 0)
+        {
+            SetPhase(targetPhaseIndex);
+        }
+    }
+
+    private float GetNormalizedHealth()
+    {
+        if (bossHealth == null || bossHealth.MaxHealth <= 0f)
+        {
+            return 1f;
+        }
+
+        return Mathf.Clamp01(bossHealth.CurrentHealth / bossHealth.MaxHealth);
+    }
+
+    private void SetPhase(int newPhaseIndex)
+    {
+        if (newPhaseIndex < 0 || newPhaseIndex >= phases.Count)
+        {
+            return;
+        }
+
+        if (currentPhaseIndex == newPhaseIndex)
+        {
+            return;
+        }
+
+        currentPhaseIndex = newPhaseIndex;
+        lastSelectedAttack = null;
+
+        PracticeBossPhaseDefinition activePhase = CurrentPhase;
+        ApplyPhasePresentation(activePhase);
+
+        PhaseChanged?.Invoke(currentPhaseIndex, activePhase);
+    }
+
+    private void ApplyPhasePresentation(PracticeBossPhaseDefinition phase)
+    {
+        if (phase == null)
+        {
+            return;
+        }
+
+        if (bossBodyRenderer != null)
+        {
+            bossBodyRenderer.color = phase.PhaseTintColor;
+        }
+
+        if (telegraphRenderer != null)
+        {
+            telegraphRenderer.color = phase.TelegraphColor;
+        }
     }
 
     private void StartAttackLoop()
@@ -114,47 +258,28 @@ public class PracticeBossAttackController
 
         StopAttackLoop();
 
-        attackLoopCoroutine =
-            StartCoroutine(
-                AttackLoopRoutine()
-            );
+        attackLoopCoroutine = StartCoroutine(AttackLoopRoutine());
     }
 
     private bool CanStartAttackLoop()
     {
-        if (attackDefinition == null)
-        {
-            Debug.LogError(
-                $"{name}: Attack Definition đang null.",
-                this
-            );
-
-            return false;
-        }
-
-        if (attackDefinition.ProjectilePrefab == null)
-        {
-            Debug.LogError(
-                $"{name}: Projectile Prefab đang null.",
-                this
-            );
-
-            return false;
-        }
-
         if (firePoint == null)
         {
-            Debug.LogError(
-                $"{name}: Fire Point đang null.",
-                this
-            );
-
+            Debug.LogError($"{name}: Fire Point đang null.", this);
             return false;
         }
 
-        if (bossHealth == null ||
-            bossHealth.IsDead)
+        if (bossHealth == null || bossHealth.IsDead)
         {
+            return false;
+        }
+
+        bool hasValidPhase = phases != null && phases.Count > 0 && phases[0] != null && phases[0].HasValidAttacks();
+        bool hasValidFallback = fallbackAttackDefinition != null && fallbackAttackDefinition.ProjectilePrefab != null;
+
+        if (!hasValidPhase && !hasValidFallback)
+        {
+            Debug.LogError($"{name}: Chưa cấu hình Phase hợp lệ hoặc Fallback Attack Definition.", this);
             return false;
         }
 
@@ -163,11 +288,9 @@ public class PracticeBossAttackController
 
     private IEnumerator AttackLoopRoutine()
     {
-        if (attackDefinition.InitialDelay > 0f)
+        if (initialCombatDelay > 0f)
         {
-            yield return WaitUntilRunningForSeconds(
-                attackDefinition.InitialDelay//boss ngay khi spawn ko bắn ngay lập tức
-            );
+            yield return WaitUntilRunningForSeconds(initialCombatDelay);
         }
 
         while (CanContinueAttacking())
@@ -179,33 +302,102 @@ public class PracticeBossAttackController
                 break;
             }
 
-            yield return PerformAttackRoutine();
+            PracticeBossAttackDefinition selectedAttack = SelectNextAttack();
+
+            if (selectedAttack == null || selectedAttack.ProjectilePrefab == null)
+            {
+                yield return null;
+                continue;
+            }
+
+            yield return PerformAttackRoutine(selectedAttack);
 
             if (!CanContinueAttacking())
             {
                 break;
             }
 
-            yield return WaitUntilRunningForSeconds(
-                attackDefinition.AttackCooldown
-            );
+            float runtimeCooldown = CalculateRuntimeCooldown(selectedAttack);
+            yield return WaitUntilRunningForSeconds(runtimeCooldown);
         }
 
         attackInProgress = false;
         attackLoopCoroutine = null;
     }
 
-    private IEnumerator PerformAttackRoutine()//1 lần attack hoàn chỉnh
+    private PracticeBossAttackDefinition SelectNextAttack()
+    {
+        PracticeBossPhaseDefinition activePhase = CurrentPhase;
+
+        if (activePhase == null || !activePhase.HasValidAttacks())
+        {
+            return fallbackAttackDefinition;
+        }
+
+        IReadOnlyList<PracticeBossAttackDefinition> phaseAttacks = activePhase.Attacks;
+        List<PracticeBossAttackDefinition> validCandidates = new List<PracticeBossAttackDefinition>();
+
+        for (int i = 0; i < phaseAttacks.Count; i++)
+        {
+            PracticeBossAttackDefinition attack = phaseAttacks[i];
+
+            if (attack != null && attack.ProjectilePrefab != null)
+            {
+                validCandidates.Add(attack);
+            }
+        }
+
+        if (validCandidates.Count == 0)
+        {
+            return fallbackAttackDefinition;
+        }
+
+        if (validCandidates.Count == 1)
+        {
+            lastSelectedAttack = validCandidates[0];
+            return lastSelectedAttack;
+        }
+
+        // Anti-repeat: Lọc bỏ đòn vừa dùng ở lượt ngay trước đó
+        List<PracticeBossAttackDefinition> nonRepeatingCandidates = new List<PracticeBossAttackDefinition>();
+
+        for (int i = 0; i < validCandidates.Count; i++)
+        {
+            if (validCandidates[i] != lastSelectedAttack)
+            {
+                nonRepeatingCandidates.Add(validCandidates[i]);
+            }
+        }
+
+        List<PracticeBossAttackDefinition> poolToPick =
+            nonRepeatingCandidates.Count > 0 ? nonRepeatingCandidates : validCandidates;
+
+        int randomIndex = UnityEngine.Random.Range(0, poolToPick.Count);
+        lastSelectedAttack = poolToPick[randomIndex];
+
+        return lastSelectedAttack;
+    }
+
+    private float CalculateRuntimeCooldown(PracticeBossAttackDefinition attack)
+    {
+        if (attack == null)
+        {
+            return 1f;
+        }
+
+        float multiplier = CurrentPhase != null ? CurrentPhase.CooldownMultiplier : 1f;
+        return Mathf.Max(0.1f, attack.AttackCooldown * multiplier);
+    }
+
+    private IEnumerator PerformAttackRoutine(PracticeBossAttackDefinition attack)
     {
         attackInProgress = true;
 
         SetTelegraphActive(true);
 
-        if (attackDefinition.TelegraphDuration > 0f)
+        if (attack.TelegraphDuration > 0f)
         {
-            yield return WaitUntilRunningForSeconds(
-                attackDefinition.TelegraphDuration
-            );
+            yield return WaitUntilRunningForSeconds(attack.TelegraphDuration);
         }
 
         SetTelegraphActive(false);
@@ -216,44 +408,27 @@ public class PracticeBossAttackController
             yield break;
         }
 
-        FireRadialBurst();
+        FireRadialBurst(attack);
 
         attackInProgress = false;
     }
 
-    private void FireRadialBurst()
+    private void FireRadialBurst(PracticeBossAttackDefinition attack)
     {
-        int projectileCount =
-            Mathf.Max(
-                1,
-                attackDefinition.ProjectileCount
-            );
+        int projectileCount = Mathf.Max(1, attack.ProjectileCount);
+        float angleStep = 360f / projectileCount;
 
-        float angleStep =
-            360f / projectileCount;
-
-        for (int i = 0;
-             i < projectileCount;
-             i++)
+        for (int i = 0; i < projectileCount; i++)
         {
-            float angle =
-                attackDefinition.StartingAngleOffset +
-                angleStep * i;
-
-            Vector2 direction =
-                ConvertAngleToDirection(angle);//chuyển góc thành vector hướng
-
-            SpawnProjectile(direction);
+            float angle = attack.StartingAngleOffset + angleStep * i;
+            Vector2 direction = ConvertAngleToDirection(angle);
+            SpawnProjectile(attack, direction);
         }
     }
 
-    private Vector2 ConvertAngleToDirection(
-        float angleInDegrees
-    )
+    private Vector2 ConvertAngleToDirection(float angleInDegrees)
     {
-        float angleInRadians =
-            angleInDegrees *
-            Mathf.Deg2Rad;
+        float angleInRadians = angleInDegrees * Mathf.Deg2Rad;
 
         return new Vector2(
             Mathf.Cos(angleInRadians),
@@ -262,16 +437,16 @@ public class PracticeBossAttackController
     }
 
     private void SpawnProjectile(
+        PracticeBossAttackDefinition attack,
         Vector2 direction
     )
     {
-        PracticeBossProjectile projectile =
-            Instantiate(
-                attackDefinition.ProjectilePrefab,
-                firePoint.position,
-                Quaternion.identity,
-                projectileContainer
-            );
+        PracticeBossProjectile projectile = Instantiate(
+            attack.ProjectilePrefab,
+            firePoint.position,
+            Quaternion.identity,
+            projectileContainer
+        );
 
         if (projectile == null)
         {
@@ -280,16 +455,15 @@ public class PracticeBossAttackController
 
         projectile.Initialize(
             direction,
-            attackDefinition.ProjectileSpeed,
-            attackDefinition.ProjectileDamage,
-            attackDefinition.ProjectileLifetime
+            attack.ProjectileSpeed,
+            attack.ProjectileDamage,
+            attack.ProjectileLifetime
         );
     }
 
     private IEnumerator WaitUntilGameIsRunning()
     {
-        while (gameStateController != null &&
-               !gameStateController.IsRunning)
+        while (gameStateController != null && !gameStateController.IsRunning)
         {
             if (!CanContinueAttacking())
             {
@@ -300,9 +474,7 @@ public class PracticeBossAttackController
         }
     }
 
-    private IEnumerator WaitUntilRunningForSeconds(
-        float duration
-    )
+    private IEnumerator WaitUntilRunningForSeconds(float duration)
     {
         if (duration <= 0f)
         {
@@ -318,11 +490,9 @@ public class PracticeBossAttackController
                 yield break;
             }
 
-            if (gameStateController != null &&
-                gameStateController.IsRunning)
+            if (gameStateController != null && gameStateController.IsRunning)
             {
-                elapsedTime +=
-                    Time.deltaTime;//chỉ cộng thời gian khi game running
+                elapsedTime += Time.deltaTime;
             }
 
             yield return null;
@@ -336,8 +506,7 @@ public class PracticeBossAttackController
             return false;
         }
 
-        if (bossHealth == null ||
-            bossHealth.IsDead)
+        if (bossHealth == null || bossHealth.IsDead)
         {
             return false;
         }
@@ -347,8 +516,7 @@ public class PracticeBossAttackController
             return false;
         }
 
-        if (gameStateController.IsGameOver ||
-            gameStateController.IsVictory)
+        if (gameStateController.IsGameOver || gameStateController.IsVictory)
         {
             return false;
         }
@@ -369,9 +537,7 @@ public class PracticeBossAttackController
             return;
         }
 
-        StopCoroutine(
-            attackLoopCoroutine
-        );
+        StopCoroutine(attackLoopCoroutine);
 
         attackLoopCoroutine = null;
         attackInProgress = false;
@@ -382,16 +548,13 @@ public class PracticeBossAttackController
         SetTelegraphActive(false);
     }
 
-    private void SetTelegraphActive(
-        bool isActive
-    )
+    private void SetTelegraphActive(bool isActive)
     {
         if (telegraphRenderer == null)
         {
             return;
         }
 
-        telegraphRenderer.enabled =
-            isActive;
+        telegraphRenderer.enabled = isActive;
     }
 }
