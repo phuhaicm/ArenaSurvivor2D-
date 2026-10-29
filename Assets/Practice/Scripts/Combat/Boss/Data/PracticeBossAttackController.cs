@@ -24,6 +24,11 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     [SerializeField]
     private Transform projectileContainer;
 
+    [Header("Attack Executors (Strategy Modules)")]
+    [SerializeField]
+    private List<PracticeBossAttackExecutorBase> attackExecutors =
+        new List<PracticeBossAttackExecutorBase>();
+
     [Header("Combat Timing")]
     [Min(0f)]
     [SerializeField]
@@ -38,6 +43,10 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     [SerializeField]
     private PracticeBossAttackDefinition fallbackAttackDefinition;
 
+    [Header("Victory Cleanup")]
+    [SerializeField]
+    private bool clearBossProjectilesOnDeath = true;
+
     private Coroutine attackLoopCoroutine;
     private bool attackInProgress;
     private int currentPhaseIndex = -1;
@@ -47,7 +56,6 @@ public class PracticeBossAttackController : HaiMonoBehaviour
 
     public int CurrentPhaseIndex => currentPhaseIndex;
     public bool IsAttackInProgress => attackInProgress;
-
     public PracticeBossPhaseDefinition CurrentPhase
     {
         get
@@ -68,6 +76,8 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         LoadBossHealth();
         LoadGameStateController();
         LoadBossBodyRenderer();
+        LoadProjectileContainer();
+        LoadAttackExecutors();
     }
 
     protected override void OnEnable()
@@ -77,6 +87,8 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         LoadBossHealth();
         LoadGameStateController();
         LoadBossBodyRenderer();
+        LoadProjectileContainer();
+        LoadAttackExecutors();
 
         ResetRuntimePhaseState();
         SubscribeBossEvents();
@@ -121,6 +133,39 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         }
 
         bossBodyRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void LoadProjectileContainer()
+    {
+        if (projectileContainer != null)
+        {
+            return;
+        }
+
+        GameObject containerObject = GameObject.Find("RuntimeBossProjectiles");
+
+        if (containerObject != null)
+        {
+            projectileContainer = containerObject.transform;
+        }
+    }
+
+    private void LoadAttackExecutors()
+    {
+        attackExecutors.RemoveAll(executor => executor == null);
+
+        if (attackExecutors.Count > 0)
+        {
+            return;
+        }
+
+        PracticeBossAttackExecutorBase[] foundExecutors =
+            GetComponentsInChildren<PracticeBossAttackExecutorBase>(true);
+
+        if (foundExecutors != null && foundExecutors.Length > 0)
+        {
+            attackExecutors.AddRange(foundExecutors);
+        }
     }
 
     private void SubscribeBossEvents()
@@ -358,7 +403,6 @@ public class PracticeBossAttackController : HaiMonoBehaviour
             return lastSelectedAttack;
         }
 
-        // Anti-repeat: Lọc bỏ đòn vừa dùng ở lượt ngay trước đó
         List<PracticeBossAttackDefinition> nonRepeatingCandidates = new List<PracticeBossAttackDefinition>();
 
         for (int i = 0; i < validCandidates.Count; i++)
@@ -408,57 +452,47 @@ public class PracticeBossAttackController : HaiMonoBehaviour
             yield break;
         }
 
-        FireRadialBurst(attack);
+        ExecuteAttackByStrategy(attack);
 
         attackInProgress = false;
     }
 
-    private void FireRadialBurst(PracticeBossAttackDefinition attack)
+    private void ExecuteAttackByStrategy(PracticeBossAttackDefinition attack)
     {
-        int projectileCount = Mathf.Max(1, attack.ProjectileCount);
-        float angleStep = 360f / projectileCount;
-
-        for (int i = 0; i < projectileCount; i++)
-        {
-            float angle = attack.StartingAngleOffset + angleStep * i;
-            Vector2 direction = ConvertAngleToDirection(angle);
-            SpawnProjectile(attack, direction);
-        }
-    }
-
-    private Vector2 ConvertAngleToDirection(float angleInDegrees)
-    {
-        float angleInRadians = angleInDegrees * Mathf.Deg2Rad;
-
-        return new Vector2(
-            Mathf.Cos(angleInRadians),
-            Mathf.Sin(angleInRadians)
-        ).normalized;
-    }
-
-    private void SpawnProjectile(
-        PracticeBossAttackDefinition attack,
-        Vector2 direction
-    )
-    {
-        PracticeBossProjectile projectile = Instantiate(
-            attack.ProjectilePrefab,
-            firePoint.position,
-            Quaternion.identity,
-            projectileContainer
-        );
-
-        if (projectile == null)
+        if (attack == null)
         {
             return;
         }
 
-        projectile.Initialize(
-            direction,
-            attack.ProjectileSpeed,
-            attack.ProjectileDamage,
-            attack.ProjectileLifetime
+        PracticeBossAttackExecutorBase executor = FindExecutorForPattern(attack.PatternType);
+
+        if (executor != null)
+        {
+            executor.ExecuteAttack(attack, firePoint, projectileContainer);
+            return;
+        }
+
+        Debug.LogWarning(
+            $"{name}: Không tìm thấy Executor cho kiểu {attack.PatternType}. Vui lòng gắn Executor lên Boss Prefab.",
+            this
         );
+    }
+
+    private PracticeBossAttackExecutorBase FindExecutorForPattern(
+        PracticeBossAttackPatternType patternType
+    )
+    {
+        for (int i = 0; i < attackExecutors.Count; i++)
+        {
+            PracticeBossAttackExecutorBase executor = attackExecutors[i];
+
+            if (executor != null && executor.SupportedPatternType == patternType)
+            {
+                return executor;
+            }
+        }
+
+        return null;
     }
 
     private IEnumerator WaitUntilGameIsRunning()
@@ -528,6 +562,29 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     {
         StopAttackLoop();
         ResetAttackPresentation();
+
+        if (clearBossProjectilesOnDeath)
+        {
+            ClearActiveBossProjectiles();
+        }
+    }
+
+    private void ClearActiveBossProjectiles()
+    {
+        if (projectileContainer == null)
+        {
+            return;
+        }
+
+        for (int i = projectileContainer.childCount - 1; i >= 0; i--)
+        {
+            Transform child = projectileContainer.GetChild(i);
+
+            if (child != null)
+            {
+                Destroy(child.gameObject);
+            }
+        }
     }
 
     private void StopAttackLoop()

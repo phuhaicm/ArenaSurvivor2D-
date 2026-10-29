@@ -20,4 +20,5 @@ MonoBehaviour:
   telegraphColor: {r: 1, g: 0.25, b: 0.25, a: 0.45}
   attacks:
   - {fileID: 11400000, guid: 1f0fdbe1c3174204587506c9fa870940, type: 2}
+  - {fileID: 11400000, guid: 0f62be2a69ecd9149bbdf8f339d690bf, type: 2}
   - {fileID: 11400000, guid: 02787507dc84636409f0cc56cff22a65, type: 2}
