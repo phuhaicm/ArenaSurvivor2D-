@@ -45,7 +45,7 @@ public class PracticePlayerAudioFeedback : HaiMonoBehaviour
             return;
         }
 
-        playerHealth.damageTaken +=
+        playerHealth.DamageTaken +=
             HandlePlayerDamageTaken;
     }
 
@@ -56,7 +56,7 @@ public class PracticePlayerAudioFeedback : HaiMonoBehaviour
             return;
         }
 
-        playerHealth.damageTaken -=
+        playerHealth.DamageTaken -=
             HandlePlayerDamageTaken;
     }
 
