@@ -13,7 +13,7 @@ public abstract class PracticeHealthBase
 
     protected bool isDead;
 
-    public event Action<float> damageTaken;
+    public event Action<float> DamageTaken;
     public event Action Died;
 
     public float CurrentHealth => currentHealth;
@@ -59,7 +59,7 @@ public abstract class PracticeHealthBase
         }
 
         // Health đã thật sự giảm nên mới phát event.
-        damageTaken?.Invoke(appliedDamage);
+        DamageTaken?.Invoke(appliedDamage);
 
         if (currentHealth <= 0f)
         {

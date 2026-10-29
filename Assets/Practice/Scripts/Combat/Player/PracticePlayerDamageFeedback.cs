@@ -64,10 +64,10 @@ public class PracticePlayerDamageFeedback
             return;
         }
 
-        playerHealth.damageTaken -=
+        playerHealth.DamageTaken -=
             HandleDamageTaken;
 
-        playerHealth.damageTaken +=
+        playerHealth.DamageTaken +=
             HandleDamageTaken;
     }
 
@@ -78,7 +78,7 @@ public class PracticePlayerDamageFeedback
             return;
         }
 
-        playerHealth.damageTaken -=
+        playerHealth.DamageTaken -=
             HandleDamageTaken;
     }
 

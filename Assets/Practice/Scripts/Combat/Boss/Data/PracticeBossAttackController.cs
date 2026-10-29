@@ -178,8 +178,8 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         bossHealth.Died -= HandleBossDied;
         bossHealth.Died += HandleBossDied;
 
-        bossHealth.damageTaken -= HandleBossDamageTaken;
-        bossHealth.damageTaken += HandleBossDamageTaken;
+        bossHealth.DamageTaken -= HandleBossDamageTaken;
+        bossHealth.DamageTaken += HandleBossDamageTaken;
     }
 
     private void UnsubscribeBossEvents()
@@ -190,7 +190,7 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         }
 
         bossHealth.Died -= HandleBossDied;
-        bossHealth.damageTaken -= HandleBossDamageTaken;
+        bossHealth.DamageTaken -= HandleBossDamageTaken;
     }
 
     private void ResetRuntimePhaseState()

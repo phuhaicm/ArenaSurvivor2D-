@@ -64,10 +64,10 @@ public class PracticeEnemyDamageFeedback
             return;
         }
 
-        enemyHealth.damageTaken -=
+        enemyHealth.DamageTaken -=
             HandleDamageTaken;
 
-        enemyHealth.damageTaken +=
+        enemyHealth.DamageTaken +=
             HandleDamageTaken;
     }
 
@@ -78,7 +78,7 @@ public class PracticeEnemyDamageFeedback
             return;
         }
 
-        enemyHealth.damageTaken -=
+        enemyHealth.DamageTaken -=
             HandleDamageTaken;
     }
 

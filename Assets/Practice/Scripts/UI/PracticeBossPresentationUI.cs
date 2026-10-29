@@ -235,10 +235,10 @@ public class PracticeBossPresentationUI : HaiMonoBehaviour
             return;
         }
 
-        activeBoss.damageTaken -=
+        activeBoss.DamageTaken -=
             HandleBossDamageTaken;
 
-        activeBoss.damageTaken +=
+        activeBoss.DamageTaken +=
             HandleBossDamageTaken;
 
         activeBoss.Died -=
@@ -255,7 +255,7 @@ public class PracticeBossPresentationUI : HaiMonoBehaviour
             return;
         }
 
-        activeBoss.damageTaken -=
+        activeBoss.DamageTaken -=
             HandleBossDamageTaken;
 
         activeBoss.Died -=
