@@ -15,11 +15,11 @@ MonoBehaviour:
   attackId: boss_radial_burst
   displayName: Radial Burst
   initialDelay: 1.5
-  telegraphDuration: 0.8
-  attackCooldown: 2.5
+  telegraphDuration: 0.75
+  attackCooldown: 2
   projectilePrefab: {fileID: 7769510910710801178, guid: 7debd1d5a69fb9e48b02065f8124ff33,
     type: 3}
-  projectileCount: 12
+  projectileCount: 8
   projectileSpeed: 4
   projectileDamage: 10
   projectileLifetime: 5

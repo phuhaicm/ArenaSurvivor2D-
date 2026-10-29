@@ -1,9 +1,9 @@
-using System.Collections;//cần cho ienumerator
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PracticeBossPresentationUI: HaiMonoBehaviour
+public class PracticeBossPresentationUI : HaiMonoBehaviour
 {
     [Header("Boss System")]
     [SerializeField]
@@ -43,6 +43,10 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
     private string bossDisplayName = "FINAL BOSS";
 
     private PracticeEnemyHealth activeBoss;
+
+    private PracticeBossAttackController
+        activeBossAttackController;
+
     private Coroutine warningCoroutine;
 
     protected override void LoadComponents()
@@ -52,7 +56,7 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
         LoadBossController();
     }
 
-    protected override void OnEnable()// cái này là để bật
+    protected override void OnEnable()
     {
         base.OnEnable();
 
@@ -68,10 +72,10 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
         }
     }
 
-    protected override void OnDisable()// ngừng nghe
+    protected override void OnDisable()
     {
         UnsubscribeBossControllerEvents();
-        UnsubscribeActiveBossEvents();
+        UnbindCurrentBoss();
         StopWarning();
 
         base.OnDisable();
@@ -100,24 +104,29 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
 
     private void InitializePresentation()
     {
-        SetBossHealthPanelActive(false);//boss chưa spawn thì ko hiện health bar
+        SetBossHealthPanelActive(false);
+
+        if (bossNameText != null)
+        {
+            bossNameText.text =
+                bossDisplayName;
+        }
 
         if (warningText != null)
         {
             warningText.text =
-                "FINAL BOSS";
+                bossDisplayName;
         }
 
         if (warningCanvasGroup != null)
         {
-            warningCanvasGroup.alpha = 0f;// vô hình
-            warningCanvasGroup.interactable = false;// ko nhận click
-            warningCanvasGroup.blocksRaycasts = false;// ko chặn UI phía dưới
+            warningCanvasGroup.alpha = 0f;
+            warningCanvasGroup.interactable = false;
+            warningCanvasGroup.blocksRaycasts = false;
         }
 
-        SetWarningPanelActive(false);//tắt panel hoàn toàn
-
-        ConfigureHealthSlider();//đưa silder về cấu hình hiển thị health chuẩn hóa 0-1
+        SetWarningPanelActive(false);
+        ConfigureHealthSlider();
     }
 
     private void ConfigureHealthSlider()
@@ -129,8 +138,8 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
 
         bossHealthSlider.minValue = 0f;
         bossHealthSlider.maxValue = 1f;
-        bossHealthSlider.wholeNumbers = false;// cho biết giá trị trung gian
-        bossHealthSlider.interactable = false;//người chơi ko được kéo máu boss health
+        bossHealthSlider.wholeNumbers = false;
+        bossHealthSlider.interactable = false;
         bossHealthSlider.value = 1f;
     }
 
@@ -165,33 +174,61 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
 
     private void HandleBossSpawned()
     {
-        AttachActiveBoss();// lấy boss vừa spawn từ controller và đăng ký event boss
-        RefreshBossPresentation();//điền tên boss và health hiện tại
+        AttachActiveBoss();
+
+        if (activeBoss == null)
+        {
+            SetBossHealthPanelActive(false);
+            return;
+        }
+
+        RefreshBossPresentation();
+        RefreshCurrentBossPhase();
+
         SetBossHealthPanelActive(true);
-        PlayWarning();
+
+        PlayWarning(bossDisplayName);
     }
 
     // =========================================================
-    // ACTIVE BOSS
+    // ACTIVE BOSS BINDING
     // =========================================================
 
     private void AttachActiveBoss()
     {
-        UnsubscribeActiveBossEvents();//gỡ listener boss cũ trước khi chuyển references
+        UnbindCurrentBoss();
 
-        if (bossController == null)
+        if (bossController == null ||
+            !bossController.HasActiveBoss)
         {
-            activeBoss = null;
             return;
         }
 
         activeBoss =
             bossController.ActiveBoss;
 
-        SubscribeActiveBossEvents();
+        if (activeBoss == null)
+        {
+            return;
+        }
+
+        SubscribeActiveBossHealthEvents();
+        BindBossAttackEvents(activeBoss);
     }
 
-    private void SubscribeActiveBossEvents()
+    private void UnbindCurrentBoss()
+    {
+        UnsubscribeActiveBossHealthEvents();
+        UnbindBossAttackEvents();
+
+        activeBoss = null;
+    }
+
+    // =========================================================
+    // ACTIVE BOSS HEALTH EVENTS
+    // =========================================================
+
+    private void SubscribeActiveBossHealthEvents()
     {
         if (activeBoss == null)
         {
@@ -211,7 +248,7 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
             HandleBossDied;
     }
 
-    private void UnsubscribeActiveBossEvents()
+    private void UnsubscribeActiveBossHealthEvents()
     {
         if (activeBoss == null)
         {
@@ -235,11 +272,153 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
     private void HandleBossDied()
     {
         RefreshBossHealth();
-        UnsubscribeActiveBossEvents();
+
+        UnsubscribeActiveBossHealthEvents();
+        UnbindBossAttackEvents();
 
         activeBoss = null;
 
+        StopWarning();
         SetBossHealthPanelActive(false);
+    }
+
+    // =========================================================
+    // BOSS ATTACK / PHASE EVENTS
+    // =========================================================
+
+    private void BindBossAttackEvents(
+        PracticeEnemyHealth bossHealth
+    )
+    {
+        UnbindBossAttackEvents();
+
+        if (bossHealth == null)
+        {
+            return;
+        }
+
+        activeBossAttackController =
+            bossHealth.GetComponent<
+                PracticeBossAttackController
+            >();
+
+        if (activeBossAttackController == null)
+        {
+            Debug.LogWarning(
+                $"{name}: Active Boss không có " +
+                $"{nameof(PracticeBossAttackController)}.",
+                bossHealth
+            );
+
+            return;
+        }
+
+        activeBossAttackController.PhaseChanged -=
+            HandleBossPhaseChanged;
+
+        activeBossAttackController.PhaseChanged +=
+            HandleBossPhaseChanged;
+    }
+
+    private void UnbindBossAttackEvents()
+    {
+        if (activeBossAttackController == null)
+        {
+            return;
+        }
+
+        activeBossAttackController.PhaseChanged -=
+            HandleBossPhaseChanged;
+
+        activeBossAttackController = null;
+    }
+
+    private void RefreshCurrentBossPhase()
+    {
+        if (activeBossAttackController == null)
+        {
+            return;
+        }
+
+        PracticeBossPhaseDefinition currentPhase =
+            activeBossAttackController.CurrentPhase;
+
+        if (currentPhase == null)
+        {
+            return;
+        }
+
+        UpdateBossPhaseTitle(currentPhase);
+    }
+
+    private void HandleBossPhaseChanged(
+        int phaseIndex,
+        PracticeBossPhaseDefinition phaseDefinition
+    )
+    {
+        if (phaseDefinition == null)
+        {
+            return;
+        }
+
+        UpdateBossPhaseTitle(phaseDefinition);
+
+        if (phaseIndex > 0)
+        {
+            ShowPhaseTransitionWarning(
+                phaseDefinition
+            );
+        }
+    }
+
+    private void UpdateBossPhaseTitle(
+        PracticeBossPhaseDefinition phaseDefinition
+    )
+    {
+        if (bossNameText == null ||
+            phaseDefinition == null)
+        {
+            return;
+        }
+
+        string phaseName =
+            phaseDefinition.PhaseName;
+
+        if (string.IsNullOrWhiteSpace(phaseName))
+        {
+            bossNameText.text =
+                bossDisplayName;
+
+            return;
+        }
+
+        bossNameText.text =
+            $"{bossDisplayName} - " +
+            $"{phaseName.ToUpperInvariant()}";
+    }
+
+    private void ShowPhaseTransitionWarning(
+        PracticeBossPhaseDefinition phaseDefinition
+    )
+    {
+        if (phaseDefinition == null)
+        {
+            return;
+        }
+
+        string phaseName =
+            phaseDefinition.PhaseName;
+
+        if (string.IsNullOrWhiteSpace(phaseName))
+        {
+            phaseName = "NEW PHASE";
+        }
+
+        string warningMessage =
+            $"BOSS ENRAGED - " +
+            $"{phaseName.ToUpperInvariant()}!";
+
+        PlayWarning(warningMessage);
     }
 
     // =========================================================
@@ -280,7 +459,7 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
         float normalizedHealth =
             Mathf.Clamp01(
                 currentHealth / maxHealth
-            );// giữ giá trị từ 0-1
+            );
 
         if (bossHealthSlider != null)
         {
@@ -301,9 +480,19 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
     // WARNING
     // =========================================================
 
-    private void PlayWarning()
+    private void PlayWarning(
+        string message
+    )
     {
         StopWarning();
+
+        if (warningText != null)
+        {
+            warningText.text =
+                string.IsNullOrWhiteSpace(message)
+                    ? bossDisplayName
+                    : message;
+        }
 
         warningCoroutine =
             StartCoroutine(
@@ -315,11 +504,15 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
     {
         SetWarningPanelActive(true);
 
-        if (warningCanvasGroup == null)//ko thể fade nên chờ hold duration và tắt panel
+        if (warningCanvasGroup == null)
         {
-            yield return new WaitForSecondsRealtime(
-                warningHoldDuration
-            );
+            if (warningHoldDuration > 0f)
+            {
+                yield return
+                    new WaitForSecondsRealtime(
+                        warningHoldDuration
+                    );
+            }
 
             SetWarningPanelActive(false);
             warningCoroutine = null;
@@ -335,9 +528,10 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
 
         if (warningHoldDuration > 0f)
         {
-            yield return new WaitForSecondsRealtime(
-                warningHoldDuration
-            );
+            yield return
+                new WaitForSecondsRealtime(
+                    warningHoldDuration
+                );
         }
 
         yield return FadeWarning(
@@ -401,16 +595,14 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
 
     private void StopWarning()
     {
-        if (warningCoroutine == null)
+        if (warningCoroutine != null)
         {
-            return;
+            StopCoroutine(
+                warningCoroutine
+            );
+
+            warningCoroutine = null;
         }
-
-        StopCoroutine(
-            warningCoroutine
-        );
-
-        warningCoroutine = null;
 
         if (warningCanvasGroup != null)
         {
@@ -424,7 +616,9 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
     // PANEL VISIBILITY
     // =========================================================
 
-    private void SetWarningPanelActive (bool isActive)
+    private void SetWarningPanelActive(
+        bool isActive
+    )
     {
         if (warningPanel == null)
         {
@@ -434,7 +628,9 @@ public class PracticeBossPresentationUI: HaiMonoBehaviour
         warningPanel.SetActive(isActive);
     }
 
-    private void SetBossHealthPanelActive(bool isActive)
+    private void SetBossHealthPanelActive(
+        bool isActive
+    )
     {
         if (bossHealthPanel == null)
         {
