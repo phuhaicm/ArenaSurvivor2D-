@@ -206,16 +206,6 @@ public class PracticeUIButtonAnimator : HaiMonoBehaviour,
         AnimateToScale(1f);
     }
 
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        if (!IsButtonInteractable())
-        {
-            return;
-        }
-
-        AnimateToScale(pressedScale);
-    }
-
     public void OnPointerUp(PointerEventData eventData)
     {
         if (!IsButtonInteractable())
@@ -285,5 +275,20 @@ public class PracticeUIButtonAnimator : HaiMonoBehaviour,
         {
             targetTransform.localScale = baseScale;
         }
+    }
+    
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        if (!IsButtonInteractable())
+        {
+            return;
+        }
+
+        if (PracticeAudioManager.Instance != null)
+        {
+            PracticeAudioManager.Instance.PlayButtonClickSfx();
+        }
+
+        AnimateToScale(pressedScale);
     }
 }
