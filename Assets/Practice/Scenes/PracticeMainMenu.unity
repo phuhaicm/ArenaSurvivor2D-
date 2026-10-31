@@ -1242,6 +1242,8 @@ MonoBehaviour:
   transitionDuration: 0.08
   applyStandardColorStates: 1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
+  ensureReadableTextColor: 1
+  darkTextColorForLightButton: {r: 0.09, g: 0.12, b: 0.18, a: 1}
   highlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
   pressedColor: {r: 0.78, g: 0.84, b: 0.92, a: 1}
   selectedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -1387,6 +1389,8 @@ MonoBehaviour:
   transitionDuration: 0.08
   applyStandardColorStates: 1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
+  ensureReadableTextColor: 1
+  darkTextColorForLightButton: {r: 0.09, g: 0.12, b: 0.18, a: 1}
   highlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
   pressedColor: {r: 0.78, g: 0.84, b: 0.92, a: 1}
   selectedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -2256,6 +2260,8 @@ MonoBehaviour:
   transitionDuration: 0.08
   applyStandardColorStates: 1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
+  ensureReadableTextColor: 1
+  darkTextColorForLightButton: {r: 0.09, g: 0.12, b: 0.18, a: 1}
   highlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
   pressedColor: {r: 0.78, g: 0.84, b: 0.92, a: 1}
   selectedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -3745,6 +3751,8 @@ MonoBehaviour:
   transitionDuration: 0.08
   applyStandardColorStates: 1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
+  ensureReadableTextColor: 1
+  darkTextColorForLightButton: {r: 0.09, g: 0.12, b: 0.18, a: 1}
   highlightedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
   pressedColor: {r: 0.78, g: 0.84, b: 0.92, a: 1}
   selectedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
@@ -3779,12 +3787,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
