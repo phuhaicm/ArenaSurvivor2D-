@@ -37,6 +37,13 @@ public class PracticeUIButtonAnimator : HaiMonoBehaviour,
 
     [SerializeField]
     private Color normalColor = Color.white;
+    
+    [Header("Text Contrast Guard")]
+    [SerializeField]
+    private bool ensureReadableTextColor = true;
+
+    [SerializeField]
+    private Color darkTextColorForLightButton = new Color(0.09f, 0.12f, 0.18f, 1f);
 
     [SerializeField]
     private Color highlightedColor = new Color(0.92f, 0.96f, 1f, 1f);
@@ -125,19 +132,60 @@ public class PracticeUIButtonAnimator : HaiMonoBehaviour,
 
     private void ApplyColorBlockIfNeeded()
     {
-        if (!applyStandardColorStates || targetButton == null)
+        if (targetButton == null)
         {
             return;
         }
 
-        ColorBlock colors = targetButton.colors;
-        colors.normalColor = normalColor;
-        colors.highlightedColor = highlightedColor;
-        colors.pressedColor = pressedColor;
-        colors.selectedColor = selectedColor;
-        colors.disabledColor = disabledColor;
-        colors.fadeDuration = transitionDuration;
-        targetButton.colors = colors;
+        if (applyStandardColorStates)
+        {
+            ColorBlock colors = targetButton.colors;
+            colors.normalColor = normalColor;
+            colors.highlightedColor = highlightedColor;
+            colors.pressedColor = pressedColor;
+            colors.selectedColor = selectedColor;
+            colors.disabledColor = disabledColor;
+            colors.fadeDuration = transitionDuration;
+            targetButton.colors = colors;
+        }
+
+        if (ensureReadableTextColor)
+        {
+            EnsureButtonTextContrast();
+        }
+    }
+
+    private void EnsureButtonTextContrast()
+    {
+        Graphic targetGraphic = targetButton.targetGraphic;
+
+        if (targetGraphic == null)
+        {
+            return;
+        }
+
+        // Tính độ sáng (Luminance) của màu nền nút bấm
+        Color bg = targetGraphic.color * normalColor;
+        float bgLuminance = (0.299f * bg.r) + (0.587f * bg.g) + (0.114f * bg.b);
+
+        // Nếu nền nút bấm màu sáng (Luminance > 0.7) như màu trắng
+        if (bgLuminance > 0.7f)
+        {
+            TMPro.TMP_Text[] texts = GetComponentsInChildren<TMPro.TMP_Text>(true);
+
+            for (int i = 0; i < texts.Length; i++)
+            {
+                Color textColor = texts[i].color;
+                float textLuminance =
+                    (0.299f * textColor.r) + (0.587f * textColor.g) + (0.114f * textColor.b);
+
+                // Nếu chữ cũng đang màu trắng/sáng (Luminance > 0.75) gây tàng hình chữ
+                if (textLuminance > 0.75f)
+                {
+                    texts[i].color = darkTextColorForLightButton;
+                }
+            }
+        }
     }
 
     public void OnPointerEnter(PointerEventData eventData)

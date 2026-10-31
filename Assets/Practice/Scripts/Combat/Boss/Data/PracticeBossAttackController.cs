@@ -152,19 +152,50 @@ public class PracticeBossAttackController : HaiMonoBehaviour
 
     private void LoadAttackExecutors()
     {
+        // Xóa các phần tử null trong danh sách nếu có
         attackExecutors.RemoveAll(executor => executor == null);
 
-        if (attackExecutors.Count > 0)
-        {
-            return;
-        }
-
+        // Tìm tất cả các Executor đã được gắn trên Boss hoặc các object con của Boss
         PracticeBossAttackExecutorBase[] foundExecutors =
             GetComponentsInChildren<PracticeBossAttackExecutorBase>(true);
 
         if (foundExecutors != null && foundExecutors.Length > 0)
         {
-            attackExecutors.AddRange(foundExecutors);
+            for (int i = 0; i < foundExecutors.Length; i++)
+            {
+                if (!attackExecutors.Contains(foundExecutors[i]))
+                {
+                    attackExecutors.Add(foundExecutors[i]);
+                }
+            }
+        }
+
+        // Tự động gắn Radial Executor nếu trên Prefab Boss chưa có
+        if (FindExecutorForPattern(PracticeBossAttackPatternType.RadialBurst) == null)
+        {
+            PracticeBossRadialAttackExecutor radialExecutor =
+                gameObject.GetComponent<PracticeBossRadialAttackExecutor>();
+
+            if (radialExecutor == null)
+            {
+                radialExecutor = gameObject.AddComponent<PracticeBossRadialAttackExecutor>();
+            }
+
+            attackExecutors.Add(radialExecutor);
+        }
+
+        // Tự động gắn Aimed Spread Executor nếu trên Prefab Boss chưa có
+        if (FindExecutorForPattern(PracticeBossAttackPatternType.AimedSpread) == null)
+        {
+            PracticeBossAimedSpreadAttackExecutor aimedExecutor =
+                gameObject.GetComponent<PracticeBossAimedSpreadAttackExecutor>();
+
+            if (aimedExecutor == null)
+            {
+                aimedExecutor = gameObject.AddComponent<PracticeBossAimedSpreadAttackExecutor>();
+            }
+
+            attackExecutors.Add(aimedExecutor);
         }
     }
 
