@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48cee160183c94b43ab270bb21586239, type: 3}
+  m_Name: PracticeAudioLibrary
+  m_EditorClassIdentifier: 
+  menuBgm: {fileID: 8300000, guid: 68a3599e7b20b4b45a027d9fa1cc8d07, type: 3}
+  gameplayBgm: {fileID: 8300000, guid: 3603a8418dd9ab148b8c3650f8ece803, type: 3}
+  bossBgm: {fileID: 0}
+  shootSfx: {fileID: 0}
+  enemyDeathSfx: {fileID: 0}
+  playerHitSfx: {fileID: 0}
+  levelUpSfx: {fileID: 0}
+  buttonClickSfx: {fileID: 8300000, guid: 6abcdca54425a004393cb2dca4a96934, type: 3}
+  upgradePickSfx: {fileID: 8300000, guid: 2a40feaae2ba9784fb0b3860d55a7d8b, type: 3}
+  bossWarningSfx: {fileID: 0}
+  gameOverSfx: {fileID: 8300000, guid: 95467a05aa91ee843825deb1c75eaea5, type: 3}
+  victorySfx: {fileID: 0}

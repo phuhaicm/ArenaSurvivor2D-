@@ -1,0 +1,1554 @@
+==> Assets/Practice/Scripts/Audio/PracticeAudioLibrary.cs <==
+using UnityEngine;
+
+[CreateAssetMenu(
+    fileName = "PracticeAudioLibrary",
+    menuName = "Practice/Audio/Audio Library"
+)]
+public class PracticeAudioLibrary : ScriptableObject//gom toàn bộ hiệu ứng nhạc nền và hiệu ứng âm thanh vào asset dữ liệu tập trung
+{
+    [Header("Background Music (BGM)")]
+    [SerializeField]
+    private AudioClip menuBgm;
+
+    [SerializeField]
+    private AudioClip gameplayBgm;
+
+    [SerializeField]
+    private AudioClip bossBgm;
+
+    [Header("UI & Progression SFX")]
+    [SerializeField]
+    private AudioClip buttonClickSfx;
+
+    [SerializeField]
+    private AudioClip upgradePickSfx;
+
+    [SerializeField]
+    private AudioClip levelUpSfx;
+
+    [Header("Combat & Result SFX")]
+    [SerializeField]
+    private AudioClip playerHurtSfx;
+
+    [SerializeField]
+    private AudioClip bossWarningSfx;
+
+    [SerializeField]
+    private AudioClip gameOverSfx;
+
+    [SerializeField]
+    private AudioClip victorySfx;
+
+    public AudioClip MenuBgm => menuBgm;
+    public AudioClip GameplayBgm => gameplayBgm;
+    public AudioClip BossBgm => bossBgm != null ? bossBgm : gameplayBgm;
+    public AudioClip ButtonClickSfx => buttonClickSfx;
+    public AudioClip UpgradePickSfx => upgradePickSfx;
+    public AudioClip LevelUpSfx => levelUpSfx != null ? levelUpSfx : upgradePickSfx;
+    public AudioClip PlayerHurtSfx => playerHurtSfx;
+    public AudioClip BossWarningSfx => bossWarningSfx;
+    public AudioClip GameOverSfx => gameOverSfx;
+    public AudioClip VictorySfx => victorySfx != null ? victorySfx : upgradePickSfx;
+}
+==> Assets/Practice/Scripts/Audio/PracticeAudioManager.cs <==
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Audio;
+
+public class PracticeAudioManager : HaiMonoBehaviour
+{
+    public static PracticeAudioManager Instance { get; private set; }
+
+    [Header("Mixer & Library")]
+    [SerializeField]
+    private AudioMixer audioMixer;
+
+    [SerializeField]
+    private PracticeAudioLibrary audioLibrary;
+
+    [Header("Audio Sources")]
+    [SerializeField]
+    private AudioSource musicSource;
+
+    [SerializeField]
+    private AudioSource sfxSource;
+
+    [Header("Exposed Mixer Parameters")]
+    [SerializeField]
+    private string masterVolumeParam = "Master";
+
+    [SerializeField]
+    private string musicVolumeParam = "Music";
+
+    [SerializeField]
+    private string sfxVolumeParam = "SFX";
+
+    [Header("Voice Budget & Persistence")]
+    [SerializeField]
+    private bool persistAcrossScenes = true;
+
+    [Min(0.01f)]
+    [SerializeField]
+    private float minSfxRepeatInterval = 0.045f;
+
+    private readonly Dictionary<AudioClip, float> lastSfxPlayTimes =
+        new Dictionary<AudioClip, float>();
+
+    public PracticeAudioLibrary Library => audioLibrary;
+    public AudioSource MusicSource => musicSource;
+    public AudioSource SfxSource => sfxSource;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadAudioSources();
+    }
+
+    protected override void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
+        if (persistAcrossScenes)
+        {
+            Transform rootTransform = transform.root != null ? transform.root : transform;
+            DontDestroyOnLoad(rootTransform.gameObject);
+        }
+
+        base.Awake();
+        LoadAudioSources();
+        ConfigureAudioSources();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void LoadAudioSources()
+    {
+        if (musicSource == null)
+        {
+            Transform musicChild = transform.Find("MusicSource");
+
+            if (musicChild != null)
+            {
+                musicSource = musicChild.GetComponent<AudioSource>();
+            }
+        }
+
+        if (sfxSource == null)
+        {
+            Transform sfxChild = transform.Find("SfxSource");
+
+            if (sfxChild != null)
+            {
+                sfxSource = sfxChild.GetComponent<AudioSource>();
+            }
+        }
+
+        if (musicSource == null || sfxSource == null)
+        {
+            AudioSource[] sources = GetComponentsInChildren<AudioSource>(true);
+
+            if (sources.Length > 0 && musicSource == null)
+            {
+                musicSource = sources[0];
+            }
+
+            if (sources.Length > 1 && sfxSource == null)
+            {
+                sfxSource = sources[1];
+            }
+        }
+    }
+
+    private void ConfigureAudioSources()
+    {
+        if (musicSource != null)
+        {
+            musicSource.playOnAwake = false;
+            musicSource.loop = true;
+        }
+
+        if (sfxSource != null)
+        {
+            sfxSource.playOnAwake = false;
+            sfxSource.loop = false;
+        }
+    }
+
+    public void PlayMusic(AudioClip clip, float pitch = 1f, bool forceRestart = false)
+    {
+        if (musicSource == null || clip == null)
+        {
+            return;
+        }
+
+        musicSource.pitch = Mathf.Clamp(pitch, 0.5f, 2f);
+
+        if (!forceRestart && musicSource.clip == clip && musicSource.isPlaying)
+        {
+            return;
+        }
+
+        musicSource.clip = clip;
+        musicSource.Play();
+    }
+
+    public void StopMusic()
+    {
+        if (musicSource == null)
+        {
+            return;
+        }
+
+        musicSource.Stop();
+    }
+
+    public void PlaySfx(AudioClip clip, float volumeScale = 1f)
+    {
+        if (sfxSource == null || clip == null)
+        {
+            return;
+        }
+
+        if (!CanPlaySfxWithinBudget(clip))
+        {
+            return;
+        }
+
+        sfxSource.PlayOneShot(clip, Mathf.Clamp01(volumeScale));
+    }
+
+    // Các hàm tiện ích gọi nhanh từ Library
+    public void PlayMenuMusic()
+    {
+        if (audioLibrary != null)
+        {
+            PlayMusic(audioLibrary.MenuBgm, 1f);
+        }
+    }
+
+    public void PlayGameplayMusic()
+    {
+        if (audioLibrary != null)
+        {
+            PlayMusic(audioLibrary.GameplayBgm, 1f);
+        }
+    }
+
+    public void PlayBossMusic()
+    {
+        if (audioLibrary == null)
+        {
+            return;
+        }
+
+        // Nếu dùng chung GameplayBgm thì tăng nhẹ pitch lên 1.06 để tạo nhịp điệu dồn dập cho Boss Fight
+        float bossPitch = audioLibrary.BossBgm == audioLibrary.GameplayBgm ? 1.06f : 1f;
+        PlayMusic(audioLibrary.BossBgm, bossPitch);
+    }
+
+    public void PlayButtonClickSfx()
+    {
+        if (audioLibrary != null)
+        {
+            PlaySfx(audioLibrary.ButtonClickSfx);
+        }
+    }
+
+    public void PlayUpgradePickSfx()
+    {
+        if (audioLibrary != null)
+        {
+            PlaySfx(audioLibrary.UpgradePickSfx);
+        }
+    }
+
+    public void PlayGameOverSfx()
+    {
+        if (audioLibrary != null)
+        {
+            PlaySfx(audioLibrary.GameOverSfx);
+        }
+    }
+
+    public void PlayVictorySfx()
+    {
+        if (audioLibrary != null)
+        {
+            PlaySfx(audioLibrary.VictorySfx);
+        }
+    }
+
+    public void SetMasterVolume(float linearVolume)
+    {
+        SetMixerLinearVolume(masterVolumeParam, linearVolume);
+    }
+
+    public void SetMusicVolume(float linearVolume)
+    {
+        SetMixerLinearVolume(musicVolumeParam, linearVolume);
+
+        if (audioMixer == null && musicSource != null)
+        {
+            musicSource.volume = Mathf.Clamp01(linearVolume);
+        }
+    }
+
+    public void SetSfxVolume(float linearVolume)
+    {
+        SetMixerLinearVolume(sfxVolumeParam, linearVolume);
+
+        if (audioMixer == null && sfxSource != null)
+        {
+            sfxSource.volume = Mathf.Clamp01(linearVolume);
+        }
+    }
+
+    public static float ConvertLinearToDecibel(float linearVolume)
+    {
+        float clamped = Mathf.Clamp(linearVolume, 0.0001f, 1f);
+        return Mathf.Log10(clamped) * 20f;
+    }
+
+    private void SetMixerLinearVolume(string parameterName, float linearVolume)
+    {
+        if (audioMixer == null || string.IsNullOrWhiteSpace(parameterName))
+        {
+            return;
+        }
+
+        float decibel = ConvertLinearToDecibel(linearVolume);
+        audioMixer.SetFloat(parameterName, decibel);
+    }
+
+    private bool CanPlaySfxWithinBudget(AudioClip clip)
+    {
+        float currentTime = Time.unscaledTime;
+
+        if (lastSfxPlayTimes.TryGetValue(clip, out float lastTime))
+        {
+            if (currentTime - lastTime < minSfxRepeatInterval)
+            {
+                return false;
+            }
+        }
+
+        lastSfxPlayTimes[clip] = currentTime;
+        return true;
+    }
+}
+==> Assets/Practice/Scripts/Audio/PracticeAudioSettings.cs <==
+using System;
+using UnityEngine;
+using UnityEngine.Audio;
+
+public class PracticeAudioSettings : HaiMonoBehaviour
+{
+    private const string MasterVolumeKey =
+        "PracticeMasterVolume";
+
+    private const string MusicVolumeKey =
+        "PracticeMusicVolume";
+
+    private const string SfxVolumeKey =
+        "PracticeSfxVolume";
+
+    private const string MasterVolumeParameter =
+        "MasterVolume";
+
+    private const string MusicVolumeParameter =
+        "MusicVolume";
+
+    private const string SfxVolumeParameter =
+        "SfxVolume";
+
+    private const float MinimumLinearVolume = 0.0001f;
+
+    [Header("Audio Mixer")]
+    [SerializeField]
+    private AudioMixer audioMixer;
+
+    [Header("Default Volume")]
+    [SerializeField, Range(0f, 1f)]
+    private float defaultMasterVolume = 1f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float defaultMusicVolume = 0.8f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float defaultSfxVolume = 1f;
+
+    private float masterVolume;
+    private float musicVolume;
+    private float sfxVolume;
+
+    public event Action<float> MasterVolumeChanged;
+    public event Action<float> MusicVolumeChanged;
+    public event Action<float> SfxVolumeChanged;
+
+    public float MasterVolume => masterVolume;
+    public float MusicVolume => musicVolume;
+    public float SfxVolume => sfxVolume;
+
+    protected override void Start()
+    {
+        base.Start();
+
+        LoadSettings();
+        ApplyAllVolumes();
+        NotifyAllVolumeChanged();
+    }
+
+    // =========================================================
+    // PUBLIC SETTERS
+    // =========================================================
+
+    public void SetMasterVolume(float newVolume)
+    {
+        masterVolume =
+            Mathf.Clamp01(newVolume);
+
+        ApplyVolume(
+            MasterVolumeParameter,
+            masterVolume
+        );
+
+        PlayerPrefs.SetFloat(
+            MasterVolumeKey,
+            masterVolume
+        );
+
+        PlayerPrefs.Save();
+
+        MasterVolumeChanged?.
+            Invoke(masterVolume);
+    }
+
+    public void SetMusicVolume(float newVolume)
+    {
+        musicVolume =
+            Mathf.Clamp01(newVolume);
+
+        ApplyVolume(
+            MusicVolumeParameter,
+            musicVolume
+        );
+
+        PlayerPrefs.SetFloat(
+            MusicVolumeKey,
+            musicVolume
+        );
+
+        PlayerPrefs.Save();
+
+        MusicVolumeChanged?.
+            Invoke(musicVolume);
+    }
+
+    public void SetSfxVolume(float newVolume)
+    {
+        sfxVolume =
+            Mathf.Clamp01(newVolume);
+
+        ApplyVolume(
+            SfxVolumeParameter,
+            sfxVolume
+        );
+
+        PlayerPrefs.SetFloat(
+            SfxVolumeKey,
+            sfxVolume
+        );
+
+        PlayerPrefs.Save();
+
+        SfxVolumeChanged?.
+            Invoke(sfxVolume);
+    }
+
+    // =========================================================
+    // LOAD / APPLY
+    // =========================================================
+
+    private void LoadSettings()
+    {
+        masterVolume =
+            PlayerPrefs.GetFloat(
+                MasterVolumeKey,
+                defaultMasterVolume
+            );
+
+        musicVolume =
+            PlayerPrefs.GetFloat(
+                MusicVolumeKey,
+                defaultMusicVolume
+            );
+
+        sfxVolume =
+            PlayerPrefs.GetFloat(
+                SfxVolumeKey,
+                defaultSfxVolume
+            );
+
+        masterVolume =
+            Mathf.Clamp01(masterVolume);
+
+        musicVolume =
+            Mathf.Clamp01(musicVolume);
+
+        sfxVolume =
+            Mathf.Clamp01(sfxVolume);
+    }
+
+    private void ApplyAllVolumes()
+    {
+        ApplyVolume(
+            MasterVolumeParameter,
+            masterVolume
+        );
+
+        ApplyVolume(
+            MusicVolumeParameter,
+            musicVolume
+        );
+
+        ApplyVolume(
+            SfxVolumeParameter,
+            sfxVolume
+        );
+    }
+
+    private void ApplyVolume(
+        string parameterName,
+        float linearVolume
+    )
+    {
+        if (audioMixer == null)
+        {
+            Debug.LogError(
+                $"{name}: Audio Mixer đang null.",
+                this
+            );
+
+            return;
+        }
+
+        float decibelVolume =
+            ConvertLinearToDecibel(
+                linearVolume
+            );
+
+        bool appliedSuccessfully =
+            audioMixer.SetFloat(
+                parameterName,
+                decibelVolume
+            );
+
+        if (!appliedSuccessfully)
+        {
+            Debug.LogWarning(
+                $"{name}: Không tìm thấy exposed parameter " +
+                $"{parameterName}.",
+                this
+            );
+        }
+    }
+
+    private float ConvertLinearToDecibel(
+        float linearVolume
+    )
+    {
+        if (linearVolume <= 0f)
+        {
+            return -80f;// -80 là gần như là im lặng
+        }
+
+        float safeLinearVolume =
+            Mathf.Max(
+                linearVolume,
+                MinimumLinearVolume
+            );
+
+        return Mathf.Log10(
+            safeLinearVolume
+        ) * 20f;//đây là công thức tính decibel
+    }
+
+    private void NotifyAllVolumeChanged()
+    {
+        MasterVolumeChanged?.
+            Invoke(masterVolume);
+
+        MusicVolumeChanged?.
+            Invoke(musicVolume);
+
+        SfxVolumeChanged?.
+            Invoke(sfxVolume);
+    }
+
+    // =========================================================
+    // DEBUG RESET
+    // =========================================================
+
+    [ContextMenu("Reset Audio Settings")]
+    private void ResetAudioSettings()
+    {
+        PlayerPrefs.DeleteKey(
+            MasterVolumeKey
+        );
+
+        PlayerPrefs.DeleteKey(
+            MusicVolumeKey
+        );
+
+        PlayerPrefs.DeleteKey(
+            SfxVolumeKey
+        );
+
+        PlayerPrefs.Save();
+
+        masterVolume =
+            defaultMasterVolume;
+
+        musicVolume =
+            defaultMusicVolume;
+
+        sfxVolume =
+            defaultSfxVolume;
+
+        ApplyAllVolumes();
+        NotifyAllVolumeChanged();
+    }
+}
+==> Assets/Practice/Scripts/Combat/Player/PracticePlayerLevelSystem.cs <==
+using System;
+using UnityEngine;
+
+public class PracticePlayerLevelSystem : HaiMonoBehaviour
+{
+    [Header("Level Settings")]
+    [SerializeField, Min(1)] protected int startingLevel = 1;
+    [SerializeField, Min(1f)] protected float startingExperienceRequired = 10f;
+    [SerializeField, Min(1f)] protected float experienceMultiplier = 5f;
+    [SerializeField] PracticePlayerExperience playerExperience;
+    [SerializeField] protected float currentExperience;
+    [SerializeField] protected float currentLevel;
+    [SerializeField] protected float experienceToNextLevel;
+    public event Action<float, float> ExperienceChanged;
+    public event Action<float> LevelChanged; // event thông báo lên cấp    
+    public float CurrenLevel => currentLevel;
+    public float CurrentExperience => currentExperience;
+    public float ExperienceToNextLevel => experienceToNextLevel;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadPlayerExperience();
+    }
+    protected virtual void LoadPlayerExperience()
+    {
+        if(playerExperience != null) return;
+
+        playerExperience = GetComponent<PracticePlayerExperience>();
+    }
+    protected override void Awake()
+    {
+        base.Awake();
+        currentLevel = startingLevel;
+        currentExperience = 0f;
+        experienceToNextLevel = startingExperienceRequired;
+    }
+    protected override void Start()
+    {
+        base.Start();
+
+        PublishCurrentProgress();
+    }
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        RegisterEventLevel();
+    }
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+
+        UnRegisterEventLevel();
+    }
+    protected virtual void RegisterEventLevel()
+    {
+        if(playerExperience == null) return;
+
+        playerExperience.ExperienceGained += HandleExperienceGained;
+    }
+    protected virtual void UnRegisterEventLevel()
+    {
+        if(playerExperience == null) return;
+
+        playerExperience.ExperienceGained -= HandleExperienceGained;
+    }
+
+    protected virtual void HandleExperienceGained(float amount)
+    {
+        if (amount <= 0f) return;
+
+        currentExperience += amount;
+        
+        CheckLevelUp();
+        PublishCurrentProgress();
+
+        Debug.Log($"{name} Level: {currentLevel} | " + 
+        $"XP: {currentExperience:F1}/" + $"{experienceToNextLevel:F1}", gameObject);
+    }
+    protected virtual void CheckLevelUp()
+    {
+        while(currentExperience >= experienceToNextLevel)
+        {
+            currentExperience -= experienceToNextLevel;
+            LevelUp();
+        }
+    }
+    protected virtual void LevelUp()
+    {
+        currentLevel++;
+        experienceToNextLevel += experienceMultiplier;
+
+        Debug.Log($"Level Up! Current Level: " + $"{currentLevel}", gameObject);// gameOjbect là trỏ toàn bộ player còn this là chỉ riêng 1 componet thôi log này muốn thông báo cho player nên dùng gameObject
+        LevelChanged?.Invoke(currentLevel);//phát tbao player vừa lên cấp 
+    }
+    protected virtual void PublishCurrentProgress()
+    {
+        ExperienceChanged?.Invoke(currentExperience, experienceToNextLevel);
+    }
+    protected override void ResetValues()
+    {
+        base.ResetValues();
+        startingLevel = 1;
+        startingExperienceRequired = 5f;
+        experienceToNextLevel = 5f;
+
+    }
+}
+
+==> Assets/Practice/Scripts/Combat/Player/PracticeRunDirector.cs <==
+using UnityEngine;
+using System;
+
+public class PracticeRunDirector : HaiMonoBehaviour
+{
+    [Header("References")]
+    [SerializeField]
+    private PracticeSurvivalTimer survivalTimer;
+
+    [SerializeField]
+    private PracticeGameStateController gameStateController;
+
+    [Header("Run Settings")]
+    [SerializeField, Min(1f)]
+    private float runDuration = 5f;
+    [SerializeField]
+    private PracticeFinalBossController bossController;
+    private PracticeRunPhase currentPhase;
+    public event Action<PracticeRunPhase> RunPhaseChanged;
+    public PracticeRunPhase CurrentPhase =>
+        currentPhase;
+
+    public bool IsBossPhase =>
+        currentPhase ==
+        PracticeRunPhase.BossFight;
+
+    private bool victoryRequested;
+
+    public float RunDuration =>
+        runDuration;
+
+    public float RemainingTime
+    {
+        get
+        {
+            if (survivalTimer == null)
+            {
+                return runDuration;
+            }
+
+            return Mathf.Max(
+                0f,
+                runDuration -
+                survivalTimer.ElapsedTime
+            );
+        }
+    }
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadSurvivalTimer();
+        LoadGameStateController();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        LoadSurvivalTimer();
+        LoadGameStateController();
+        LoadBossController();
+
+        SubscribeBossEvents();
+
+        victoryRequested = false;
+
+        SetRunPhase(PracticeRunPhase.Survival);
+    }
+    protected override void OnDisable()
+    {
+        UnsubscribeBossEvents();
+
+        base.OnDisable();
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+
+        Debug.Log(
+            $"{name}: Run Director started. " +
+            $"Run Duration = {runDuration}, " +
+            $"Timer = {survivalTimer}, " +
+            $"Game State Controller = {gameStateController}.",
+            this
+        );
+    }
+
+    private void Update()
+    {
+        CheckRunProgress();
+    }
+
+    private void LoadSurvivalTimer()
+    {
+        if (survivalTimer != null)
+        {
+            return;
+        }
+
+        survivalTimer =
+            FindFirstObjectByType<
+                PracticeSurvivalTimer
+            >();
+
+        if (survivalTimer == null)
+        {
+            Debug.LogError(
+                $"{name}: Không tìm thấy PracticeSurvivalTimer.",
+                this
+            );
+        }
+    }
+    private void LoadBossController()
+    {
+        if (bossController != null)
+        {
+            return;
+        }
+
+        bossController =
+            FindFirstObjectByType<
+                PracticeFinalBossController
+            >();
+
+        if (bossController == null)
+        {
+            Debug.LogError(
+                $"{name}: Không tìm thấy " +
+                $"PracticeFinalBossController.",
+                this
+            );
+        }
+    }
+
+    private void LoadGameStateController()
+    {
+        if (gameStateController != null)
+        {
+            return;
+        }
+
+        gameStateController =
+            FindFirstObjectByType<
+                PracticeGameStateController
+            >();
+
+        if (gameStateController == null)
+        {
+            Debug.LogError(
+                $"{name}: Không tìm thấy " +
+                $"PracticeGameStateController.",
+                this
+            );
+        }
+    }
+
+    private void CheckVictoryCondition()
+    {
+        if (victoryRequested)
+        {
+            return;
+        }
+
+        if (survivalTimer == null ||
+            gameStateController == null)
+        {
+            return;
+        }
+
+        if (!gameStateController.IsRunning)
+        {
+            return;
+        }
+
+        if (survivalTimer.ElapsedTime <
+            runDuration)
+        {
+            return;
+        }
+
+        Debug.Log(
+            $"{name}: Victory condition reached. " +
+            $"Elapsed = {survivalTimer.ElapsedTime}, " +
+            $"Required = {runDuration}.",
+            this
+        );
+
+        RequestVictory();
+    }
+    private void SubscribeBossEvents()
+    {
+        if (bossController == null)
+        {
+            return;
+        }
+
+        bossController.BossDefeated +=
+            HandleBossDefeated;
+    }
+    private void UnsubscribeBossEvents()
+    {
+        if (bossController == null)
+        {
+            return;
+        }
+
+        bossController.BossDefeated -=
+            HandleBossDefeated;
+    }
+    private void CheckRunProgress()
+    {
+        if (survivalTimer == null ||
+            gameStateController == null)
+        {
+            return;
+        }
+
+        if (!gameStateController.IsRunning)
+        {
+            return;
+        }
+
+        if (currentPhase !=
+            PracticeRunPhase.Survival)
+        {
+            return;
+        }
+
+        if (survivalTimer.ElapsedTime <
+            runDuration)
+        {
+            return;
+        }
+
+        StartBossPhase();
+    }
+    protected void StartBossPhase()
+    {
+        if (bossController == null) return;
+        bool spawnedSuccessfully = bossController.SpawnBoss();
+
+        if (!spawnedSuccessfully)
+        {
+            Debug.LogWarning($"{name}: Không thể bắt đầu Boss Phase.", this);
+            return;
+        }
+
+        SetRunPhase(PracticeRunPhase.BossFight);
+    }
+    protected void HandleBossDefeated()
+    {
+        if (currentPhase != PracticeRunPhase.BossFight) return;
+        if (gameStateController == null || !gameStateController.IsRunning)
+        {
+            return;
+        }
+
+        SetRunPhase(PracticeRunPhase.Completed);
+
+        RequestVictory();
+    }
+
+    private void RequestVictory()
+    {
+        if (victoryRequested)
+        {
+            return;
+        }
+
+        if (gameStateController == null)
+        {
+            return;
+        }
+
+        if (gameStateController.IsVictory)
+        {
+            victoryRequested = true;
+            return;
+        }
+
+        victoryRequested = true;
+
+        bool changedSuccessfully =
+            gameStateController.RequestVictory();
+
+        if (changedSuccessfully)
+        {
+            return;
+        }
+
+        Debug.LogWarning(
+            $"{name}: Victory request was rejected. " +
+            $"Current State = " +
+            $"{gameStateController.CurrentState}.",
+            this
+        );
+    }
+    protected void SetRunPhase(PracticeRunPhase newPhase)
+    {
+        if (currentPhase == newPhase) return;
+
+        currentPhase = newPhase;
+
+        RunPhaseChanged?.Invoke(currentPhase);
+    }
+}
+==> Assets/Practice/Scripts/Controller/PracticeFinalBossController.cs <==
+using System;
+using UnityEngine;
+
+public class PracticeFinalBossController : HaiMonoBehaviour
+{
+    [Header("Boss Setup")]
+    [SerializeField] protected PracticeEnemyHealth bossPrefab;
+    [SerializeField] protected Transform bossSpawnPoint;
+    [SerializeField] protected Transform bossContainer;
+    [SerializeField] protected PracticeEnemyHealth activeBoss;
+    protected bool bossSpawned;
+    protected bool bossDefeated;
+    public event Action BossSpawned;
+    public event Action BossDefeated;
+    public bool HasActiveBoss => activeBoss != null && !activeBoss.IsDead;
+    public bool IsBossDefeated => bossDefeated;
+    public PracticeEnemyHealth ActiveBoss => activeBoss;
+
+    protected override void OnDisable()
+    {
+        UnsubscribeActiveBoss();
+
+        base.OnDisable();
+    }
+    public bool SpawnBoss()
+    {
+        if(bossSpawned) return false;
+
+        if(bossPrefab == null)
+        {
+            Debug.LogError($"{name}: Boss Prefab null.", this);
+            return false;
+        }
+
+        if(bossSpawnPoint == null)
+        {
+            Debug.LogError($"{name}: Boss Spawn Point null. ", this);
+            return false;
+        }
+        bossSpawned = true;
+        bossDefeated = false;
+
+        activeBoss = Instantiate(bossPrefab, bossSpawnPoint.position, bossSpawnPoint.rotation, bossContainer);
+
+        if(activeBoss == null)
+        {
+            bossSpawned = false;
+
+            Debug.LogError($"{name}: Spawn Boss thất bại.", this);
+            return false;
+        }
+
+        SubscribeActiveBoss();
+        BossSpawned?.Invoke();
+        return true;
+    }
+    protected void SubscribeActiveBoss()
+    {
+        if(activeBoss == null) return;
+
+        activeBoss.Died += HandleBossDied;
+    }
+    protected void UnsubscribeActiveBoss()
+    {
+        if(activeBoss == null) return;
+
+        activeBoss.Died -= HandleBossDied;
+    }
+    protected void HandleBossDied()
+    {
+        UnsubscribeActiveBoss();
+
+        bossDefeated = true;
+        BossDefeated?.Invoke();
+        activeBoss = null;
+    }
+}
+
+==> Assets/Practice/Scripts/Controller/PracticeGameStateController.cs <==
+using System;
+using UnityEngine;
+
+public class PracticeGameStateController : HaiMonoBehaviour
+{
+    [SerializeField] protected PracticeGameStates currentState;
+    public event Action<PracticeGameStates> StateChanged;
+    public PracticeGameStates CurrentState => currentState;
+    public bool IsRunning => currentState == PracticeGameStates.Running;
+    public bool IsPaused => currentState == PracticeGameStates.Paused;
+    public bool IsChoosingUpgrade => currentState == PracticeGameStates.UpgradeChoices;
+    public bool IsGameOver => currentState == PracticeGameStates.GameOver;
+    public bool IsVictory => currentState == PracticeGameStates.Victory;
+
+    protected override void Start()
+    {
+        base.Start();
+        InitializeState();
+    }
+    protected void InitializeState()
+    {
+        currentState = PracticeGameStates.Running;
+        ApplyTimeScale(currentState);
+
+        StateChanged?.Invoke(currentState);
+    }
+    protected bool TryChangeState(PracticeGameStates nextState)
+    {
+        if(currentState == nextState) return false;
+        if (!CanTransition(nextState))
+        {
+            return false;
+        }
+
+        PracticeGameStates previousState = currentState;
+        currentState = nextState;
+        ApplyTimeScale(currentState);
+        Debug.Log($"{name}: Game state change from " + $"{previousState} to {currentState}.", this);
+
+        StateChanged?.Invoke(currentState);
+        return true;
+    }
+    protected bool CanTransition(PracticeGameStates nextState)
+    {
+        if (nextState == PracticeGameStates.GameOver)//đoạn này ở trong vì ngoại lệ kiểu dù đang ở trạng thái nào đi nữa thì đều có thể chuyển sang trạng thái over
+        {
+            return currentState != PracticeGameStates.GameOver;
+        }
+        if (currentState == PracticeGameStates.GameOver) return false;// đoạn này là chặn mọi chuyển đổi rời khỏi over
+
+        switch (currentState)
+        {
+            case PracticeGameStates.Running:
+                {
+                    return nextState == PracticeGameStates.UpgradeChoices || nextState == PracticeGameStates.Paused
+                    || nextState == PracticeGameStates.GameOver || nextState == PracticeGameStates.Victory;
+                }
+            case PracticeGameStates.UpgradeChoices:
+                {
+                    return nextState == PracticeGameStates.Running || nextState == PracticeGameStates.GameOver;
+                }
+            case PracticeGameStates.Paused:
+                {
+                    return nextState == PracticeGameStates.Running || nextState == PracticeGameStates.GameOver;
+                }
+            case PracticeGameStates.GameOver:
+            case PracticeGameStates.Victory:
+                {
+                    return false;
+                }
+            default:
+            return false;
+        }
+    }
+    protected void ApplyTimeScale(PracticeGameStates state)
+    {
+        switch (state)
+        {
+            case PracticeGameStates.Running:
+                {
+                    Time.timeScale = 1f;
+                    break;
+                }
+            case PracticeGameStates.UpgradeChoices:
+            case PracticeGameStates.Paused:
+            case PracticeGameStates.GameOver:
+            case PracticeGameStates.Victory:
+                {
+                    Time.timeScale = 0f;
+                    break;
+                }
+        }
+    }
+    public bool RequestRunning()
+    {
+        return TryChangeState(PracticeGameStates.Running);
+    }
+    public bool RequestUpgradeChoices()
+    {
+        return TryChangeState(PracticeGameStates.UpgradeChoices);
+    }
+    public bool RequestPaused()
+    {
+        return TryChangeState(PracticeGameStates.Paused);
+    }
+    public bool RequestGameOver()
+    {
+        return TryChangeState(PracticeGameStates.GameOver);
+    }
+    public bool RequestVictory()
+    {
+        return TryChangeState(PracticeGameStates.Victory);
+    }
+}
+
+==> Assets/Practice/Scripts/Controller/PracticeSceneNames.cs <==
+
+using UnityEngine;
+
+public static class PracticeSceneNames//file này chỉ giữ tên scene ko phải là 1 component gameplay
+{
+    public const string MainMenu = "PracticeMainMenu";
+    public const string GamePlay = "Practice_CoreLoop";
+}
+
+==> Assets/Practice/Scripts/UI/PracticeSettingsUI.cs <==
+using UnityEngine;
+using UnityEngine.UI;
+
+public class PracticeSettingsUI : HaiMonoBehaviour
+{
+    [Header("References")]
+    [SerializeField]
+    private PracticeAudioSettings audioSettings;
+
+    [Header("Panels")]
+    [SerializeField]
+    private GameObject settingsPanel;
+
+    [Header("Volume Sliders")]
+    [SerializeField]
+    private Slider masterVolumeSlider;
+
+    [SerializeField]
+    private Slider musicVolumeSlider;
+
+    [SerializeField]
+    private Slider sfxVolumeSlider;
+
+    [Header("Buttons")]
+    [SerializeField]
+    private Button openSettingsButton;
+
+    [SerializeField]
+    private Button backButton;
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        SubscribeSliderEvents();
+        SubscribeButtonEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribeSliderEvents();
+        UnsubscribeButtonEvents();
+
+        base.OnDisable();
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+
+        ConfigureSliders();
+        RefreshAllSliders();
+        SetSettingsPanelActive(false);
+    }
+
+    // =========================================================
+    // SETUP
+    // =========================================================
+
+    private void ConfigureSliders()
+    {
+        ConfigureSlider(masterVolumeSlider);
+        ConfigureSlider(musicVolumeSlider);
+        ConfigureSlider(sfxVolumeSlider);
+    }
+
+    private void ConfigureSlider(Slider slider)
+    {
+        if (slider == null)
+        {
+            return;
+        }
+
+        slider.minValue = 0f;
+        slider.maxValue = 1f;
+        slider.wholeNumbers = false;
+    }
+
+    private void RefreshAllSliders()
+    {
+        if (audioSettings == null)
+        {
+            return;
+        }
+
+        SetSliderValueWithoutNotify(
+            masterVolumeSlider,
+            audioSettings.MasterVolume
+        );
+
+        SetSliderValueWithoutNotify(
+            musicVolumeSlider,
+            audioSettings.MusicVolume
+        );
+
+        SetSliderValueWithoutNotify(
+            sfxVolumeSlider,
+            audioSettings.SfxVolume
+        );
+    }
+
+    private void SetSliderValueWithoutNotify(
+        Slider slider,
+        float value
+    )
+    {
+        if (slider == null)
+        {
+            return;
+        }
+
+        slider.SetValueWithoutNotify(
+            Mathf.Clamp01(value)
+        );
+    }
+
+    // =========================================================
+    // SLIDER EVENTS
+    // =========================================================
+
+    private void SubscribeSliderEvents()
+    {
+        if (masterVolumeSlider != null)
+        {
+            masterVolumeSlider.onValueChanged.
+                RemoveListener(
+                    HandleMasterVolumeChanged
+                );
+
+            masterVolumeSlider.onValueChanged.
+                AddListener(
+                    HandleMasterVolumeChanged
+                );
+        }
+
+        if (musicVolumeSlider != null)
+        {
+            musicVolumeSlider.onValueChanged.
+                RemoveListener(
+                    HandleMusicVolumeChanged
+                );
+
+            musicVolumeSlider.onValueChanged.
+                AddListener(
+                    HandleMusicVolumeChanged
+                );
+        }
+
+        if (sfxVolumeSlider != null)
+        {
+            sfxVolumeSlider.onValueChanged.
+                RemoveListener(
+                    HandleSfxVolumeChanged
+                );
+
+            sfxVolumeSlider.onValueChanged.
+                AddListener(
+                    HandleSfxVolumeChanged
+                );
+        }
+    }
+
+    private void UnsubscribeSliderEvents()
+    {
+        if (masterVolumeSlider != null)
+        {
+            masterVolumeSlider.onValueChanged.
+                RemoveListener(
+                    HandleMasterVolumeChanged
+                );
+        }
+
+        if (musicVolumeSlider != null)
+        {
+            musicVolumeSlider.onValueChanged.
+                RemoveListener(
+                    HandleMusicVolumeChanged
+                );
+        }
+
+        if (sfxVolumeSlider != null)
+        {
+            sfxVolumeSlider.onValueChanged.
+                RemoveListener(
+                    HandleSfxVolumeChanged
+                );
+        }
+    }
+
+    private void HandleMasterVolumeChanged(
+        float newVolume
+    )
+    {
+        audioSettings?.
+            SetMasterVolume(newVolume);
+    }
+
+    private void HandleMusicVolumeChanged(
+        float newVolume
+    )
+    {
+        audioSettings?.
+            SetMusicVolume(newVolume);
+    }
+
+    private void HandleSfxVolumeChanged(
+        float newVolume
+    )
+    {
+        audioSettings?.
+            SetSfxVolume(newVolume);
+    }
+
+    // =========================================================
+    // BUTTON EVENTS
+    // =========================================================
+
+    private void SubscribeButtonEvents()
+    {
+        if (openSettingsButton != null)
+        {
+            openSettingsButton.onClick.
+                RemoveListener(
+                    HandleOpenSettingsClicked
+                );
+
+            openSettingsButton.onClick.
+                AddListener(
+                    HandleOpenSettingsClicked
+                );
+        }
+
+        if (backButton != null)
+        {
+            backButton.onClick.
+                RemoveListener(
+                    HandleBackClicked
+                );
+
+            backButton.onClick.
+                AddListener(
+                    HandleBackClicked
+                );
+        }
+    }
+
+    private void UnsubscribeButtonEvents()
+    {
+        if (openSettingsButton != null)
+        {
+            openSettingsButton.onClick.
+                RemoveListener(
+                    HandleOpenSettingsClicked
+                );
+        }
+
+        if (backButton != null)
+        {
+            backButton.onClick.
+                RemoveListener(
+                    HandleBackClicked
+                );
+        }
+    }
+
+    private void HandleOpenSettingsClicked()
+    {
+        RefreshAllSliders();
+        SetSettingsPanelActive(true);
+    }
+
+    private void HandleBackClicked()
+    {
+        SetSettingsPanelActive(false);
+    }
+
+    // =========================================================
+    // PANEL
+    // =========================================================
+
+    private void SetSettingsPanelActive(
+        bool isActive
+    )
+    {
+        if (settingsPanel == null)
+        {
+            return;
+        }
+
+        settingsPanel.SetActive(isActive);
+    }
+}

@@ -1,0 +1,981 @@
+=== ORIGINAL PracticeAudioManager IN GIT ===
+commit 3075c984ad2c456418a4f30af9b7a6da2d1b8897
+Author: lenguyenphuhai <lenguyenphuhai2005@gmail.com>
+Date:   Thu Oct 29 19:04:09 2026 +0700
+
+    refactor(architecture): reorganzie data/script folders, standardize DamageTaken event, and add editor content validator
+
+diff --git a/Assets/Practice/Scripts/Controller/PracticeAudioManager.cs b/Assets/Practice/Scripts/Audio/PracticeAudioManager.cs
+similarity index 100%
+rename from Assets/Practice/Scripts/Controller/PracticeAudioManager.cs
+rename to Assets/Practice/Scripts/Audio/PracticeAudioManager.cs
+
+commit 3b9dde290b9df45beb1f8dd44c1a619732f2efb9
+Author: lenguyenphuhai <lenguyenphuhai2005@gmail.com>
+Date:   Sat Oct 17 18:41:11 2026 +0700
+
+    feat(practice): add centralized audio system
+
+diff --git a/Assets/Practice/Scripts/Controller/PracticeAudioManager.cs b/Assets/Practice/Scripts/Controller/PracticeAudioManager.cs
+new file mode 100644
+index 0000000..0486b81
+--- /dev/null
++++ b/Assets/Practice/Scripts/Controller/PracticeAudioManager.cs
+@@ -0,0 +1,129 @@
++using UnityEngine.SceneManagement;
++using UnityEngine;
++
++public class PracticeAudioManager : HaiMonoBehaviour
++{
++    protected static PracticeAudioManager instance;
++    public static PracticeAudioManager Instance => instance;
++    [Header("Audio Sources")]
++    [SerializeField] protected AudioSource musicSource;
++    [SerializeField] protected AudioSource sfxSource;
++    [Header("Music Clips")]
++    [SerializeField] protected AudioClip mainMenuMusic;
++    [SerializeField] protected AudioClip gameplayMusic;
++    [Header("Gameplay SFX")]
++    [SerializeField] protected AudioClip shootSfx;
++    [SerializeField] protected AudioClip enemyDeathSfx;
++    [SerializeField] protected AudioClip playerHitSfx;
++    [SerializeField] protected AudioClip levelUpSfx;
++    [Header("UI SFX")]
++    [SerializeField] protected AudioClip buttonClickSfx;
++    protected override void Awake()
++    {
++        base.Awake();
++
++        if(instance != null && instance != this)
++        {
++            Destroy(gameObject);
++            return;
++        }
++        instance = this;// vì khi instance null thì nó chọn hiện tại nên là this và kể từ đó destroy những object sau
++
++        DontDestroyOnLoad(gameObject);
++    }
++    protected override void OnEnable()
++    {
++        base.OnEnable();
++        
++        SceneManager.sceneLoaded += HandleSceneLoaded;
++    }
++    protected override void OnDisable()
++    {
++        SceneManager.sceneLoaded -= HandleSceneLoaded;
++
++        base.OnDisable();
++    }
++    protected override void Start()
++    {
++        base.Start();
++
++        ConfigureAudioSources();
++        PlayMusicForCurrentScene();
++    }
++    protected void ConfigureAudioSources()
++    {
++        if(musicSource != null)
++        {
++            musicSource.playOnAwake = false;
++            musicSource.loop = true;
++            musicSource.spatialBlend = 0f;
++        }
++        if(sfxSource != null)
++        {
++            sfxSource.playOnAwake = false;
++            sfxSource.loop = true;
++            sfxSource.spatialBlend = 0f;
++        }
++    }
++    protected void HandleSceneLoaded(Scene loadedScene, LoadSceneMode loadSceneMode)
++    {
++        PlayMusicForScene(loadedScene.name);
++    }
++    protected void PlayMusicForCurrentScene()
++    {
++        Scene currentScene = SceneManager.GetActiveScene();
++
++        PlayMusicForScene(currentScene.name);
++    }
++    protected void PlayMusicForScene(string sceneName)
++    {
++        if(sceneName == PracticeSceneNames.MainMenu)
++        {
++            PlayMusic(mainMenuMusic);
++        }
++        if(sceneName == PracticeSceneNames.GamePlay)
++        {
++            PlayMusic(gameplayMusic);
++        }
++        StopMusic();
++    }
++    protected void PlayMusic(AudioClip musicClip)
++    {
++        if(musicSource == null || musicClip == null) return;
++        if(musicSource.clip == musicClip && musicSource.isPlaying) return;
++
++        musicSource.Stop();
++        musicSource.clip = musicClip;
++        musicSource.Play();
++    }
++    public void StopMusic()
++    {
++        if(musicSource == null) return;
++        musicSource.Stop();
++        musicSource.clip = null;
++    }
++    public void PlaySfx(AudioClip sfxClip, float volumeScale = 1f)
++    {
++        if(sfxSource == null || sfxClip == null) return;
++
++        float validVolumeScale = Mathf.Clamp01(volumeScale);
++        sfxSource.PlayOneShot(sfxClip, validVolumeScale);
++    }
++    public void PlayShootSfx()
++    {
++        PlaySfx(shootSfx);
++    }
++    public void PlayEnemyDeathSfx()
++    {
++        PlaySfx(enemyDeathSfx);
++    }public void PlayPlayerHitSfx()
++    {
++        PlaySfx(playerHitSfx);
++    }public void PlayLevelUpSfx()
++    {
++        PlaySfx(levelUpSfx);
++    }public void PlayButtonClickSfx()
++    {
++        PlaySfx(buttonClickSfx);
++    }
++}
+=== CALLER FILES ===
+==> Assets/Practice/Scripts/Combat/Player/PracticePlayerAudioFeedback.cs <==
+using UnityEngine;
+
+public class PracticePlayerAudioFeedback : HaiMonoBehaviour
+{
+    [SerializeField]
+    protected PracticePlayerHealth playerHealth;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadPlayerHealth();
+    }
+
+    private void LoadPlayerHealth()
+    {
+        if (playerHealth != null)
+        {
+            return;
+        }
+
+        playerHealth =
+            GetComponent<PracticePlayerHealth>();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        LoadPlayerHealth();
+        SubscribePlayerEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribePlayerEvents();
+
+        base.OnDisable();
+    }
+
+    private void SubscribePlayerEvents()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        playerHealth.DamageTaken +=
+            HandlePlayerDamageTaken;
+    }
+
+    private void UnsubscribePlayerEvents()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        playerHealth.DamageTaken -=
+            HandlePlayerDamageTaken;
+    }
+
+    private void HandlePlayerDamageTaken(float damageAmount)
+    {
+        PracticeAudioManager.Instance?.
+            PlayPlayerHitSfx();
+    }
+}
+==> Assets/Practice/Scripts/Combat/Shooters/PracticeShooterWithDamage.cs <==
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PracticeShooterWithDamage : HaiMonoBehaviour
+{
+    [SerializeField] protected PracticeBulletMovement bulletPrefab;
+    [SerializeField] protected Transform firePoint;
+    [SerializeField] protected float shootInterval = 0.5f;
+    [SerializeField] protected int bulletDamage = 10;
+    [SerializeField] protected int projectileCount = 1;
+    [SerializeField] protected float projectileSpreadAngle = 12f;
+    protected float nextShootTime;
+    protected override void Awake()
+    {
+        base.Awake();
+        nextShootTime = Time.time;
+    }
+    protected override void ResetValues()
+    {
+        base.ResetValues();
+        shootInterval = 0.5f;
+        projectileCount = 1;
+        projectileSpreadAngle = 12f;
+    }
+    private void Update()
+    {
+        if (!CanShoot()) return;
+
+        PracticeEnemyHealth target = FindTarget();
+        if (target == null) return;
+
+        ShootAt(target);
+    }
+    protected virtual bool CanShoot()
+    {
+        if (bulletPrefab == null || firePoint == null || Time.time < nextShootTime) return false;
+
+        return true;
+    }
+    protected virtual PracticeEnemyHealth FindTarget()
+    {
+        return PracticeNearestEnemyFinder.FindNearest(firePoint.position);
+        //hàm này có trách nhiệm trả về object có nghĩa là tìm enemy và trả enemy cho hàm findtarget    
+    }
+    protected void ShootAt(PracticeEnemyHealth target)
+    {
+        Vector2 spawnPosition = firePoint.position;
+        Vector2 baseDirection = (target.transform.position - firePoint.position).normalized;
+
+        if (projectileCount <= 1)
+        {
+            SpawnSingleProjectile(spawnPosition, baseDirection);
+            nextShootTime = Time.time + shootInterval;
+            return;
+        }
+
+        float startAngle = -projectileSpreadAngle * (projectileCount - 1) * 0.5f;
+
+        for (int i = 0; i < projectileCount; i++)
+        {
+            float currentAngle = startAngle + projectileSpreadAngle * i;
+            Vector2 direction = RotationDirection(baseDirection, currentAngle);
+
+            SpawnSingleProjectile(spawnPosition, direction);
+        }
+        PracticeAudioManager.Instance?.PlayShootSfx();
+
+        nextShootTime = Time.time + shootInterval;
+    }
+    private void SpawnSingleProjectile(Vector2 spawnPosition, Vector2 baseDirection)
+    {
+        PracticeBulletMovement bullet = Instantiate(bulletPrefab, spawnPosition, Quaternion.identity);
+
+        bullet.SetDirection(baseDirection);
+
+        PracticeBulletDamageDealer dealer = bullet.GetComponent<PracticeBulletDamageDealer>();
+
+        if (dealer != null) 
+        {
+            dealer.SetDamage(bulletDamage);
+        }
+        PracticeAudioManager.Instance?.PlayShootSfx();
+
+    }
+    private Vector2 RotationDirection(Vector2 baseDirection, float currentAngle)
+    {
+        Quaternion rotation = Quaternion.Euler(0f, 0f, currentAngle);
+        return rotation * baseDirection;
+    }
+
+    public void AddBulletDamage(int amount)
+    {
+        if (amount <= 0) return;
+
+        bulletDamage += amount;
+    }
+    public void ReduceShootInterval(float amount)
+    {
+        if (amount <= 0) return;
+
+        shootInterval = Mathf.Max(0, 0.1f, shootInterval - amount);
+    }
+    public void AddProjectileCount(int amount)
+    {
+        if (amount <= 0) return;
+
+        projectileCount += amount;
+    }
+    public int BulletDamage => bulletDamage;
+    public float ShootInterval => shootInterval;
+    public int ProjectileCount => projectileCount;
+}
+
+==> Assets/Practice/Scripts/Combat/Enemies/Spawning/PracticeEnemySpawner.cs <==
+using System.Collections.Generic;
+using System.Collections;
+using UnityEngine;
+using System;
+using Random = UnityEngine.Random;
+
+public class PracticeEnemySpawner : HaiMonoBehaviour
+{
+    [Header("Enemy Type Reference")] 
+    [SerializeField] private PracticeEnemyTypeData[] enemyTypes;
+    private readonly List<PracticeEnemyTypeData>
+        availableEnemyTypes = new();
+    private int currentDifficulyLevel = 1;
+    [SerializeField] private Transform enemyContainer;
+    [Header("Playr Reference")] 
+    [SerializeField] protected PracticePlayerHealth playerHealth;
+    [Header("World References")]
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private Transform playerTarget;
+    [Header("Spawn Timing")] 
+    [SerializeField, Min(0f)] private float initalSpawnDelay = 1f;
+    [SerializeField, Min(0.1f)] private float spawnInterval = 2f;
+    [Header("Spawn Limits")] 
+    [SerializeField, Min(1)] private int maxAliveEnemies = 10;
+    [SerializeField, Min(0f)] private float spawnPadding = 1.5f;
+    [SerializeField, Min(0f)] private float miniumDistanceFromPlayer = 3f;
+    [SerializeField, Min(1)] private int maxiumSpawnAttemps = 8;
+    [Header("Difficulty Reference")]
+    [SerializeField] private PracticeDifficultySystem difficultySystem;
+
+    [Header("Debug")] 
+    [SerializeField, Min(0.05f)] private float spawnPointGizmoRadius = 0.2f;
+    private readonly List<PracticeEnemyHealth>//kko thể gắn sang 1 list khác
+        spawnedEnemies = new();// nếu ko có dòng này thì khi add enemy vào thì sẽ bị null
+    private float nextSpawnTime;
+    //public event Action<PracticeDifficultyData>
+    [SerializeField, Min(1)] private int batchSize = 1;
+    [SerializeField, Min(0f)] private float delayBetweenBatchEnemies = 0.2f;
+    private Coroutine spawnBatchCoroutine;// check xem batch có hoạt động ko đặt về null khi hoàn thành
+    public event Action EnemyDefeated;
+    private bool canSpawn = true;
+    private bool hasStarted;
+    public int AliveEnemyCount => spawnedEnemies.Count;// để script khác bên ngoài đọc được
+    public bool CanSpawn => canSpawn;
+    public bool HasStarted => hasStarted;
+    protected override void Start()
+    {
+        base.Start();
+        canSpawn = true;
+        hasStarted = true;
+        nextSpawnTime = Time.time + initalSpawnDelay;
+    }
+    private void Update()
+    {
+        if(!canSpawn) return;
+        if(spawnBatchCoroutine != null) return;
+        if(Time.time < nextSpawnTime) return;
+
+        RemoveDestroyedEnemies();
+
+        if(spawnedEnemies.Count >= maxAliveEnemies) return;
+        spawnBatchCoroutine= StartCoroutine(SpawnBatchCoroutine());//bắt đầu 1 tiến trình batch
+    }
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadPlayerHealth();
+    }
+    protected void LoadPlayerHealth()
+    {
+        if(playerHealth != null) return;
+        playerHealth = FindFirstObjectByType<PracticePlayerHealth>();
+    }
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        LoadDifficultyEvents();
+        SubscribeAllEnemyEvents();
+        SubcribePlayerEvents();
+    }
+    protected override void OnDisable()
+    {
+        UnLoadDifficultyEvents();
+        UnsubscribeAllEnemyEvents();
+        StopSpawnBatch();//trước đây ko cần dừng vì mỗi lần spawn chạy xong ngay trong một method có thể đang ngủ tại yield return nên cần cleanup
+        UnSubcribePlayerEvents();
+        base.OnDisable();
+    }
+    protected void SubcribePlayerEvents()
+    {
+        if(playerHealth == null) return;
+        playerHealth.Died += HandlePlayerDied;
+    }
+    protected void LoadDifficultyEvents()
+    {
+        if(difficultySystem == null) return;
+
+        difficultySystem.DifficultyChanged += HandleDifficultyChanged;
+    }
+    protected void UnLoadDifficultyEvents()
+    {
+        if(difficultySystem != null)
+        {
+            difficultySystem.DifficultyChanged -= HandleDifficultyChanged;
+        }
+    }
+    protected void UnSubcribePlayerEvents()
+    {
+        if(playerHealth == null) return;
+        playerHealth.Died -= HandlePlayerDied;
+    }
+    protected void SubscribeAllEnemyEvents()
+    {
+        foreach(PracticeEnemyHealth enemy in spawnedEnemies)
+        {
+            if(enemy == null) continue;
+            enemy.Died -= HandleEnemyDied;
+            enemy.Died += HandleEnemyDied;
+        }
+    }
+    protected void UnsubscribeAllEnemyEvents()
+    {
+        foreach(PracticeEnemyHealth enemy in spawnedEnemies)
+        {
+            if(enemy == null) continue;
+            enemy.Died -= HandleEnemyDied;
+        }
+    }
+    protected void HandlePlayerDied()
+    {
+        SetSpawningEnabled(false);
+    }
+    private bool TrySelectEnemyType(out PracticeEnemyTypeData selectedEnemyType)// practiceenemytypedata selec.. là biến selec sẽ tham chiếu để kiểu dữ liệu của practce.. do đó nó có thể bằng 3 assest fast tank normal và null 
+    //out đơn giản là gửi kết quả ra bên ngoài
+    {
+        BuilAvailableEnemyTypes();
+
+        if(availableEnemyTypes.Count == 0)
+        {
+            selectedEnemyType = null;//do có out nên phải có dòng này chứ ko là lỗi tham chiếu
+            return false;
+        }
+        float totalWeight = CalculateTotalWeight();
+
+        if(totalWeight <= 0)
+        {
+            selectedEnemyType = null;
+            return false;
+        }
+
+        selectedEnemyType = SelectedEnemyTypeByWeight(totalWeight);
+
+        Debug.Log(
+            $"Selected Enemy Type: " +
+            $"{selectedEnemyType.EnemyTypeName} | " +
+            $"Weight: {selectedEnemyType.SpawnWeight}"
+        );
+
+        return selectedEnemyType != null;// có nghĩa là khác null là true == null là false
+    }
+    private void BuilAvailableEnemyTypes()//cú pháp này có nghĩa gửi enemy type ra ngoài out là gửi
+    {
+        availableEnemyTypes.Clear();
+
+        foreach(PracticeEnemyTypeData enemyType in enemyTypes)
+        {
+            if(enemyType == null) continue;
+            if(enemyType.EnemyPrefab == null) continue;
+
+            bool isUnlock = enemyType.UnlockDifficultyLevel <= currentDifficulyLevel;
+            if(!isUnlock) continue;
+
+            if(enemyType.SpawnWeight <= 0f) continue;
+
+            availableEnemyTypes.Add(enemyType);
+        }
+    }
+    private float CalculateTotalWeight()
+    {
+        float totalWeight = 0f;
+        
+        foreach(PracticeEnemyTypeData enemyType in availableEnemyTypes)
+        {
+            if(enemyType == null) continue;
+            totalWeight += enemyType.SpawnWeight;
+        }
+        return totalWeight;
+    }
+    private PracticeEnemyTypeData SelectedEnemyTypeByWeight(float totalWeight)// gọi là kiểu trả về int là nguyên còn này là enemytype
+    {
+        float randomIndex = Random.Range(0,totalWeight);
+
+        float cucumlativeWeight = 0f;
+        
+        foreach(PracticeEnemyTypeData enemyType in availableEnemyTypes)
+        {
+            cucumlativeWeight += enemyType.SpawnWeight;;
+
+            if(randomIndex <= cucumlativeWeight)
+            return enemyType;
+        }
+        return availableEnemyTypes[availableEnemyTypes.Count - 1];//thêm để chống lỗi nếu vì sai số mà ko chọn được phần tử trong foreach thì trả về phần tử cuối cùng
+    }
+    private void StopSpawnBatch()
+    {
+        if(spawnBatchCoroutine == null)
+        {
+            return;
+        }
+        StopCoroutine(spawnBatchCoroutine);
+        spawnBatchCoroutine = null;
+    }
+    private IEnumerator SpawnBatchCoroutine()
+    {
+        for(int i = 0; i < batchSize; i++)
+        {
+            if(!CanSpawn) break;//spawner bị khóa 
+
+            RemoveDestroyedEnemies();
+
+            if(spawnedEnemies.Count >= maxAliveEnemies) break;
+
+            bool spawnedSuccessfully = TrySpawnSingleEnemy();
+            
+            if(!spawnedSuccessfully) break;// spawn thât bại thì bnreak
+
+            bool spawnEndBatch = i < batchSize -1;
+
+            if (spawnEndBatch)
+            {
+                yield return new WaitForSeconds(delayBetweenBatchEnemies);
+            }
+        }
+        ScheduleNextSpawn();
+        spawnBatchCoroutine = null; //xóa reference
+    }
+    private void HandleDifficultyChanged(PracticeDifficultyData difficultyData)
+    {
+        //if(difficultyData == null) return;
+
+        currentDifficulyLevel = difficultyData.Level;
+
+        spawnInterval = difficultyData.SpawnInterval;
+
+        maxAliveEnemies = difficultyData.MaxAliveEnemies;
+
+        batchSize = difficultyData.BatchSize;
+
+        if (hasStarted)
+        {
+            nextSpawnTime = Time.time + spawnInterval;
+        }
+    }
+    protected void HandleEnemyDied()
+    {
+        PracticeAudioManager.Instance?.PlayEnemyDeathSfx();
+        EnemyDefeated?.Invoke();
+    }
+    private bool TrySpawnSingleEnemy()
+    {
+        if(!HasValidSpawnSetup())
+        {
+            return false;
+        }
+
+        if(!TryGetSpawnPosition(out Vector2 spawnPosition))
+        {
+            Debug.LogWarning($"{name}: khong tim duoc vi tri spawn hop le",this);
+            return false;
+        }   
+        if(!TrySelectEnemyType(out PracticeEnemyTypeData selectedEnemyType))
+        {
+            Debug.LogWarning($"{name}: khong co enemy type " + " phu hop voi difficulty hien tai. ",this);
+            return false;
+        }
+        PracticeEnemyHealth selectedPrefab = selectedEnemyType.EnemyPrefab;
+        PracticeEnemyHealth spawnedEnemy = Instantiate(
+        selectedPrefab,
+        spawnPosition,
+        Quaternion.identity,
+        enemyContainer
+    );
+
+Debug.Log(
+    $"SPAWN | Enemy: {spawnedEnemy.name} | " +
+    $"Spawn Position: {spawnPosition} | " +
+    $"Actual Position: {spawnedEnemy.transform.position} | " +
+    $"Player Position: {playerTarget.position} | " +
+    $"Distance: {Vector2.Distance(spawnedEnemy.transform.position, playerTarget.position):F2}",
+    spawnedEnemy
+);
+
+    spawnedEnemies.Add(spawnedEnemy);
+    spawnedEnemy.Died += HandleEnemyDied;
+
+        return true;
+    }
+    private bool TryGetSpawnPosition(out Vector2 spawnPosition)
+    {
+        for(int attempt = 0; attempt < maxiumSpawnAttemps; attempt++)
+        {
+            Vector2 candidatePosition = GenerateSpawnPosition();
+            if (IsFarEnoughFromPlayer(candidatePosition))
+            {
+                spawnPosition = candidatePosition;
+                return true;
+            }
+        }    
+        spawnPosition = Vector2.zero;
+        return false;
+        
+    }
+    private Vector2 GenerateSpawnPosition()
+    {
+        float gamePlayPlaneZ = 0f;
+
+        float distanceFromCameraToPlane = Mathf.Abs(gamePlayPlaneZ - mainCamera.transform.position.z);
+
+        Vector3 bottomLeft = mainCamera.ViewportToWorldPoint(new Vector3(0f, 0f, distanceFromCameraToPlane));
+        Vector3 topRight = mainCamera.ViewportToWorldPoint(new Vector3(1f, 1f, distanceFromCameraToPlane));
+
+==> Assets/Practice/Scripts/Upgrade/PracticeUpgradeChoiceUI.cs <==
+//using System;
+using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
+using System.Collections.Generic;
+
+public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] private PracticePlayerLevelSystem levelSystem;
+    [SerializeField] private PracticeShooterUpgradeApplier upgradeApplier;
+    [SerializeField] private PracticeGameStateController gameStateController;
+
+    [Header("Upgrade Choices")]
+    [SerializeField] private PracticeUpgradeDefinition[] upgradePool;
+    [Header("UI References")]
+    [SerializeField] private GameObject upgradePanel;
+    [Header("Choice Âctions")]
+    [SerializeField] private Button rerollButton;
+    [SerializeField] private Button skipButton;
+    [Header("Reroll Settings")]
+    [SerializeField, Min(0)] private int rerollPerChoices = 1;//lượt reroll
+    [SerializeField] private int remainingRerolls;//số reroll hiện có
+
+    [SerializeField] private TextMeshProUGUI titleText;
+    //[SerializeField] private Button damageButton;
+    //[SerializeField] private Button fireRateButton;
+    //[SerializeField] private Button projectileButton;
+    [SerializeField] private Button[] choiceButtons;
+
+    private int pendingUpgradeChoices;
+    private readonly List<PracticeUpgradeDefinition>
+    currentChoices = new();//choices hiện trên màn hình UI 3 choices
+    private readonly List<PracticeUpgradeDefinition>
+    availableChoice = new();// đây là mảng tạm cho upgrade
+    private readonly Dictionary<PracticeUpgradeDefinition, int> upgradeLevels = new();//lưu upgrade level run time
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadLevelSystem();
+        LoadUpgradeApplier();
+        LoadGameStateController();
+    }
+
+    protected virtual void LoadLevelSystem()
+    {
+        if (levelSystem != null) return;
+
+        levelSystem = FindFirstObjectByType<PracticePlayerLevelSystem>();
+    }
+
+    protected virtual void LoadUpgradeApplier()
+    {
+        if (upgradeApplier != null) return;
+
+        upgradeApplier = FindFirstObjectByType<PracticeShooterUpgradeApplier>();
+    }
+    protected virtual void LoadGameStateController()
+    {
+        if (gameStateController != null) return;
+
+        gameStateController = FindFirstObjectByType<PracticeGameStateController>();
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+
+        //HidePanel();
+        if(upgradePanel != null)
+        {
+            upgradePanel.SetActive(false);
+        }
+        RefeshButtonTexts();
+        RefeshRerollButton();
+        RefeshSkipButton();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        SubscribeLevelEvents();
+        SubscribeButtonEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        
+        UnsubscribeLevelEvents();
+        UnsubscribeButtonEvents();
+        base.OnDisable();
+    }
+    protected void BuildAvailableChoices()//lúc nào cũng phải tạo 1 mảng tạm để làm việc ko đụng cái gốc trong inspector
+    {
+        availableChoice.Clear();
+        
+        foreach(PracticeUpgradeDefinition upgrade in upgradePool)
+        {
+            if(upgrade == null) continue;
+            if(HasReachedMaxiumLevel(upgrade)) continue;
+            availableChoice.Add(upgrade);
+        }
+    }
+    protected int GetUpgradeLevel(PracticeUpgradeDefinition upgrade)
+    {
+        if(upgrade == null) return 0;
+        if(upgradeLevels.TryGetValue(upgrade, out int currentLevel))// trả 2 kết quả dictionary có chưa upgrade hay ko nếu có thì level hiện tại là bao nhiêu
+        {
+            return currentLevel;
+        }
+        return 0;
+    }
+    protected bool HasReachedMaxiumLevel(PracticeUpgradeDefinition upgrade)
+    {
+        if(upgrade == null) return true;
+        int currentLevel = GetUpgradeLevel(upgrade);
+        
+        return currentLevel >= upgrade.MaxLevel;
+    }
+    protected void IncreaseUpgradeLevel(PracticeUpgradeDefinition upgrade)//nâng level run time
+    {
+        if(upgrade == null) return;
+        int currentLevel = GetUpgradeLevel(upgrade);
+        int nextLevel = currentLevel + 1;
+
+        upgradeLevels[upgrade] = nextLevel;
+    }
+    protected bool GenerateRandomChoices()
+    {
+        currentChoices.Clear();
+        BuildAvailableChoices();
+
+        int choiceCount = Mathf.Min(3, availableChoice.Count);
+        for(int i = 0; i < choiceCount; i++)//ko có = tại vì nếu choiceCount là 2 thì chỉ cần random 1 lần 
+        {
+            int randomIndex = Random.Range(0, availableChoice.Count);
+            PracticeUpgradeDefinition selectedUpgrade = availableChoice[randomIndex];
+
+            currentChoices.Add(selectedUpgrade);
+            availableChoice.RemoveAt(randomIndex);//phải xóa để tránh trùng random kiểu như random chọn số đó r thì sau đó phải xóa
+        }
+        return currentChoices.Count > 0;
+    }
+    private void SubscribeLevelEvents()
+    {
+        if (levelSystem == null) return;
+
+        levelSystem.LevelChanged += HandleLeveledUp;
+    }
+
+    private void UnsubscribeLevelEvents()
+    {
+        if (levelSystem == null) return;
+
+        levelSystem.LevelChanged -= HandleLeveledUp;
+    }
+
+    private void SubscribeButtonEvents()
+    {
+        if(choiceButtons == null || choiceButtons.Length < 3) return;
+
+        if(choiceButtons[0] != null)
+        {
+            choiceButtons[0].onClick.AddListener(HandleButtonChoice1Clicked);
+        }
+        if(choiceButtons[1] != null)
+        {
+            choiceButtons[1].onClick.AddListener(HandleButtonChoice2Clicked);
+        }
+        if(choiceButtons[2] != null)
+        {
+            choiceButtons[2].onClick.AddListener(HandleButtonChoice3Clicked);
+        }
+        if(rerollButton != null)
+        {
+            rerollButton.onClick.AddListener(HandleRerollButtonClicked);
+        }
+        if(skipButton != null)
+        {
+            skipButton.onClick.AddListener(HandleSkipButtonClicked);
+        }
+    }
+    private void UnsubscribeButtonEvents()
+    {
+        if(choiceButtons == null || choiceButtons.Length < 3) return;
+
+        if(choiceButtons[0] != null)
+        {
+            choiceButtons[0].onClick.RemoveListener(HandleButtonChoice1Clicked);
+        }
+        if(choiceButtons[1] != null)
+        {
+            choiceButtons[1].onClick.RemoveListener(HandleButtonChoice2Clicked);
+        }
+        if(choiceButtons[2] != null)
+        {
+            choiceButtons[2].onClick.RemoveListener(HandleButtonChoice3Clicked);
+        }
+        if(rerollButton != null)
+        {
+            rerollButton.onClick.RemoveListener(HandleRerollButtonClicked);
+        }
+        if(skipButton != null)
+        {
+            skipButton.onClick.RemoveListener(HandleSkipButtonClicked);
+        }
+    }
+    protected void SubscribeGameStateEvents()
+    {
+        if(gameStateController == null) return;
+
+        gameStateController.StateChanged += HandleGameStateChanged;
+        HandleGameStateChanged(gameStateController.CurrentState);
+    }
+    protected void UnSubscribeGameStateEvents()
+    {
+        if(gameStateController == null) return;
+
+        gameStateController.StateChanged -= HandleGameStateChanged;
+    }
+    protected void HandleGameStateChanged(PracticeGameStates gameStates)
+    {
+        bool shoulUpgradePanelMenu = gameStates == PracticeGameStates.Paused;
+
+        SetUpgradePanelMenu(shoulUpgradePanelMenu);
+        if(gameStates != PracticeGameStates.GameOver) return;
+
+        pendingUpgradeChoices = 0;
+        currentChoices.Clear();
+        RefeshButtonTexts();
+        RefeshRerollButton();
+        RefeshSkipButton();
+    }
+    protected void SetUpgradePanelMenu(bool isPause)
+    {
+        if(upgradePanel == null) return;
+
+        upgradePanel.SetActive(isPause);
+    }
+    protected void HandleRerollButtonClicked()
+    {
+        if(pendingUpgradeChoices <= 0) return;
+        if(remainingRerolls <= 0) return;
+        remainingRerolls--;
+
+        bool hasReroll = GenerateRandomChoices();
+        if (!hasReroll)
+        {
+            pendingUpgradeChoices = 0;
+            currentChoices.Clear();
+            HidePanel();
+            return;
+        }
+        RefeshButtonTexts();
+        RefeshRerollButton();
+    }
+    protected void HandleSkipButtonClicked()
+    {
+        if(pendingUpgradeChoices <= 0) return;
+        Debug.Log($"{name}: upgrade choice skipped.",this);
+        CompleteOneChoice();
+    }
+    protected void RefeshRerollButton()
+    {
+        if(rerollButton == null) return;
+        bool canReroll = pendingUpgradeChoices > 0 && remainingRerolls > 0 && currentChoices.Count > 0;
+        rerollButton.interactable = canReroll;
+
+        SetButtonText(rerollButton, $"Reroll ({remainingRerolls})");
+    }
+
+    private void HandleLeveledUp(float newLevel)
+    {
+        PracticeAudioManager.Instance?.PlayLevelUpSfx();
+        pendingUpgradeChoices++;
+
+        if(titleText != null)
+        {
+            titleText.text = $"Level {newLevel} reached! Choose an upgrade:";
+        }
+        if(pendingUpgradeChoices > 1) return;//nghĩa là đã có 1 lượt đang hiển thị chỉ ghi nhận thêm pending chứ ko thay đổi currentchoices
+        
+        bool prepareSuccesfull = PrepareNextChoices();
+        if(prepareSuccesfull) return; // có nghĩa là nếu thành công rồi thì xong tương đương == true
+
+        pendingUpgradeChoices = 0;
+        HidePanel();
+
+        Debug.Log($"{name}: Không còn upgrade hợp lệ",this);        
+    }
+    protected bool PrepareNextChoices()
+    {
+        remainingRerolls = rerollPerChoices;
+        bool hasReroll = GenerateRandomChoices();
+
+        if(!hasReroll) return false;
+
+        RefeshButtonTexts();
+        RefeshRerollButton();
+        RefeshSkipButton();
+        ShowPanel();
+        return true;
+    }
+
+    private void HandleButtonChoice1Clicked()
+    {
+        ApplyChoice(0);
+    }
+    private void HandleButtonChoice2Clicked()
+    {
+        ApplyChoice(1);
+    }
+    private void HandleButtonChoice3Clicked()
+    {
+        ApplyChoice(2);
+    } 
+    private void ApplyChoice(int choiceIndex)
+    {
