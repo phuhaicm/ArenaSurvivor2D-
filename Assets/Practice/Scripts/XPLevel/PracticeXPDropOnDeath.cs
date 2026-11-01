@@ -80,7 +80,7 @@ public class PracticeXPDropOnDeath : HaiMonoBehaviour
 
         LoadXPOrbContainer();
 
-        Instantiate(
+        PracticeObjectPoolManager.SpawnOrInstantiate(
             xpOrbPrefab,
             transform.position,
             Quaternion.identity,

@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 
 public class PracticeSpriteFlashFeedback
-    : HaiMonoBehaviour
+    : HaiMonoBehaviour, IPracticePoolable
 {
     [Header("References")]
     [SerializeField]
@@ -18,7 +18,8 @@ public class PracticeSpriteFlashFeedback
     [SerializeField]
     private Color flashColor = Color.red;
 
-    private Color originalColor;
+    private Color originalColor = Color.white;
+    private bool hasCachedOriginalColor;
     private Coroutine flashCoroutine;
 
     protected override void LoadComponents()
@@ -34,6 +35,15 @@ public class PracticeSpriteFlashFeedback
 
         LoadTargetSprite();
         CacheOriginalColor();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        LoadTargetSprite();
+        CacheOriginalColor();
+        RestoreOriginalColor();
     }
 
     protected override void OnDisable()
@@ -57,22 +67,26 @@ public class PracticeSpriteFlashFeedback
 
     private void CacheOriginalColor()
     {
-        if (targetSprite == null)
+        // Guard Clause: Chỉ lưu màu gốc đúng 1 lần duy nhất lúc khởi tạo
+        // để không bao giờ lưu nhầm flashColor (màu đỏ) làm màu gốc khi tái sử dụng từ Pool
+        if (hasCachedOriginalColor || targetSprite == null)
         {
             return;
         }
 
-        originalColor =
-            targetSprite.color;
+        originalColor = targetSprite.color;
+        hasCachedOriginalColor = true;
     }
 
     public void PlayFlash()
     {
-        if (targetSprite == null)
+        // Nếu đối tượng đang bị tắt (ví dụ vừa chết và về Pool trong cùng frame), không chạy Coroutine
+        if (!isActiveAndEnabled || targetSprite == null)
         {
             return;
         }
 
+        CacheOriginalColor();
         StopFlash();
         RestoreOriginalColor();
 
@@ -86,30 +100,34 @@ public class PracticeSpriteFlashFeedback
     {
         for (int i = 0; i < flashCount; i++)
         {
-            targetSprite.color =
-                flashColor;
+            targetSprite.color = flashColor;
 
             if (flashInterval > 0f)
             {
-                yield return new WaitForSeconds(
-                    flashInterval
-                );
+                yield return WaitForSecondsRoutine(flashInterval);
             }
 
-            targetSprite.color =
-                originalColor;
+            targetSprite.color = originalColor;
 
             if (flashInterval > 0f)
             {
-                yield return new WaitForSeconds(
-                    flashInterval
-                );
+                yield return WaitForSecondsRoutine(flashInterval);
             }
         }
 
         RestoreOriginalColor();
-
         flashCoroutine = null;
+    }
+
+    private IEnumerator WaitForSecondsRoutine(float duration)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
     }
 
     private void StopFlash()
@@ -120,18 +138,33 @@ public class PracticeSpriteFlashFeedback
         }
 
         StopCoroutine(flashCoroutine);
-
         flashCoroutine = null;
     }
 
     private void RestoreOriginalColor()
     {
-        if (targetSprite == null)
+        if (targetSprite == null || !hasCachedOriginalColor)
         {
             return;
         }
 
-        targetSprite.color =
-            originalColor;
+        targetSprite.color = originalColor;
+    }
+
+    public void OnTakenFromPool()
+    {
+        RestoreOriginalColor();
+    }
+
+    public void OnReturnedToPool()
+    {
+        StopFlash();
+        RestoreOriginalColor();
+    }
+
+    public void ResetRuntimeState()
+    {
+        StopFlash();
+        RestoreOriginalColor();
     }
 }

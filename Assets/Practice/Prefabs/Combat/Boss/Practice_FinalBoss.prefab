@@ -198,8 +198,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8afdec420a35eb042acb4cfd26519825, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 300
+  maxHealth: 100
   currentHealth: 0
+  enemyCollider: {fileID: 1019942089556460235}
+  enemyRigidbody: {fileID: 6684418186157247156}
 --- !u!114 &3183020186760176956
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -212,9 +214,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 914cc0936f1146a4593ea0eff16a6532, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 1.2
-  stoppingDistance: 1.5
+  moveSpeed: 2
+  stoppingDistance: 0.8
   targetSearchInterval: 0.5
+  enemyRigidbody: {fileID: 6684418186157247156}
 --- !u!114 &8659378148005791084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -230,6 +233,7 @@ MonoBehaviour:
   enemyHealth: {fileID: 6169112465887158619}
   xpOrbPrefab: {fileID: 1760206178346980923, guid: 6e44bffd684a8b24da5b0208d80bf538,
     type: 3}
+  xpOrbContainer: {fileID: 0}
 --- !u!50 &6684418186157247156
 Rigidbody2D:
   serializedVersion: 4
@@ -336,6 +340,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyHealth: {fileID: 6169112465887158619}
   flashFeedback: {fileID: 8205562967837412687}
+  damageTextPrefab: {fileID: 1781613061235985134, guid: b7ee3b9d8d8e3bf4fac86f7139e0426a,
+    type: 3}
+  damageTextContainer: {fileID: 0}
 --- !u!114 &8517175218888541521
 MonoBehaviour:
   m_ObjectHideFlags: 0
