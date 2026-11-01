@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: -3223912548090065380}
   - component: {fileID: 4196089091995185143}
   - component: {fileID: 8260595439349065732}
+  - component: {fileID: 8196830332879480105}
   m_Layer: 8
   m_Name: Practice_XPOrb_Medium
   m_TagString: Untagged
@@ -165,3 +166,17 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
+--- !u!114 &8196830332879480105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1760206178346980923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e0aea6a48c8ab468482964aee7a99c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  originPrefab: {fileID: 0}
+  isInPool: 0

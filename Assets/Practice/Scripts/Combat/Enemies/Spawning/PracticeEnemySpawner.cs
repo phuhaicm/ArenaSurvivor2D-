@@ -258,40 +258,56 @@ public class PracticeEnemySpawner : HaiMonoBehaviour
     }
     private bool TrySpawnSingleEnemy()
     {
-        if(!HasValidSpawnSetup())
+        if (!HasValidSpawnSetup())
         {
             return false;
         }
 
-        if(!TryGetSpawnPosition(out Vector2 spawnPosition))
+        if (!TryGetSpawnPosition(out Vector2 spawnPosition))
         {
-            Debug.LogWarning($"{name}: khong tim duoc vi tri spawn hop le",this);
-            return false;
-        }   
-        if(!TrySelectEnemyType(out PracticeEnemyTypeData selectedEnemyType))
-        {
-            Debug.LogWarning($"{name}: khong co enemy type " + " phu hop voi difficulty hien tai. ",this);
+            Debug.LogWarning($"{name}: khong tim duoc vi tri spawn hop le", this);
             return false;
         }
+
+        if (!TrySelectEnemyType(out PracticeEnemyTypeData selectedEnemyType))
+        {
+            Debug.LogWarning($"{name}: khong co enemy type phu hop voi difficulty hien tai.", this);
+            return false;
+        }
+
         PracticeEnemyHealth selectedPrefab = selectedEnemyType.EnemyPrefab;
-        PracticeEnemyHealth spawnedEnemy = Instantiate(
-        selectedPrefab,
-        spawnPosition,
-        Quaternion.identity,
-        enemyContainer
-    );
 
-Debug.Log(
-    $"SPAWN | Enemy: {spawnedEnemy.name} | " +
-    $"Spawn Position: {spawnPosition} | " +
-    $"Actual Position: {spawnedEnemy.transform.position} | " +
-    $"Player Position: {playerTarget.position} | " +
-    $"Distance: {Vector2.Distance(spawnedEnemy.transform.position, playerTarget.position):F2}",
-    spawnedEnemy
-);
+        // Lấy Enemy từ Object Pool thay vì Instantiate mới
+        PracticeEnemyHealth spawnedEnemy =
+            PracticeObjectPoolManager.SpawnOrInstantiate(
+                selectedPrefab,
+                spawnPosition,
+                Quaternion.identity,
+                enemyContainer
+            );
 
-    spawnedEnemies.Add(spawnedEnemy);
-    spawnedEnemy.Died += HandleEnemyDied;
+        if (spawnedEnemy == null)
+        {
+            return false;
+        }
+
+        Debug.Log(
+            $"SPAWN | Enemy: {spawnedEnemy.name} | " +
+            $"Spawn Position: {spawnPosition} | " +
+            $"Actual Position: {spawnedEnemy.transform.position} | " +
+            $"Player Position: {playerTarget.position} | " +
+            $"Distance: {Vector2.Distance(spawnedEnemy.transform.position, playerTarget.position):F2}",
+            spawnedEnemy
+        );
+
+        if (!spawnedEnemies.Contains(spawnedEnemy))
+        {
+            spawnedEnemies.Add(spawnedEnemy);
+        }
+
+        // Hủy đăng ký trước khi đăng ký lại để chống cộng dồn sự kiện khi Enemy được tái sử dụng từ Pool
+        spawnedEnemy.Died -= HandleEnemyDied;
+        spawnedEnemy.Died += HandleEnemyDied;
 
         return true;
     }
@@ -369,14 +385,20 @@ Debug.Log(
     }
     private void RemoveDestroyedEnemies()
     {
-        for(int i = spawnedEnemies.Count - 1; i >= 0; i--)
+        for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
         {
-            if(spawnedEnemies[i] == null)
-            spawnedEnemies.RemoveAt(i);
+            PracticeEnemyHealth enemy = spawnedEnemies[i];
+
+            if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy)
+            {
+                if (enemy != null)
+                {
+                    enemy.Died -= HandleEnemyDied;
+                }
+
+                spawnedEnemies.RemoveAt(i);
+            }
         }
-        /// <summary>
-        // phải dùng từ dưới lên bởi vì sẽ ko bị đảo lộn vị trí index khi mà remove rồi tiếp tục dò
-        /// </summary>
     }
     private bool HasValidSpawnSetup()
     {

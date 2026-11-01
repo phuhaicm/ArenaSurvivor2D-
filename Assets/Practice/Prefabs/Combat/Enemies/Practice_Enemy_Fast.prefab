@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: -5745078997539951388}
   - component: {fileID: 379495624071083681}
   - component: {fileID: 8651256493258378526}
+  - component: {fileID: 4848533394270351773}
   m_Layer: 7
   m_Name: Practice_Enemy_Fast
   m_TagString: Untagged
@@ -105,9 +106,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 914cc0936f1146a4593ea0eff16a6532, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3.5
-  stoppingDistance: 1
+  moveSpeed: 2
+  stoppingDistance: 0.8
   targetSearchInterval: 0.5
+  enemyRigidbody: {fileID: 6684418186157247156}
 --- !u!114 &6169112465887158619
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -120,8 +122,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8afdec420a35eb042acb4cfd26519825, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 20
+  maxHealth: 100
   currentHealth: 0
+  enemyCollider: {fileID: -5745078997539951388}
+  enemyRigidbody: {fileID: 6684418186157247156}
 --- !u!114 &8659378148005791084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,3 +248,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyHealth: {fileID: 6169112465887158619}
   flashFeedback: {fileID: 379495624071083681}
+  damageTextPrefab: {fileID: 0}
+  damageTextContainer: {fileID: 0}
+--- !u!114 &4848533394270351773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3149481832146249845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e0aea6a48c8ab468482964aee7a99c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  originPrefab: {fileID: 0}
+  isInPool: 0

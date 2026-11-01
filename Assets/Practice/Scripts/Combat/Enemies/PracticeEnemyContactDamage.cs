@@ -1,7 +1,7 @@
 using UnityEngine;
 
 public class PracticeEnemyContactDamage
-    : HaiMonoBehaviour
+    : HaiMonoBehaviour, IPracticePoolable
 {
     [Header("Damage Settings")]
     [SerializeField, Min(0f)]
@@ -12,24 +12,50 @@ public class PracticeEnemyContactDamage
 
     private float nextDamageTime;
 
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        nextDamageTime = 0f;
+    }
+
     private void OnTriggerStay2D(Collider2D other)
-{
-    if (Time.time < nextDamageTime)
     {
-        return;
+        if (Time.time < nextDamageTime)
+        {
+            return;
+        }
+
+        PracticePlayerHealth playerHealth =
+            other.GetComponent<PracticePlayerHealth>();
+
+        if (playerHealth == null)
+        {
+            playerHealth = other.GetComponentInParent<PracticePlayerHealth>();
+        }
+
+        if (playerHealth == null || playerHealth.IsDead)
+        {
+            return;
+        }
+
+        playerHealth.TakeDamage(contactDamage);
+
+        nextDamageTime =
+            Time.time + damageCooldown;
     }
 
-    PracticePlayerHealth playerHealth =
-        other.GetComponent<PracticePlayerHealth>();
-
-    if (playerHealth == null)
+    public void OnTakenFromPool()
     {
-        return;
+        nextDamageTime = 0f;
     }
 
-    playerHealth.TakeDamage(contactDamage);
+    public void OnReturnedToPool()
+    {
+        nextDamageTime = 0f;
+    }
 
-    nextDamageTime =
-        Time.time + damageCooldown;
-}  
+    public void ResetRuntimeState()
+    {
+        nextDamageTime = 0f;
+    }
 }

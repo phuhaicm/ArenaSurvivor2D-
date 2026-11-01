@@ -2293,6 +2293,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 222317968}
   m_CullTransparentMesh: 1
+--- !u!1 &225376166
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 225376167}
+  m_Layer: 0
+  m_Name: RuntimeDamageTexts
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &225376167
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 225376166}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 948434524}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &258585502
 GameObject:
   m_ObjectHideFlags: 0
@@ -4091,6 +4122,34 @@ MonoBehaviour:
       type: 3}
     initialCount: 60
     defaultContainer: {fileID: 1978724056}
+  - prefab: {fileID: 3149481832146249845, guid: b028682ad38fe71499d203b1031b2ed3,
+      type: 3}
+    initialCount: 20
+    defaultContainer: {fileID: 1508022804}
+  - prefab: {fileID: 3149481832146249845, guid: 8acb2dce438976649854f9f529f82acd,
+      type: 3}
+    initialCount: 15
+    defaultContainer: {fileID: 1508022804}
+  - prefab: {fileID: 3149481832146249845, guid: e1848005d8872c943b970d12efc51b72,
+      type: 3}
+    initialCount: 10
+    defaultContainer: {fileID: 1508022804}
+  - prefab: {fileID: 1760206178346980923, guid: 41f49617cdfe55b4d9dd18725b1573cf,
+      type: 3}
+    initialCount: 25
+    defaultContainer: {fileID: 203561440}
+  - prefab: {fileID: 1760206178346980923, guid: 47a3311b1aa672b46a6c09554d3d38e9,
+      type: 3}
+    initialCount: 15
+    defaultContainer: {fileID: 203561440}
+  - prefab: {fileID: 1760206178346980923, guid: 2ce36aac412b60147a77255e869dfc23,
+      type: 3}
+    initialCount: 10
+    defaultContainer: {fileID: 203561440}
+  - prefab: {fileID: 2020878578798839251, guid: b7ee3b9d8d8e3bf4fac86f7139e0426a,
+      type: 3}
+    initialCount: 25
+    defaultContainer: {fileID: 225376167}
   fallbackContainer: {fileID: 0}
 --- !u!1 &584911413
 GameObject:
@@ -6562,6 +6621,7 @@ Transform:
   - {fileID: 1978724056}
   - {fileID: 203561440}
   - {fileID: 2103196727}
+  - {fileID: 225376167}
   m_Father: {fileID: 729398503}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &966891665

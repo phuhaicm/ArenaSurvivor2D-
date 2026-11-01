@@ -10,12 +10,20 @@ public class PracticeEnemyDamageFeedback
     [SerializeField]
     private PracticeSpriteFlashFeedback flashFeedback;
 
+    [Header("Floating Damage Text (Optional)")]
+    [SerializeField]
+    private PracticeFloatingDamageText damageTextPrefab;
+
+    [SerializeField]
+    private Transform damageTextContainer;
+
     protected override void LoadComponents()
     {
         base.LoadComponents();
 
         LoadEnemyHealth();
         LoadFlashFeedback();
+        LoadDamageTextContainer();
     }
 
     private void LoadEnemyHealth()
@@ -40,12 +48,27 @@ public class PracticeEnemyDamageFeedback
             GetComponent<PracticeSpriteFlashFeedback>();
     }
 
+    private void LoadDamageTextContainer()
+    {
+        if (damageTextContainer != null)
+        {
+            return;
+        }
+
+        GameObject containerObj = GameObject.Find("RuntimeDamageTexts");
+        if (containerObj != null)
+        {
+            damageTextContainer = containerObj.transform;
+        }
+    }
+
     protected override void OnEnable()
     {
         base.OnEnable();
 
         LoadEnemyHealth();
         LoadFlashFeedback();
+        LoadDamageTextContainer();
 
         SubscribeEnemyEvents();
     }
@@ -87,5 +110,29 @@ public class PracticeEnemyDamageFeedback
     )
     {
         flashFeedback?.PlayFlash();
+        SpawnFloatingDamageText(damageAmount);
+    }
+
+    private void SpawnFloatingDamageText(float damageAmount)
+    {
+        if (damageTextPrefab == null)
+        {
+            return;
+        }
+
+        LoadDamageTextContainer();
+
+        PracticeFloatingDamageText spawnedText =
+            PracticeObjectPoolManager.SpawnOrInstantiate(
+                damageTextPrefab,
+                transform.position,
+                Quaternion.identity,
+                damageTextContainer
+            );
+
+        if (spawnedText != null)
+        {
+            spawnedText.Initialize(damageAmount, transform.position);
+        }
     }
 }
