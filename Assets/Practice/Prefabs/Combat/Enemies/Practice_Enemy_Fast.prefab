@@ -135,8 +135,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyHealth: {fileID: 6169112465887158619}
-  xpOrbPrefab: {fileID: 1760206178346980923, guid: 6e44bffd684a8b24da5b0208d80bf538,
+  xpOrbPrefab: {fileID: 1760206178346980923, guid: 47a3311b1aa672b46a6c09554d3d38e9,
     type: 3}
+  xpOrbContainer: {fileID: 0}
 --- !u!50 &6684418186157247156
 Rigidbody2D:
   serializedVersion: 4

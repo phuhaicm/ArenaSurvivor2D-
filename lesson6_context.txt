@@ -1,0 +1,637 @@
+==> Assets/Practice/Scripts/Controller/PracticeHealthBase.cs <==
+using System;
+using UnityEngine;
+
+public abstract class PracticeHealthBase
+    : HaiMonoBehaviour, IPracticeDamageable
+{
+    [Header("Health Settings")]
+    [SerializeField, Min(1f)]
+    protected float maxHealth = 100f;
+
+    [SerializeField, Min(0f)]
+    protected float currentHealth;
+
+    protected bool isDead;
+
+    public event Action<float> DamageTaken;
+    public event Action Died;
+
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth => maxHealth;
+    public bool IsDead => isDead;
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        currentHealth = maxHealth;
+        isDead = false;
+    }
+
+    public virtual void TakeDamage(float damage)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        if (damage <= 0f)
+        {
+            return;
+        }
+
+        float previousHealth =
+            currentHealth;
+
+        currentHealth =
+            Mathf.Clamp(
+                currentHealth - damage,
+                0f,
+                maxHealth
+            );
+
+        float appliedDamage =
+            previousHealth - currentHealth;
+
+        if (appliedDamage <= 0f)
+        {
+            return;
+        }
+
+        // Health đã thật sự giảm nên mới phát event.
+        DamageTaken?.Invoke(appliedDamage);
+
+        if (currentHealth <= 0f)
+        {
+            Die();
+        }
+    }
+
+    protected virtual void Die()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        isDead = true;
+
+        Died?.Invoke();
+    }
+}
+==> Assets/Practice/Scripts/Combat/Player/PracticePlayerHealth.cs <==
+using System;
+using UnityEngine;
+
+public class PracticePlayerHealth : PracticeHealthBase
+{
+    [Header("Invulnerability Settings")]
+    [SerializeField, Min(0f)]
+    private float invulnerabilityDuration = 0.5f;
+
+    private float invulnerabilityEndTime;
+
+    public event Action<float, float> HealthChanged;
+
+    public bool IsInvulnerable =>
+        Time.time < invulnerabilityEndTime;
+
+    public override void TakeDamage(float damageAmount)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        if (damageAmount <= 0f)
+        {
+            return;
+        }
+
+        if (IsInvulnerable)
+        {
+            return;
+        }
+
+        float previousHealth =
+            currentHealth;
+
+        // HealthBase chịu trách nhiệm:
+        // - giảm Health
+        // - phát damageTaken
+        // - gọi Die nếu Health bằng 0
+        base.TakeDamage(damageAmount);
+
+        float actualDamageTaken =
+            previousHealth - currentHealth;
+
+        if (actualDamageTaken <= 0f)
+        {
+            return;
+        }
+
+        // Chỉ bắt đầu bất tử nếu Player vẫn còn sống.
+        if (!isDead)
+        {
+            invulnerabilityEndTime =
+                Time.time +
+                invulnerabilityDuration;
+        }
+
+        HealthChanged?.Invoke(
+            currentHealth,
+            maxHealth
+        );
+    }
+
+    protected override void Die()
+    {
+        base.Die();
+
+        Debug.Log(
+            $"{name}: Game Over.",
+            this
+        );
+    }
+}
+==> Assets/Practice/Scripts/Combat/Player/PracticePlayerMovement.cs <==
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Collider2D))]
+public class PracticePlayerMovement : HaiMonoBehaviour
+{
+    [Header("Movement Settings")]
+    [SerializeField, Min(0f)]
+    private float moveSpeed = 5f;
+
+    [Header("Bounds Settings")]
+    [SerializeField] private float minX = -8f;
+    [SerializeField] private float maxX = 8f;
+    [SerializeField] private float minY = -4f;
+    [SerializeField] private float maxY = 4f;
+    private bool canMove = true;
+    private Rigidbody2D playerRigidbody;
+    private Collider2D playerCollider;
+    private Vector2 movementInput;
+
+    protected override void LoadComponents()
+{
+    base.LoadComponents();
+
+    playerRigidbody = GetComponent<Rigidbody2D>();
+    playerCollider = GetComponent<Collider2D>();
+}
+
+    private void Update()
+    {
+        if(!canMove) return;
+        ReadMovementInput();
+    }
+
+    private void FixedUpdate()
+    {
+        if(!canMove) return;
+        Move();
+    }
+
+    private void ReadMovementInput()
+    {
+        float horizontalInput = Input.GetAxisRaw("Horizontal");
+        float verticalInput = Input.GetAxisRaw("Vertical");
+
+        movementInput = new Vector2(
+            horizontalInput,
+            verticalInput
+        ).normalized;
+    }
+
+    private void Move()
+    {
+        Vector2 displacement = movementInput * moveSpeed * Time.fixedDeltaTime;
+
+        Vector2 targetPosition = playerRigidbody.position + displacement;
+        
+        Vector2 clampedPosition = ClampPositionToBounds(targetPosition);
+
+        playerRigidbody.MovePosition(clampedPosition);
+    }
+
+    protected Vector2 ClampPositionToBounds(Vector2 targetPosition)
+    {
+        Vector2 colliderExtents = playerCollider.bounds.extents;
+        
+        float allowedMinX = minX + colliderExtents.x;
+        float allowedMaxX = maxX - colliderExtents.x;
+        float allowedMinY = minY + colliderExtents.y;
+        float allowedMaxY = maxY - colliderExtents.y;
+
+        if(!HasvalidMovementArea(allowedMinX, allowedMaxX, allowedMinY, allowedMaxY))
+        {
+            Debug.LogWarning("Player movement area is invalid. Please check the bounds settings.");
+            return playerRigidbody.position;
+        }
+
+        float clampedX = Mathf.Clamp(targetPosition.x, allowedMinX, allowedMaxX);
+        float clampedY = Mathf.Clamp(targetPosition.y, allowedMinY, allowedMaxY);
+
+        return new Vector2(clampedX, clampedY);
+    }
+    protected bool HasvalidMovementArea(float allowedMinX, float allowedMaxX, float allowedMinY, float allowedMaxY)
+    {
+        return allowedMinX < allowedMaxX && allowedMinY < allowedMaxY;
+    }
+
+    protected void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Vector3 boundsCenter = new Vector3((minX + maxX) * 0.5f, (minY + maxY) * 0.5f, 0f);
+
+        Vector3 boundsSize = new Vector3(maxX - minX, maxY - minY, 0f);
+        Gizmos.DrawWireCube(boundsCenter, boundsSize);
+    }
+    public void SetMoveEnable(bool isEnabled)
+    {
+        canMove = isEnabled;
+
+        if (!canMove)
+        {
+            movementInput = Vector2.zero;// xóa input còn dư
+        }
+    }
+}
+==> Assets/Practice/Scripts/Upgrade/PracticeUpgradeDefinition.cs <==
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "NewUpgrade", menuName = "Practice/Upgrade Definition")]
+public class PracticeUpgradeDefinition : ScriptableObject {
+    [Header("Display")]
+    [SerializeField] private string displayName = "New Upgrade";
+    [SerializeField, TextArea] private string description = "Upgrade description";
+    [Header("Effect")]
+    [SerializeField] PracticeUpgradeType upgradeType;
+    [SerializeField, Min(0f)] private float baseValue = 1f;
+    [SerializeField, Min(0f)] private float valueIncreasePerLevel;
+    [SerializeField, Min(1f)] private int maxLevel = 5;
+    public string DisplayName => displayName;
+    public string Description => description;
+    public PracticeUpgradeType UpgradeType => upgradeType;
+    public float BaseValue => baseValue;
+    public float ValueIncreasePerLevel => valueIncreasePerLevel;
+    public int MaxLevel => maxLevel;
+    public float GetValuePerLevel(int level)
+    {
+        int validLevel = Mathf.Max(1, level);
+
+        return baseValue + valueIncreasePerLevel * (validLevel - 1);
+    }
+
+}
+
+==> Assets/Practice/Scripts/Enum/PracticeUpgradeType.cs <==
+public enum PracticeUpgradeType //tại sao dùng enum có thể dùng string nhưng chỉ cần gõ sai 1 kí tự thôi thì sẽ bị lỗi nên dùng enum
+{
+    BulletDamage,
+    FireRate,
+    ProjectileCount
+}
+
+==> Assets/Practice/Scripts/Upgrade/PracticeShooterUpgradeApplier.cs <==
+using UnityEngine;
+
+public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
+{
+    [Header("Reference")]
+    [SerializeField] PracticeShooterWithDamage shooter;
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadShooter();
+    }
+    protected void LoadShooter()
+    {
+        if(shooter != null) return;
+
+        shooter = GetComponent<PracticeShooterWithDamage>();
+    }
+    public bool ApplyUpgrade(PracticeUpgradeDefinition upgrade, int upgradeLevel)
+    {
+        if(upgrade == null) return false;
+        if(shooter == null) return false;
+        if(upgradeLevel <= 0) return false;
+        float value = upgrade.GetValuePerLevel(upgradeLevel);
+        switch (upgrade.UpgradeType)
+        {
+            case PracticeUpgradeType.BulletDamage:
+                {
+                    int bulletDamage = Mathf.RoundToInt(value);//code này là chuyển từ float sang int 
+
+                    shooter.AddBulletDamage(bulletDamage);
+
+                    break;
+                }
+            case PracticeUpgradeType.FireRate:
+                {
+                    shooter.ReduceShootInterval(value);
+                    break;
+                }
+            case PracticeUpgradeType.ProjectileCount:
+{
+    int projectileBonus =
+        Mathf.RoundToInt(value);
+
+    int previousProjectileCount =
+        shooter.ProjectileCount;
+
+    shooter.AddProjectileCount(
+        projectileBonus
+    );
+
+    Debug.Log(
+        $"{name}: Projectile Count changed from " +
+        $"{previousProjectileCount} to " +
+        $"{shooter.ProjectileCount}. " +
+        $"Bonus = {projectileBonus}.",
+        this
+    );
+
+    break;
+}
+            default:
+            return false;
+        }
+        Debug.Log($"Applied Upgrade: " + $"{upgrade.DisplayName} | " + $"Value: {value}", this);
+        return true;
+    }
+}
+
+==> Assets/Practice/Scripts/XPLevel/PracticeXPAttractable.cs <==
+using UnityEngine;
+
+public class PracticeXPAttractable : HaiMonoBehaviour
+{
+    [Header("Attraction Settings")]
+    [SerializeField, Min(0f)] private float initalAttractionSpeed = 3f;
+    [SerializeField, Min(0f)] private float attractionAcceleration = 8f;
+    [SerializeField, Min(0f)] private float maxiumAttractionSpeed = 11f;
+    private float currentAttractionSpeed;
+    private Transform attractionTarget;
+    public Transform AttractionTarget => attractionTarget;
+    public bool HasAttractionTartget => attractionTarget != null;
+    protected override void Awake() {
+        base.Awake();
+
+        currentAttractionSpeed = initalAttractionSpeed;
+    }
+    private void Update()// nguyên tắc transform movement là update + deltatime còn rigibody physics movement thì fixupdate + fixedeltatime
+    {
+        if(!HasAttractionTartget) return;
+
+        UpdateAttractionSpeed();
+        MoveTowardsTarget();
+    }
+    private void UpdateAttractionSpeed()
+    {
+        currentAttractionSpeed =
+        Mathf.MoveTowards(currentAttractionSpeed, maxiumAttractionSpeed, attractionAcceleration * Time.deltaTime);//tăng tốc độ hút theo mỗi frame. Hàm này làm việc với số
+    }
+    public void SetAttractionTarget(Transform newTarget)
+    {
+        if(newTarget == null) return;
+
+        if(attractionTarget != null) return;
+
+        attractionTarget = newTarget;
+
+        Debug.Log(
+            $"{name}: đã nhận attraction target: " + $"{attractionTarget.name}",this
+        );
+        currentAttractionSpeed = initalAttractionSpeed;// để có thể tái sử dụng
+    }
+    private void MoveTowardsTarget()
+    {
+        Vector2 currentPosition = transform.position;
+        Vector2 targetPosition = attractionTarget.position;
+
+        float movementThisFrame = currentAttractionSpeed * Time.deltaTime;
+        Vector2 newPosition = Vector2.MoveTowards(currentPosition, targetPosition, movementThisFrame);//sử dụng hàm này thay vì tự tính direction vì khi khoảng cách giữa player và orb nhỏ hơn quãng đường mà frame muốn đi thì orb sẽ vượt qua player và sau đó mới quay đầu lại nên sử dụng hàm này thay vì tự tính. Hàm này làm việc với tọa độ
+
+        transform.position = newPosition;
+    }
+    private void CleanAttractionTarget()
+    {
+        attractionTarget = null;
+
+        currentAttractionSpeed = initalAttractionSpeed;
+    }
+
+
+}
+
+==> Assets/Practice/Scripts/XPLevel/PracticeXPDropOnDeath.cs <==
+
+using UnityEngine;
+
+public class PracticeXPDropOnDeath : HaiMonoBehaviour
+{
+    [SerializeField] protected PracticeEnemyHealth enemyHealth;
+    [SerializeField] protected GameObject xpOrbPrefab;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadEnemyHealth();
+    }
+
+    protected virtual void LoadEnemyHealth()
+    {
+        if(enemyHealth != null) return;
+
+        enemyHealth = GetComponent<PracticeEnemyHealth>();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        SubscribeEvent();
+    } 
+    protected override void OnDisable()
+    {
+        base.OnDisable();
+
+        UnsubscribeEvent();
+    }
+    protected virtual void SubscribeEvent()
+    {
+        if(enemyHealth == null) return;
+
+        enemyHealth.Died += HandleEnemyDied;
+    }
+    
+    protected virtual void UnsubscribeEvent()
+    {
+        if(enemyHealth == null) return;
+
+        enemyHealth.Died -= HandleEnemyDied;
+    }
+
+    protected virtual void HandleEnemyDied()
+    {
+        // Implementation for handling enemy death
+        DropXP();
+    }
+
+    protected virtual void DropXP()
+    {
+        if (xpOrbPrefab == null) return;
+        
+        Instantiate(xpOrbPrefab, transform.position, Quaternion.identity);
+        
+    }
+}
+
+==> Assets/Practice/Scripts/XPLevel/PracticeXPMagnetDetector.cs <==
+using UnityEngine;
+
+[RequireComponent(typeof(CircleCollider2D))]
+public class PracticeXPMagnetDetector : HaiMonoBehaviour
+{
+    private Transform playerTarget;
+    PracticePlayerExperience playerExperience;
+    private CircleCollider2D magnetCollider;
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        
+        playerExperience = GetComponentInParent<PracticePlayerExperience>();//tại vì component nằm trên player và thể hiện rõ object này là object nhận kinh nghiệm nên chọn component này
+        magnetCollider = GetComponent<CircleCollider2D>();
+
+        if(playerExperience != null)
+        {
+            playerTarget = playerExperience.transform;
+        }
+    }
+    private void OnTriggerEnter2D(Collider2D other) {
+        if(playerTarget == null) return;
+
+        PracticeXPAttractable xPAttractable = other.GetComponentInParent<PracticeXPAttractable>();
+        
+        if(xPAttractable == null) return;
+
+        xPAttractable.SetAttractionTarget(playerTarget);
+    }
+    private void OnDrawGizmosSelected()
+    {
+        if(magnetCollider == null)
+        {
+            magnetCollider = GetComponent<CircleCollider2D>();
+        }
+
+        if(magnetCollider == null) return;
+        Gizmos.color = Color.green;
+
+        Vector3 magnerCenter = magnetCollider.bounds.center;
+        float worldRadius = magnetCollider.bounds.extents.x;
+
+        Gizmos.DrawWireSphere(magnerCenter, worldRadius);
+
+    }
+
+}
+
+==> Assets/Practice/Scripts/XPLevel/PracticeXPOrb.cs <==
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PracticeXPOrb : HaiMonoBehaviour
+{
+    [SerializeField] private int experienceAmount = 1;
+
+    public int ExperienceAmount => experienceAmount;
+
+    protected override void ResetValues()
+    {
+        base.ResetValues();
+        experienceAmount = 1;
+    }
+}
+
+==> Assets/Practice/Scripts/XPLevel/PracticeXPPickup.cs <==
+using UnityEngine;
+
+[RequireComponent(typeof(CircleCollider2D))]
+public class PracticeXPPickup : HaiMonoBehaviour
+{
+    [SerializeField] protected PracticeXPOrb xpOrb;
+    private bool hasBeenCollected;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadXPOrb();
+    }
+
+    protected virtual void LoadXPOrb()
+    {
+        if (xpOrb != null) return;
+
+        xpOrb = GetComponent<PracticeXPOrb>();
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        PracticePlayerExperience playerExperience = other.GetComponentInParent<PracticePlayerExperience>();
+
+        if(playerExperience == null) return;
+        
+        Collect(playerExperience);
+    }
+    public void Collect(PracticePlayerExperience playerExperience)
+    {
+        if(hasBeenCollected) return;
+        if(playerExperience == null) return;
+
+        hasBeenCollected = true;
+        playerExperience.AddExperience(xpOrb.ExperienceAmount);
+        Destroy(gameObject);
+    }
+    private void OnDrawGizmosSelected()
+    {
+        CircleCollider2D collider = GetComponent<CircleCollider2D>();
+
+        if(collider == null) return;
+
+        Gizmos.color = Color.yellow;
+        Vector3 magnerCenter = collider.bounds.center;
+        float worldRadius = collider.bounds.extents.x;
+
+        Gizmos.DrawWireSphere(magnerCenter, worldRadius);
+
+    }
+}
+==> Assets/Practice/Scripts/XPLevel/PracticeXPPickupReceiver.cs <==
+using UnityEngine;
+[RequireComponent(typeof(CircleCollider2D))]
+
+public class PracticeXPPickupReceiver : HaiMonoBehaviour
+{
+    PracticePlayerExperience playerExperience;
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        playerExperience = GetComponentInParent<PracticePlayerExperience>();//tại vì component nằm trên player và thể hiện rõ object này là object nhận kinh nghiệm nên chọn component này
+    }
+    private void OnTriggerEnter2D(Collider2D other) {
+        if(playerExperience == null) return;
+
+        PracticeXPPickup xpPickup = other.GetComponentInParent<PracticeXPPickup>();
+        
+        if(xpPickup == null) return;
+
+        xpPickup.Collect(playerExperience);
+    }
+}

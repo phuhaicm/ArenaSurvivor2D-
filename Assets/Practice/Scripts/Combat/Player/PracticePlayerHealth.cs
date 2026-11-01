@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 public class PracticePlayerHealth : PracticeHealthBase
@@ -8,8 +7,6 @@ public class PracticePlayerHealth : PracticeHealthBase
     private float invulnerabilityDuration = 0.5f;
 
     private float invulnerabilityEndTime;
-
-    public event Action<float, float> HealthChanged;
 
     public bool IsInvulnerable =>
         Time.time < invulnerabilityEndTime;
@@ -31,17 +28,15 @@ public class PracticePlayerHealth : PracticeHealthBase
             return;
         }
 
-        float previousHealth =
-            currentHealth;
+        float previousHealth = currentHealth;
 
         // HealthBase chịu trách nhiệm:
         // - giảm Health
-        // - phát damageTaken
+        // - phát DamageTaken & HealthChanged
         // - gọi Die nếu Health bằng 0
         base.TakeDamage(damageAmount);
 
-        float actualDamageTaken =
-            previousHealth - currentHealth;
+        float actualDamageTaken = previousHealth - currentHealth;
 
         if (actualDamageTaken <= 0f)
         {
@@ -52,14 +47,8 @@ public class PracticePlayerHealth : PracticeHealthBase
         if (!isDead)
         {
             invulnerabilityEndTime =
-                Time.time +
-                invulnerabilityDuration;
+                Time.time + invulnerabilityDuration;
         }
-
-        HealthChanged?.Invoke(
-            currentHealth,
-            maxHealth
-        );
     }
 
     protected override void Die()

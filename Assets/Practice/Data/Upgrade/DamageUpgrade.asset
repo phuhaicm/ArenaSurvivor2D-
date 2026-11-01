@@ -12,8 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35b7bdee59631024cb66822cf3d026ae, type: 3}
   m_Name: DamageUpgrade
   m_EditorClassIdentifier: 
+  upgradeId: upgrade_bullet_damage
+  category: 0
   displayName: Bullet Damage
   description: "T\u1EB1ng s\xE1t th\u01B0\u01A1ng \u0111\u1EA1n th\xEAm 5"
+  icon: {fileID: 0}
   upgradeType: 0
   baseValue: 5
   valueIncreasePerLevel: 2
