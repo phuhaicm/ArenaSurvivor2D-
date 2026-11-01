@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
 public class PracticeBossProjectile
-    : HaiMonoBehaviour
+    : HaiMonoBehaviour, IPracticePoolable
 {
     [Header("References")]
     [SerializeField]
@@ -33,10 +33,20 @@ public class PracticeBossProjectile
         LoadCollider();
     }
 
+    protected override void Awake()
+    {
+        base.Awake();
+
+        LoadRigidbody();
+        LoadCollider();
+    }
+
     protected override void OnEnable()
     {
         base.OnEnable();
 
+        LoadRigidbody();
+        LoadCollider();
         ResetRuntimeState();
     }
 
@@ -55,7 +65,8 @@ public class PracticeBossProjectile
     )
     {
         if (!isInitialized ||
-            hasHitPlayer)
+            hasHitPlayer ||
+            other == null)
         {
             return;
         }
@@ -65,7 +76,7 @@ public class PracticeBossProjectile
                 PracticePlayerHealth
             >();
 
-        if (playerHealth == null)
+        if (playerHealth == null || playerHealth.IsDead)
         {
             return;
         }
@@ -179,10 +190,26 @@ public class PracticeBossProjectile
             projectileCollider.enabled = false;
         }
 
-        Destroy(gameObject);
+        PracticeObjectPoolManager.DespawnOrDestroy(gameObject);
     }
 
-    private void ResetRuntimeState()
+    public void OnTakenFromPool()
+    {
+        if (projectileCollider != null)
+        {
+            projectileCollider.enabled = true;
+        }
+    }
+
+    public void OnReturnedToPool()
+    {
+        if (projectileCollider != null)
+        {
+            projectileCollider.enabled = false;
+        }
+    }
+
+    public void ResetRuntimeState()
     {
         moveDirection = Vector2.zero;
         moveSpeed = 0f;

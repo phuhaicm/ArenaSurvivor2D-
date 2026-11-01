@@ -601,22 +601,28 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     }
 
     private void ClearActiveBossProjectiles()
+{
+    if (projectileContainer == null)
     {
-        if (projectileContainer == null)
-        {
-            return;
-        }
+        return;
+    }
 
-        for (int i = projectileContainer.childCount - 1; i >= 0; i--)
-        {
-            Transform child = projectileContainer.GetChild(i);
+    if (PracticeObjectPoolManager.Instance != null)
+    {
+        PracticeObjectPoolManager.Instance.DespawnAllActiveInContainer(projectileContainer);
+        return;
+    }
 
-            if (child != null)
-            {
-                Destroy(child.gameObject);
-            }
+    for (int i = projectileContainer.childCount - 1; i >= 0; i--)
+    {
+        Transform child = projectileContainer.GetChild(i);
+
+        if (child != null)
+        {
+            Destroy(child.gameObject);
         }
     }
+}
 
     private void StopAttackLoop()
     {
