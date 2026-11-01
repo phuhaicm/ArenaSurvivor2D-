@@ -1,6 +1,16 @@
-public enum PracticeUpgradeType //tại sao dùng enum có thể dùng string nhưng chỉ cần gõ sai 1 kí tự thôi thì sẽ bị lỗi nên dùng enum
+public enum PracticeUpgradeCategory
 {
-    BulletDamage,
-    FireRate,
-    ProjectileCount
+    Offensive = 0,
+    Defensive = 1,
+    Utility = 2
+}
+
+public enum PracticeUpgradeType // dùng enum thay cho string để tránh lỗi gõ sai ký tự (magic string)
+{
+    BulletDamage = 0,
+    FireRate = 1,
+    ProjectileCount = 2,
+    MaxHealth = 3,
+    MoveSpeed = 4,
+    MagnetRadius = 5
 }

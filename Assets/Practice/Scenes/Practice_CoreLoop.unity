@@ -1827,6 +1827,37 @@ MonoBehaviour:
   survivalTimer: {fileID: 2087182589}
   timerText: {fileID: 280780748}
   finalTimeText: {fileID: 316323406}
+--- !u!1 &203561439
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 203561440}
+  m_Layer: 0
+  m_Name: RuntimeXPOrbs
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &203561440
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 203561439}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 948434524}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &204973506
 GameObject:
   m_ObjectHideFlags: 0
@@ -4473,6 +4504,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fd281cedb6a228c4d8ea3b518f75ffd6, type: 2}
   - {fileID: 11400000, guid: 026c4cb4c2cefb349b383891b8a0429f, type: 2}
   - {fileID: 11400000, guid: b824f51becc22b940a17eb31fdf48e7a, type: 2}
+  - {fileID: 11400000, guid: cbe8e1446b08b8a42b231af0dfc39ed7, type: 2}
+  - {fileID: 11400000, guid: 93eeb271d5ea9dc4e9581ef99bc60d76, type: 2}
+  - {fileID: 11400000, guid: 398f62d3c88941a4b8196087dffb7190, type: 2}
   upgradePanel: {fileID: 178362882}
   rerollButton: {fileID: 120017114}
   skipButton: {fileID: 885304159}
@@ -4498,7 +4532,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &681264070
 Transform:
   m_ObjectHideFlags: 0
@@ -5906,6 +5940,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec60fd7bc7ad8354294c3f6310a2240c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerTarget: {fileID: 1142143047}
+  playerExperience: {fileID: 1142143045}
+  magnetCollider: {fileID: 889266234}
 --- !u!1 &892578477
 GameObject:
   m_ObjectHideFlags: 0
@@ -6468,6 +6505,7 @@ Transform:
   - {fileID: 918411211}
   - {fileID: 766133992}
   - {fileID: 1978724056}
+  - {fileID: 203561440}
   m_Father: {fileID: 729398503}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &966891665
@@ -7119,6 +7157,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shooter: {fileID: 1064092658}
+  playerHealth: {fileID: 0}
+  playerMovement: {fileID: 0}
+  magnetDetector: {fileID: 0}
 --- !u!1 &1083382141
 GameObject:
   m_ObjectHideFlags: 0
@@ -7349,6 +7390,7 @@ GameObject:
   - component: {fileID: 1142143053}
   - component: {fileID: 1142143055}
   - component: {fileID: 1142143056}
+  - component: {fileID: 1142143057}
   m_Layer: 3
   m_Name: Practice_Player
   m_TagString: Player
@@ -7549,6 +7591,8 @@ MonoBehaviour:
   maxX: 8
   minY: -4
   maxY: 4
+  playerRigidbody: {fileID: 1142143043}
+  playerCollider: {fileID: 1142143044}
 --- !u!114 &1142143051
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7630,6 +7674,22 @@ MonoBehaviour:
   flashCount: 3
   flashInterval: 0.08
   flashColor: {r: 1, g: 0, b: 0, a: 1}
+--- !u!114 &1142143057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1142143041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73bdbaae68b87f442bbe43b1573fc7c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shooter: {fileID: 1142143053}
+  playerHealth: {fileID: 1142143051}
+  playerMovement: {fileID: 1142143050}
+  magnetDetector: {fileID: 889266235}
 --- !u!1 &1189056384
 GameObject:
   m_ObjectHideFlags: 0

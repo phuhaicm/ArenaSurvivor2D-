@@ -1,0 +1,456 @@
+==> Assets/Practice/Scripts/Combat/Enemies/PracticeEnemyChase.cs <==
+
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Collider2D))]
+public class PracticeEnemyChase : HaiMonoBehaviour
+{
+    [Header("Chase Settings")]  
+    [SerializeField, Min(0f)]
+    private float moveSpeed = 2f;
+    [SerializeField, Min(0f)]
+    private float stoppingDistance = 0.8f;
+    [Header("Target Settings")]
+    [SerializeField, Min(0.1f)]
+    private float targetSearchInterval = 0.5f;
+    private Rigidbody2D enemyRigidbody;
+    private Transform target;
+    private float nextTargetSearchTime;
+    //ko cho bằng 0 nhưng khi chạy là bằng 0 hả
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        enemyRigidbody = GetComponent<Rigidbody2D>();
+    } 
+    protected override void Start()
+    {
+        base.Start();
+        FindTarget();
+    }
+    protected void FixedUpdate()
+    {
+        if(target == null)
+        {
+            TryFindTarget();
+            return;
+        }
+
+        ChaseTarget();
+    }
+    protected void TryFindTarget()
+    {
+        if(Time.time >= nextTargetSearchTime)
+        {
+            nextTargetSearchTime = Time.time + targetSearchInterval;
+            FindTarget();
+        }
+    }
+
+    protected void FindTarget()
+    {
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if(playerObject != null)
+        {
+            target = playerObject.transform;
+        }
+    }
+    protected void ChaseTarget()
+    {
+        Vector2 directionToTarget = (Vector2)target.position - enemyRigidbody.position;
+        float distanceTotarget = directionToTarget.magnitude;
+        if(distanceTotarget > stoppingDistance)
+        {
+            Vector2 moveDirection = directionToTarget.normalized;
+            //nếu ko có thì enemy càng xa player thì vector càng lớn enemy sẽ chạy nhanh hơn, có thể gây ra lỗi
+            float movementThisStep = moveSpeed * Time.fixedDeltaTime;
+            float maximumAllowedMovement = distanceTotarget - stoppingDistance;
+            float moveDistance = Mathf.Min(movementThisStep, maximumAllowedMovement);
+
+            Vector2 displacement = moveDirection * moveDistance;
+            Vector2 nextPosition = enemyRigidbody.position + displacement;
+            enemyRigidbody.MovePosition(nextPosition);
+        }
+    }
+    protected void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, stoppingDistance);
+    }
+}
+
+==> Assets/Practice/Scripts/Combat/Enemies/PracticeEnemyContactDamage.cs <==
+using UnityEngine;
+
+public class PracticeEnemyContactDamage
+    : HaiMonoBehaviour
+{
+    [Header("Damage Settings")]
+    [SerializeField, Min(0f)]
+    private float contactDamage = 10f;
+
+    [SerializeField, Min(0.05f)]
+    private float damageCooldown = 1f;
+
+    private float nextDamageTime;
+
+    private void OnTriggerStay2D(Collider2D other)
+{
+    if (Time.time < nextDamageTime)
+    {
+        return;
+    }
+
+    PracticePlayerHealth playerHealth =
+        other.GetComponent<PracticePlayerHealth>();
+
+    if (playerHealth == null)
+    {
+        return;
+    }
+
+    playerHealth.TakeDamage(contactDamage);
+
+    nextDamageTime =
+        Time.time + damageCooldown;
+}  
+}
+==> Assets/Practice/Scripts/Combat/Enemies/PracticeEnemyDamageFeedback.cs <==
+using UnityEngine;
+
+public class PracticeEnemyDamageFeedback
+    : HaiMonoBehaviour
+{
+    [Header("References")]
+    [SerializeField]
+    private PracticeEnemyHealth enemyHealth;
+
+    [SerializeField]
+    private PracticeSpriteFlashFeedback flashFeedback;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadEnemyHealth();
+        LoadFlashFeedback();
+    }
+
+    private void LoadEnemyHealth()
+    {
+        if (enemyHealth != null)
+        {
+            return;
+        }
+
+        enemyHealth =
+            GetComponent<PracticeEnemyHealth>();
+    }
+
+    private void LoadFlashFeedback()
+    {
+        if (flashFeedback != null)
+        {
+            return;
+        }
+
+        flashFeedback =
+            GetComponent<PracticeSpriteFlashFeedback>();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        LoadEnemyHealth();
+        LoadFlashFeedback();
+
+        SubscribeEnemyEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribeEnemyEvents();
+
+        base.OnDisable();
+    }
+
+    private void SubscribeEnemyEvents()
+    {
+        if (enemyHealth == null)
+        {
+            return;
+        }
+
+        enemyHealth.DamageTaken -=
+            HandleDamageTaken;
+
+        enemyHealth.DamageTaken +=
+            HandleDamageTaken;
+    }
+
+    private void UnsubscribeEnemyEvents()
+    {
+        if (enemyHealth == null)
+        {
+            return;
+        }
+
+        enemyHealth.DamageTaken -=
+            HandleDamageTaken;
+    }
+
+    private void HandleDamageTaken(
+        float damageAmount
+    )
+    {
+        flashFeedback?.PlayFlash();
+    }
+}
+==> Assets/Practice/Scripts/Combat/Enemies/PracticeEnemyHealth.cs <==
+using System;
+using UnityEngine;
+
+public class PracticeEnemyHealth : PracticeHealthBase
+{
+    //Enemy có một sự kiện tên Died.
+//Script khác có thể đăng ký nghe sự kiện này.
+//Khi enemy chết, enemy sẽ phát event này.
+    protected override void Die()
+    {
+        base.Die();
+
+        Destroy(gameObject);
+    }
+}
+==> Assets/Practice/Scripts/Combat/Player/PracticeSpriteFlashFeedback.cs <==
+using System.Collections;
+using UnityEngine;
+
+public class PracticeSpriteFlashFeedback
+    : HaiMonoBehaviour
+{
+    [Header("References")]
+    [SerializeField]
+    private SpriteRenderer targetSprite;
+
+    [Header("Flash Settings")]
+    [SerializeField, Min(1)]
+    private int flashCount = 3;
+
+    [SerializeField, Min(0f)]
+    private float flashInterval = 0.08f;
+
+    [SerializeField]
+    private Color flashColor = Color.red;
+
+    private Color originalColor;
+    private Coroutine flashCoroutine;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadTargetSprite();
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        LoadTargetSprite();
+        CacheOriginalColor();
+    }
+
+    protected override void OnDisable()
+    {
+        StopFlash();
+        RestoreOriginalColor();
+
+        base.OnDisable();
+    }
+
+    private void LoadTargetSprite()
+    {
+        if (targetSprite != null)
+        {
+            return;
+        }
+
+        targetSprite =
+            GetComponentInChildren<SpriteRenderer>();
+    }
+
+    private void CacheOriginalColor()
+    {
+        if (targetSprite == null)
+        {
+            return;
+        }
+
+        originalColor =
+            targetSprite.color;
+    }
+
+    public void PlayFlash()
+    {
+        if (targetSprite == null)
+        {
+            return;
+        }
+
+        StopFlash();
+        RestoreOriginalColor();
+
+        flashCoroutine =
+            StartCoroutine(
+                FlashRoutine()
+            );
+    }
+
+    private IEnumerator FlashRoutine()
+    {
+        for (int i = 0; i < flashCount; i++)
+        {
+            targetSprite.color =
+                flashColor;
+
+            if (flashInterval > 0f)
+            {
+                yield return new WaitForSeconds(
+                    flashInterval
+                );
+            }
+
+            targetSprite.color =
+                originalColor;
+
+            if (flashInterval > 0f)
+            {
+                yield return new WaitForSeconds(
+                    flashInterval
+                );
+            }
+        }
+
+        RestoreOriginalColor();
+
+        flashCoroutine = null;
+    }
+
+    private void StopFlash()
+    {
+        if (flashCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(flashCoroutine);
+
+        flashCoroutine = null;
+    }
+
+    private void RestoreOriginalColor()
+    {
+        if (targetSprite == null)
+        {
+            return;
+        }
+
+        targetSprite.color =
+            originalColor;
+    }
+}
+==> Assets/Practice/Scripts/Combat/Player/PracticePlayerDamageFeedback.cs <==
+using UnityEngine;
+
+public class PracticePlayerDamageFeedback
+    : HaiMonoBehaviour
+{
+    [Header("References")]
+    [SerializeField]
+    private PracticePlayerHealth playerHealth;
+
+    [SerializeField]
+    private PracticeSpriteFlashFeedback flashFeedback;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadPlayerHealth();
+        LoadFlashFeedback();
+    }
+
+    private void LoadPlayerHealth()
+    {
+        if (playerHealth != null)
+        {
+            return;
+        }
+
+        playerHealth =
+            GetComponent<PracticePlayerHealth>();
+    }
+
+    private void LoadFlashFeedback()
+    {
+        if (flashFeedback != null)
+        {
+            return;
+        }
+
+        flashFeedback =
+            GetComponent<PracticeSpriteFlashFeedback>();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        LoadPlayerHealth();
+        LoadFlashFeedback();
+
+        SubscribePlayerEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribePlayerEvents();
+
+        base.OnDisable();
+    }
+
+    private void SubscribePlayerEvents()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        playerHealth.DamageTaken -=
+            HandleDamageTaken;
+
+        playerHealth.DamageTaken +=
+            HandleDamageTaken;
+    }
+
+    private void UnsubscribePlayerEvents()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        playerHealth.DamageTaken -=
+            HandleDamageTaken;
+    }
+
+    private void HandleDamageTaken(
+        float damageAmount
+    )
+    {
+        flashFeedback?.PlayFlash();
+    }
+}

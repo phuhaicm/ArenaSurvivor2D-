@@ -13,28 +13,46 @@ public class PracticePlayerMovement : HaiMonoBehaviour
     [SerializeField] private float maxX = 8f;
     [SerializeField] private float minY = -4f;
     [SerializeField] private float maxY = 4f;
+
+    [Header("Components")]
+    [SerializeField] private Rigidbody2D playerRigidbody;
+    [SerializeField] private Collider2D playerCollider;
+
     private bool canMove = true;
-    private Rigidbody2D playerRigidbody;
-    private Collider2D playerCollider;
     private Vector2 movementInput;
 
-    protected override void LoadComponents()
-{
-    base.LoadComponents();
+    public float MoveSpeed => moveSpeed;
 
-    playerRigidbody = GetComponent<Rigidbody2D>();
-    playerCollider = GetComponent<Collider2D>();
-}
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        if (playerRigidbody == null)
+        {
+            playerRigidbody = GetComponent<Rigidbody2D>();
+        }
+
+        if (playerCollider == null)
+        {
+            playerCollider = GetComponent<Collider2D>();
+        }
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+        LoadComponents();
+    }
 
     private void Update()
     {
-        if(!canMove) return;
+        if (!canMove) return;
         ReadMovementInput();
     }
 
     private void FixedUpdate()
     {
-        if(!canMove) return;
+        if (!canMove) return;
         Move();
     }
 
@@ -54,7 +72,7 @@ public class PracticePlayerMovement : HaiMonoBehaviour
         Vector2 displacement = movementInput * moveSpeed * Time.fixedDeltaTime;
 
         Vector2 targetPosition = playerRigidbody.position + displacement;
-        
+
         Vector2 clampedPosition = ClampPositionToBounds(targetPosition);
 
         playerRigidbody.MovePosition(clampedPosition);
@@ -63,13 +81,13 @@ public class PracticePlayerMovement : HaiMonoBehaviour
     protected Vector2 ClampPositionToBounds(Vector2 targetPosition)
     {
         Vector2 colliderExtents = playerCollider.bounds.extents;
-        
+
         float allowedMinX = minX + colliderExtents.x;
         float allowedMaxX = maxX - colliderExtents.x;
         float allowedMinY = minY + colliderExtents.y;
         float allowedMaxY = maxY - colliderExtents.y;
 
-        if(!HasvalidMovementArea(allowedMinX, allowedMaxX, allowedMinY, allowedMaxY))
+        if (!HasvalidMovementArea(allowedMinX, allowedMaxX, allowedMinY, allowedMaxY))
         {
             Debug.LogWarning("Player movement area is invalid. Please check the bounds settings.");
             return playerRigidbody.position;
@@ -80,7 +98,13 @@ public class PracticePlayerMovement : HaiMonoBehaviour
 
         return new Vector2(clampedX, clampedY);
     }
-    protected bool HasvalidMovementArea(float allowedMinX, float allowedMaxX, float allowedMinY, float allowedMaxY)
+
+    protected bool HasvalidMovementArea(
+        float allowedMinX,
+        float allowedMaxX,
+        float allowedMinY,
+        float allowedMaxY
+    )
     {
         return allowedMinX < allowedMaxX && allowedMinY < allowedMaxY;
     }
@@ -93,13 +117,24 @@ public class PracticePlayerMovement : HaiMonoBehaviour
         Vector3 boundsSize = new Vector3(maxX - minX, maxY - minY, 0f);
         Gizmos.DrawWireCube(boundsCenter, boundsSize);
     }
+
     public void SetMoveEnable(bool isEnabled)
     {
         canMove = isEnabled;
 
         if (!canMove)
         {
-            movementInput = Vector2.zero;// xóa input còn dư
+            movementInput = Vector2.zero; // xóa input còn dư
         }
+    }
+
+    public void AddMoveSpeed(float amount)
+    {
+        if (amount <= 0f)
+        {
+            return;
+        }
+
+        moveSpeed += amount;
     }
 }
