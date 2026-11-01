@@ -1,21 +1,47 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PracticeShooterWithDamage : HaiMonoBehaviour
 {
-    [SerializeField] protected PracticeBulletMovement bulletPrefab;
-    [SerializeField] protected Transform firePoint;
-    [SerializeField] protected float shootInterval = 0.5f;
-    [SerializeField] protected int bulletDamage = 10;
-    [SerializeField] protected int projectileCount = 1;
-    [SerializeField] protected float projectileSpreadAngle = 12f;
+    [SerializeField]
+    protected PracticeBulletMovement bulletPrefab;
+
+    [SerializeField]
+    protected Transform firePoint;
+
+    [SerializeField]
+    protected Transform bulletContainer;
+
+    [SerializeField]
+    protected float shootInterval = 0.5f;
+
+    [SerializeField]
+    protected int bulletDamage = 10;
+
+    [SerializeField]
+    protected int projectileCount = 1;
+
+    [SerializeField]
+    protected float projectileSpreadAngle = 12f;
+
     protected float nextShootTime;
+
+    public int BulletDamage => bulletDamage;
+    public float ShootInterval => shootInterval;
+    public int ProjectileCount => projectileCount;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadBulletContainer();
+    }
+
     protected override void Awake()
     {
         base.Awake();
+        LoadBulletContainer();
         nextShootTime = Time.time;
     }
+
     protected override void ResetValues()
     {
         base.ResetValues();
@@ -23,6 +49,22 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
         projectileCount = 1;
         projectileSpreadAngle = 12f;
     }
+
+    private void LoadBulletContainer()
+    {
+        if (bulletContainer != null)
+        {
+            return;
+        }
+
+        GameObject containerObj = GameObject.Find("RuntimePlayerBullets");
+
+        if (containerObj != null)
+        {
+            bulletContainer = containerObj.transform;
+        }
+    }
+
     private void Update()
     {
         if (!CanShoot()) return;
@@ -32,17 +74,22 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
 
         ShootAt(target);
     }
+
     protected virtual bool CanShoot()
     {
-        if (bulletPrefab == null || firePoint == null || Time.time < nextShootTime) return false;
+        if (bulletPrefab == null || firePoint == null || Time.time < nextShootTime)
+        {
+            return false;
+        }
 
         return true;
     }
+
     protected virtual PracticeEnemyHealth FindTarget()
     {
         return PracticeNearestEnemyFinder.FindNearest(firePoint.position);
-        //hàm này có trách nhiệm trả về object có nghĩa là tìm enemy và trả enemy cho hàm findtarget    
     }
+
     protected void ShootAt(PracticeEnemyHealth target)
     {
         Vector2 spawnPosition = firePoint.position;
@@ -51,38 +98,54 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
         if (projectileCount <= 1)
         {
             SpawnSingleProjectile(spawnPosition, baseDirection);
-            nextShootTime = Time.time + shootInterval;
-            return;
         }
-
-        float startAngle = -projectileSpreadAngle * (projectileCount - 1) * 0.5f;
-
-        for (int i = 0; i < projectileCount; i++)
+        else
         {
-            float currentAngle = startAngle + projectileSpreadAngle * i;
-            Vector2 direction = RotationDirection(baseDirection, currentAngle);
+            float startAngle = -projectileSpreadAngle * (projectileCount - 1) * 0.5f;
 
-            SpawnSingleProjectile(spawnPosition, direction);
+            for (int i = 0; i < projectileCount; i++)
+            {
+                float currentAngle = startAngle + projectileSpreadAngle * i;
+                Vector2 direction = RotationDirection(baseDirection, currentAngle);
+
+                SpawnSingleProjectile(spawnPosition, direction);
+            }
         }
+
+        // Chỉ phát âm thanh bắn đúng 1 lần cho mỗi loạt đạn (dù bắn 1 viên hay chùm nhiều viên)
         PracticeAudioManager.Instance?.PlayShootSfx();
 
         nextShootTime = Time.time + shootInterval;
     }
+
     private void SpawnSingleProjectile(Vector2 spawnPosition, Vector2 baseDirection)
     {
-        PracticeBulletMovement bullet = Instantiate(bulletPrefab, spawnPosition, Quaternion.identity);
+        LoadBulletContainer();
+
+        PracticeBulletMovement bullet =
+            PracticeObjectPoolManager.SpawnOrInstantiate(
+                bulletPrefab,
+                spawnPosition,
+                Quaternion.identity,
+                bulletContainer
+            );//giúp rút đạn từ kho Pool đã tạo sẵn với 0 byte cấp phát rác 
+
+        if (bullet == null)
+        {
+            return;
+        }
 
         bullet.SetDirection(baseDirection);
 
-        PracticeBulletDamageDealer dealer = bullet.GetComponent<PracticeBulletDamageDealer>();
+        PracticeBulletDamageDealer dealer =
+            bullet.GetComponent<PracticeBulletDamageDealer>();
 
-        if (dealer != null) 
+        if (dealer != null)
         {
             dealer.SetDamage(bulletDamage);
         }
-        PracticeAudioManager.Instance?.PlayShootSfx();
-
     }
+
     private Vector2 RotationDirection(Vector2 baseDirection, float currentAngle)
     {
         Quaternion rotation = Quaternion.Euler(0f, 0f, currentAngle);
@@ -95,19 +158,18 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
 
         bulletDamage += amount;
     }
+
     public void ReduceShootInterval(float amount)
     {
         if (amount <= 0) return;
 
-        shootInterval = Mathf.Max(0, 0.1f, shootInterval - amount);
+        shootInterval = Mathf.Max(0.1f, shootInterval - amount);
     }
+
     public void AddProjectileCount(int amount)
     {
         if (amount <= 0) return;
 
         projectileCount += amount;
     }
-    public int BulletDamage => bulletDamage;
-    public float ShootInterval => shootInterval;
-    public int ProjectileCount => projectileCount;
 }

@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8798206124717494876}
   - component: {fileID: 7564495674979417153}
   - component: {fileID: 6485516921461204841}
+  - component: {fileID: -8085357972785991572}
   m_Layer: 0
   m_Name: Practice_Bullet
   m_TagString: Untagged
@@ -191,3 +192,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damageAmount: 10
+  bulletCollider: {fileID: 8798206124717494876}
+--- !u!114 &-8085357972785991572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4636610092799461865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14e0aea6a48c8ab468482964aee7a99c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  originPrefab: {fileID: 0}
+  isInPool: 0

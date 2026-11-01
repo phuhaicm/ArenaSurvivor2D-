@@ -22,12 +22,13 @@ public abstract class PracticeBossAttackExecutorBase : HaiMonoBehaviour//file n√
             return;
         }
 
-        PracticeBossProjectile projectile = Instantiate(
-            attack.ProjectilePrefab,
-            firePoint.position,
-            Quaternion.identity,
-            projectileContainer
-        );
+        PracticeBossProjectile projectile =
+    PracticeObjectPoolManager.SpawnOrInstantiate(
+        attack.ProjectilePrefab,
+        firePoint.position,
+        Quaternion.identity,
+        projectileContainer
+    );
 
         if (projectile == null)
         {
