@@ -200,6 +200,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  isBossTarget: 1
   enemyCollider: {fileID: 1019942089556460235}
   enemyRigidbody: {fileID: 6684418186157247156}
 --- !u!114 &3183020186760176956
