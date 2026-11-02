@@ -2,12 +2,23 @@ using UnityEngine;
 
 public class PracticeLevelUpListener : HaiMonoBehaviour
 {
-    [SerializeField] protected PracticePlayerLevelSystem levelSystem;
+    [SerializeField]
+    protected PracticePlayerLevelSystem levelSystem;
 
     protected override void LoadComponents()
     {
         base.LoadComponents();
         LoadLevelSystem();
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        enabled = false;
+        return;
+#endif
     }
 
     protected virtual void LoadLevelSystem()
@@ -25,14 +36,15 @@ public class PracticeLevelUpListener : HaiMonoBehaviour
 
     protected override void OnDisable()
     {
-        base.OnDisable();
         UnsubscribeEvents();
+        base.OnDisable();
     }
 
     protected virtual void SubscribeEvents()
     {
         if (levelSystem == null) return;
 
+        levelSystem.LevelChanged -= HandleLeveledUp;
         levelSystem.LevelChanged += HandleLeveledUp;
     }
 

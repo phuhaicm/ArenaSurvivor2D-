@@ -2,12 +2,19 @@ using UnityEngine;
 
 public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
 {
+    [Header("Target Classification")]
+    [Tooltip("Tick chọn trên Prefab của Final Boss để súng ưu tiên khóa mục tiêu vào Boss.")]
+    [SerializeField]
+    private bool isBossTarget;
+
     [Header("Components")]
     [SerializeField]
     private Collider2D enemyCollider;
 
     [SerializeField]
     private Rigidbody2D enemyRigidbody;
+
+    public bool IsBossTarget => isBossTarget;//Đánh dấu đây có phải là mục tiêu ưu tiên cấp Boss hay không.
 
     protected override void LoadComponents()
     {
@@ -26,6 +33,17 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
         base.OnEnable();
         LoadPhysicsComponents();
         ResetRuntimeState();
+
+        // Quái vừa bật lên (sinh mới hoặc lấy từ Pool) -> Tự động ghi tên vào Target Registry
+        PracticeTargetRegistry.RegisterTarget(this);
+    }
+
+    protected override void OnDisable()
+    {
+        // Quái bị tắt (trả về Pool hoặc đổi Scene) -> Tự động rút tên khỏi Target Registry
+        PracticeTargetRegistry.UnregisterTarget(this);
+
+        base.OnDisable();
     }
 
     private void LoadPhysicsComponents()
@@ -43,26 +61,29 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
 
     protected override void Die()
     {
+        // Rút tên khỏi Registry ngay lập tức khi máu về 0 để viên đạn tiếp theo không bắn vào xác quái
+        PracticeTargetRegistry.UnregisterTarget(this);
+
         if (enemyCollider != null)
         {
             enemyCollider.enabled = false;
         }
 
-        // Gọi base.Die() trước để đặt isDead = true và phát sự kiện Died
-        // cho Spawner, KillCounter, XPDropOnDeath và BossController nhận tín hiệu
         base.Die();
 
-        // Thu hồi về Object Pool thay vì Destroy(gameObject)
         PracticeObjectPoolManager.DespawnOrDestroy(gameObject);
     }
 
     public void OnTakenFromPool()
     {
         ResetRuntimeState();
+        PracticeTargetRegistry.RegisterTarget(this);
     }
 
     public void OnReturnedToPool()
     {
+        PracticeTargetRegistry.UnregisterTarget(this);
+
         if (enemyCollider != null)
         {
             enemyCollider.enabled = false;
@@ -73,8 +94,7 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
 
     public void ResetRuntimeState()
     {
-        // Gọi ResetHealth() từ PracticeHealthBase để đặt currentHealth = maxHealth và isDead = false
-        ResetHealth();//để nạp đầy bình máu
+        ResetHealth();
 
         if (enemyCollider != null)
         {
