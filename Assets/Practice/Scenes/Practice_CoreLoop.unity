@@ -8115,8 +8115,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b125430e66eda774abcc26cbf69b991f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  runScore: {fileID: 0}
-  finalScoreText: {fileID: 401824878}
+  runScore: {fileID: 1713121779}
+  finalScoreText: {fileID: 141067132}
 --- !u!1 &1276923568
 GameObject:
   m_ObjectHideFlags: 0
@@ -8765,6 +8765,7 @@ GameObject:
   - component: {fileID: 1425939292}
   - component: {fileID: 1425939295}
   - component: {fileID: 1425939294}
+  - component: {fileID: 1425939296}
   m_Layer: 5
   m_Name: GameOverUIController
   m_TagString: Untagged
@@ -8844,6 +8845,32 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1425939296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1425939291}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92741c32e14afc445896c01550874312, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerHealth: {fileID: 1142143051}
+  gameStateController: {fileID: 536344655}
+  survivalTimer: {fileID: 2087182589}
+  killCounter: {fileID: 1598476128}
+  runScore: {fileID: 1713121779}
+  bestScore: {fileID: 2050196921}
+  gameOverPanel: {fileID: 877846724}
+  finalTimeText: {fileID: 316323406}
+  finalKillCountText: {fileID: 1300652732}
+  finalScoreText: {fileID: 401824878}
+  sceneLoader: {fileID: 7981447160898374275}
+  restartButton: {fileID: 1326340322}
+  quitButton: {fileID: 920075616}
+  mainMenuButton: {fileID: 53913600}
 --- !u!1 &1440654594
 GameObject:
   m_ObjectHideFlags: 0
@@ -10243,6 +10270,8 @@ MonoBehaviour:
   playerHealth: {fileID: 1142143051}
   survivalTimer: {fileID: 2087182589}
   playerKillCounter: {fileID: 1598476128}
+  gameStateController: {fileID: 536344655}
+  playerLevelSystem: {fileID: 917302778}
   pointPerSeconds: 10
   pointPerKills: 100
 --- !u!1 &1854325545
@@ -11047,7 +11076,7 @@ MonoBehaviour:
   survivalTimeText: {fileID: 388949231}
   killCountText: {fileID: 1373634520}
   finalScoreText: {fileID: 477671787}
-  bestScoreText: {fileID: 0}
+  bestScoreText: {fileID: 837274077}
   restartButton: {fileID: 1858757756}
   mainMenuButton: {fileID: 2108940415}
 --- !u!114 &2037106987
