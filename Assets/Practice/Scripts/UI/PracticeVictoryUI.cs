@@ -224,6 +224,19 @@ public class PracticeVictoryUI : HaiMonoBehaviour
 
     private void RefreshVictoryResults()
     {
+        LoadRunSystems();
+
+        // Đảm bảo RunScore và BestScore đã chốt điểm xong trước khi UI đọc giá trị
+        if (runScore != null)
+        {
+            runScore.CalcutedScore();
+        }
+
+        if (bestScore != null && runScore != null)
+        {
+            bestScore.EvaluateScore(runScore.FinalScore);
+        }
+
         RefreshSurvivalTime();
         RefreshKillCount();
         RefreshFinalScore();

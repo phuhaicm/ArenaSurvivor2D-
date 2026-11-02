@@ -34,6 +34,13 @@ public class PracticeBestScore : HaiMonoBehaviour
             FindFirstObjectByType<PracticeRunScore>();
     }
 
+    protected override void Awake()
+    {
+        base.Awake();
+        LoadRunScore();
+        LoadBestScore();
+    }
+
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -90,6 +97,11 @@ public class PracticeBestScore : HaiMonoBehaviour
             HandleScoreCalculated;
     }
 
+    public void EvaluateScore(int candidateScore)
+    {
+        HandleScoreCalculated(candidateScore);
+    }
+
     private void HandleScoreCalculated(int finalScore)
     {
         if (finalScore <= bestScore)
@@ -100,7 +112,7 @@ public class PracticeBestScore : HaiMonoBehaviour
         // Cập nhật dữ liệu nội bộ trước.
         bestScore = finalScore;
 
-        // Sau đó lưu dữ liệu.
+        // Sau đó lưu dữ liệu xuống JSON & PlayerPrefs.
         SaveBestScore();
 
         // Cuối cùng mới thông báo cho subscriber.
@@ -108,16 +120,22 @@ public class PracticeBestScore : HaiMonoBehaviour
     }
 
     // =========================================================
-    // SAVE / LOAD
+    // SAVE / LOAD (JSON + PlayerPrefs Sync)
     // =========================================================
 
     private void LoadBestScore()
     {
-        bestScore =
-            PlayerPrefs.GetInt(
-                BestScoreKey,
-                0
-            );//playerprefs được dùng để lưu các dữ liệu nhỏ int float string phù hợp với best score, âm lượng, một vài tùy chọn cài đặt đơn giản
+        int prefsBest = PlayerPrefs.GetInt(BestScoreKey, 0);
+        int jsonBest = PracticeSaveManager.Instance != null
+            ? PracticeSaveManager.Instance.GetBestScore()
+            : 0;
+
+        bestScore = Mathf.Max(prefsBest, jsonBest);
+
+        if (PracticeSaveManager.Instance != null && bestScore > jsonBest)
+        {
+            PracticeSaveManager.Instance.SetBestScore(bestScore, true);
+        }
 
         Debug.Log(
             $"{name}: Best Score loaded: {bestScore}",
@@ -135,6 +153,11 @@ public class PracticeBestScore : HaiMonoBehaviour
         );
 
         PlayerPrefs.Save();
+
+        if (PracticeSaveManager.Instance != null)
+        {
+            PracticeSaveManager.Instance.SetBestScore(bestScore, true);
+        }
 
         Debug.Log(
             $"{name}: New Best Score saved: {bestScore}",

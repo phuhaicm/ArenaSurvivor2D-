@@ -140,6 +140,7 @@ GameObject:
   - component: {fileID: 1472275642081514636}
   - component: {fileID: 7941513099125050665}
   - component: {fileID: 1507721780608329757}
+  - component: {fileID: -6752502037154468297}
   m_Layer: 0
   m_Name: PracticeAudioRoot
   m_TagString: Untagged
@@ -208,6 +209,40 @@ MonoBehaviour:
   defaultMasterVolume: 1
   defaultMusicVolume: 0.8
   defaultSfxVolume: 1
+--- !u!114 &-6752502037154468297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4244287342428954143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11ddf0440bd7346438c475a827a6ecc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  persistAcrossScenes: 1
+  prettyPrintJson: 1
+  currentSaveData:
+    saveVersion: 1
+    lastWriteTimestamp: 0
+    currency: 0
+    unlockedContentIds: []
+    permanentUpgrades: []
+    statistics:
+      totalRuns: 0
+      wins: 0
+      deaths: 0
+      bestSurvivalTime: 0
+      bestScore: 0
+      totalKills: 0
+      bossKills: 0
+      highestLevel: 1
+      totalPlayTime: 0
+    settings:
+      masterVolume: 1
+      musicVolume: 0.8
+      sfxVolume: 1
 --- !u!1 &5598510194107634818
 GameObject:
   m_ObjectHideFlags: 0
