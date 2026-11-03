@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
@@ -14,7 +15,16 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
     [SerializeField]
     private Rigidbody2D enemyRigidbody;
 
-    public bool IsBossTarget => isBossTarget;//Đánh dấu đây có phải là mục tiêu ưu tiên cấp Boss hay không.
+    private float baseMaxHealth;
+    private bool hasCachedBaseMaxHealth;
+    private bool isInvulnerable;
+
+    // Cho phép BossAttackController chặn cái chết khi Boss vẫn còn Phase máu tiếp theo
+    public Func<bool> LethalDamageInterceptor { get; set; }
+
+    public bool IsBossTarget => isBossTarget;
+    public bool IsInvulnerable => isInvulnerable;
+    public float BaseMaxHealth => hasCachedBaseMaxHealth ? baseMaxHealth : maxHealth;
 
     protected override void LoadComponents()
     {
@@ -24,26 +34,36 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
 
     protected override void Awake()
     {
+        CacheBaseMaxHealthIfNeeded();
         base.Awake();
         LoadPhysicsComponents();
     }
 
     protected override void OnEnable()
     {
+        CacheBaseMaxHealthIfNeeded();
         base.OnEnable();
         LoadPhysicsComponents();
         ResetRuntimeState();
 
-        // Quái vừa bật lên (sinh mới hoặc lấy từ Pool) -> Tự động ghi tên vào Target Registry
         PracticeTargetRegistry.RegisterTarget(this);
     }
 
     protected override void OnDisable()
     {
-        // Quái bị tắt (trả về Pool hoặc đổi Scene) -> Tự động rút tên khỏi Target Registry
         PracticeTargetRegistry.UnregisterTarget(this);
-
         base.OnDisable();
+    }
+
+    private void CacheBaseMaxHealthIfNeeded()
+    {
+        if (hasCachedBaseMaxHealth)
+        {
+            return;
+        }
+
+        baseMaxHealth = Mathf.Max(1f, maxHealth);
+        hasCachedBaseMaxHealth = true;
     }
 
     private void LoadPhysicsComponents()
@@ -59,9 +79,44 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
         }
     }
 
+    public void SetInvulnerable(bool invulnerable)
+    {
+        isInvulnerable = invulnerable;
+    }
+
+    public void ConfigureMaxHealthAndRefill(float newMaxHealth)
+    {
+        maxHealth = Mathf.Max(1f, newMaxHealth);
+        currentHealth = maxHealth;
+        isDead = false;
+
+        NotifyHealthChanged();
+    }
+
+    public override void TakeDamage(float damage)
+    {
+        if (isDead || isInvulnerable || damage <= 0f)
+        {
+            return;
+        }
+
+        base.TakeDamage(damage);
+    }
+
     protected override void Die()
     {
-        // Rút tên khỏi Registry ngay lập tức khi máu về 0 để viên đạn tiếp theo không bắn vào xác quái
+        if (isDead)
+        {
+            return;
+        }
+
+        // Nếu Boss còn Phase tiếp theo, LethalDamageInterceptor sẽ trả về true:
+        // Chuyển sang Phase mới, nạp lại đầy cây máu mới và KHÔNG gọi chết Boss!
+        if (LethalDamageInterceptor != null && LethalDamageInterceptor.Invoke())
+        {
+            return;
+        }
+
         PracticeTargetRegistry.UnregisterTarget(this);
 
         if (enemyCollider != null)
@@ -83,6 +138,7 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
     public void OnReturnedToPool()
     {
         PracticeTargetRegistry.UnregisterTarget(this);
+        isInvulnerable = false;
 
         if (enemyCollider != null)
         {
@@ -94,6 +150,9 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
 
     public void ResetRuntimeState()
     {
+        CacheBaseMaxHealthIfNeeded();
+        isInvulnerable = false;
+        maxHealth = baseMaxHealth;
         ResetHealth();
 
         if (enemyCollider != null)

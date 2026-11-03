@@ -34,6 +34,16 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     [SerializeField]
     private float initialCombatDelay = 1.25f;
 
+    [Header("Multi-Phase Health Bar Settings")]
+    [Tooltip("Nếu bật: Mỗi Phase có 1 thanh máu 100% riêng biệt. Đánh hết thanh máu Phase 1 sẽ chuyển sang Phase 2 và nạp đầy thanh máu mới!")]
+    [SerializeField]
+    private bool useSeparateHealthBarPerPhase = true;
+
+    [Tooltip("Thời gian Boss bất tử và ngừng bắn để biểu diễn hiệu ứng chuyển Phase (giây).")]
+    [Min(0f)]
+    [SerializeField]
+    private float phaseTransitionDuration = 1.25f;
+
     [Header("Phase Data")]
     [SerializeField]
     private List<PracticeBossPhaseDefinition> phases =
@@ -48,14 +58,21 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     private bool clearBossProjectilesOnDeath = true;
 
     private Coroutine attackLoopCoroutine;
+    private Coroutine phaseTransitionCoroutine;
     private bool attackInProgress;
+    private bool isTransitioningPhase;
     private int currentPhaseIndex = -1;
+    private int maxAllowedPhaseIndex = 99;
+    private float encounterHealthMultiplier = 1f;
     private PracticeBossAttackDefinition lastSelectedAttack;
 
     public event Action<int, PracticeBossPhaseDefinition> PhaseChanged;
 
     public int CurrentPhaseIndex => currentPhaseIndex;
+    public int MaxAllowedPhaseIndex => maxAllowedPhaseIndex;
     public bool IsAttackInProgress => attackInProgress;
+    public bool IsTransitioningPhase => isTransitioningPhase;
+
     public PracticeBossPhaseDefinition CurrentPhase
     {
         get
@@ -90,6 +107,12 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         LoadProjectileContainer();
         LoadAttackExecutors();
 
+        isTransitioningPhase = false;
+        encounterHealthMultiplier = 1f;
+        maxAllowedPhaseIndex = phases != null && phases.Count > 0
+            ? phases.Count - 1
+            : 0;
+
         ResetRuntimePhaseState();
         SubscribeBossEvents();
         ResetAttackPresentation();
@@ -100,9 +123,48 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     {
         UnsubscribeBossEvents();
         StopAttackLoop();
+        StopPhaseTransitionRoutine();
         ResetAttackPresentation();
 
         base.OnDisable();
+    }
+
+    // Được gọi bởi PracticeFinalBossController khi sinh Boss cho từng Đợt (Wave 1 Mid-Boss vs Wave 2 Final Boss)
+    public void ConfigureEncounterRules(
+        float healthMultiplier,
+        int allowedMaxPhaseIndex
+    )
+    {
+        LoadBossHealth();
+
+        encounterHealthMultiplier = Mathf.Max(0.2f, healthMultiplier);
+
+        int totalPhases = phases != null ? phases.Count : 0;
+        if (totalPhases > 0)
+        {
+            maxAllowedPhaseIndex = allowedMaxPhaseIndex < 0
+                ? totalPhases - 1
+                : Mathf.Clamp(allowedMaxPhaseIndex, 0, totalPhases - 1);
+        }
+        else
+        {
+            maxAllowedPhaseIndex = 0;
+        }
+
+        currentPhaseIndex = -1;
+        isTransitioningPhase = false;
+
+        if (totalPhases > 0)
+        {
+            SetPhase(0);
+            ApplyPhaseHealthBar(0);
+        }
+        else if (bossHealth != null)
+        {
+            bossHealth.ConfigureMaxHealthAndRefill(
+                bossHealth.BaseMaxHealth * encounterHealthMultiplier
+            );
+        }
     }
 
     private void LoadBossHealth()
@@ -152,10 +214,8 @@ public class PracticeBossAttackController : HaiMonoBehaviour
 
     private void LoadAttackExecutors()
     {
-        // Xóa các phần tử null trong danh sách nếu có
         attackExecutors.RemoveAll(executor => executor == null);
 
-        // Tìm tất cả các Executor đã được gắn trên Boss hoặc các object con của Boss
         PracticeBossAttackExecutorBase[] foundExecutors =
             GetComponentsInChildren<PracticeBossAttackExecutorBase>(true);
 
@@ -170,7 +230,6 @@ public class PracticeBossAttackController : HaiMonoBehaviour
             }
         }
 
-        // Tự động gắn Radial Executor nếu trên Prefab Boss chưa có
         if (FindExecutorForPattern(PracticeBossAttackPatternType.RadialBurst) == null)
         {
             PracticeBossRadialAttackExecutor radialExecutor =
@@ -184,7 +243,6 @@ public class PracticeBossAttackController : HaiMonoBehaviour
             attackExecutors.Add(radialExecutor);
         }
 
-        // Tự động gắn Aimed Spread Executor nếu trên Prefab Boss chưa có
         if (FindExecutorForPattern(PracticeBossAttackPatternType.AimedSpread) == null)
         {
             PracticeBossAimedSpreadAttackExecutor aimedExecutor =
@@ -206,6 +264,8 @@ public class PracticeBossAttackController : HaiMonoBehaviour
             return;
         }
 
+        bossHealth.LethalDamageInterceptor = TryInterceptLethalDamageForNextPhase;
+
         bossHealth.Died -= HandleBossDied;
         bossHealth.Died += HandleBossDied;
 
@@ -220,6 +280,11 @@ public class PracticeBossAttackController : HaiMonoBehaviour
             return;
         }
 
+        if (bossHealth.LethalDamageInterceptor == TryInterceptLethalDamageForNextPhase)
+        {
+            bossHealth.LethalDamageInterceptor = null;
+        }
+
         bossHealth.Died -= HandleBossDied;
         bossHealth.DamageTaken -= HandleBossDamageTaken;
     }
@@ -232,7 +297,107 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         if (phases != null && phases.Count > 0)
         {
             SetPhase(0);
+            ApplyPhaseHealthBar(0);
         }
+    }
+
+    // Chặn đòn kết liễu nếu Boss vẫn còn Phase tiếp theo trong đợt giao tranh này
+    private bool TryInterceptLethalDamageForNextPhase()
+    {
+        if (!useSeparateHealthBarPerPhase || phases == null || phases.Count <= 1)
+        {
+            return false;
+        }
+
+        int nextPhaseIndex = currentPhaseIndex + 1;
+        int upperPhaseLimit = Mathf.Min(maxAllowedPhaseIndex, phases.Count - 1);
+
+        // Nếu đã ở Phase cuối cùng được phép của Đợt này -> Cho phép Boss chết thật sự!
+        if (nextPhaseIndex > upperPhaseLimit)
+        {
+            return false;
+        }
+
+        // Vẫn còn Phase tiếp theo -> Chuyển sang Phase mới và nạp lại đầy thanh máu!
+        TransitionToNextPhaseBar(nextPhaseIndex);
+        return true;
+    }
+
+    private void TransitionToNextPhaseBar(int nextPhaseIndex)
+    {
+        // Dọn sạch đạn cũ của Phase trước để người chơi có nhịp thở công bằng
+        ClearActiveBossProjectiles();
+        SetTelegraphActive(false);
+
+        // Nạp đầy thanh máu mới cho Phase tiếp theo trước khi phát sự kiện PhaseChanged
+        // để PracticeBossPresentationUI đọc được ngay bình máu 100% mới!
+        ApplyPhaseHealthBar(nextPhaseIndex);
+        SetPhase(nextPhaseIndex);
+
+        if (phaseTransitionDuration > 0f && isActiveAndEnabled)
+        {
+            StopPhaseTransitionRoutine();
+            phaseTransitionCoroutine = StartCoroutine(PhaseTransitionPauseRoutine());
+        }
+    }
+
+    private IEnumerator PhaseTransitionPauseRoutine()
+    {
+        isTransitioningPhase = true;
+
+        if (bossHealth != null)
+        {
+            bossHealth.SetInvulnerable(true);
+        }
+
+        yield return WaitUntilRunningForSeconds(phaseTransitionDuration);
+
+        if (bossHealth != null)
+        {
+            bossHealth.SetInvulnerable(false);
+        }
+
+        isTransitioningPhase = false;
+        phaseTransitionCoroutine = null;
+    }
+
+    private void StopPhaseTransitionRoutine()
+    {
+        if (phaseTransitionCoroutine != null)
+        {
+            StopCoroutine(phaseTransitionCoroutine);
+            phaseTransitionCoroutine = null;
+        }
+
+        isTransitioningPhase = false;
+
+        if (bossHealth != null)
+        {
+            bossHealth.SetInvulnerable(false);
+        }
+    }
+
+    private void ApplyPhaseHealthBar(int phaseIndex)
+    {
+        if (bossHealth == null)
+        {
+            return;
+        }
+
+        float phaseMultiplier = 1f;
+
+        if (phases != null &&
+            phaseIndex >= 0 &&
+            phaseIndex < phases.Count &&
+            phases[phaseIndex] != null)
+        {
+            phaseMultiplier = phases[phaseIndex].PhaseHealthMultiplier;
+        }
+
+        float targetMaxHealth =
+            bossHealth.BaseMaxHealth * encounterHealthMultiplier * phaseMultiplier;
+
+        bossHealth.ConfigureMaxHealthAndRefill(targetMaxHealth);
     }
 
     private void HandleBossDamageTaken(float damageAmount)
@@ -242,39 +407,14 @@ public class PracticeBossAttackController : HaiMonoBehaviour
             return;
         }
 
-        EvaluatePhaseTransition();
-    }
-
-    private void EvaluatePhaseTransition()
-    {
-        if (phases == null || phases.Count == 0)
+        // Chỉ đánh giá chuyển Phase theo % máu nếu tắt chế độ Multi-Bar
+        if (!useSeparateHealthBarPerPhase)
         {
-            return;
-        }
-
-        float normalizedHealth = GetNormalizedHealth();
-        int targetPhaseIndex = currentPhaseIndex;
-
-        for (int i = currentPhaseIndex + 1; i < phases.Count; i++)
-        {
-            PracticeBossPhaseDefinition candidatePhase = phases[i];
-
-            if (candidatePhase == null)
-            {
-                continue;
-            }
-
-            if (normalizedHealth <= candidatePhase.HealthThreshold)
-            {
-                targetPhaseIndex = i;
-            }
-        }
-
-        if (targetPhaseIndex != currentPhaseIndex && targetPhaseIndex >= 0)
-        {
-            SetPhase(targetPhaseIndex);
+            EvaluatePhaseTransition();
         }
     }
+
+    
 
     private float GetNormalizedHealth()
     {
@@ -378,6 +518,12 @@ public class PracticeBossAttackController : HaiMonoBehaviour
                 break;
             }
 
+            // Chờ nếu Boss đang trong 1.25s gồng mình chuyển Phase
+            while (isTransitioningPhase && CanContinueAttacking())
+            {
+                yield return null;
+            }
+
             PracticeBossAttackDefinition selectedAttack = SelectNextAttack();
 
             if (selectedAttack == null || selectedAttack.ProjectilePrefab == null)
@@ -477,7 +623,7 @@ public class PracticeBossAttackController : HaiMonoBehaviour
 
         SetTelegraphActive(false);
 
-        if (!CanContinueAttacking())
+        if (!CanContinueAttacking() || isTransitioningPhase)
         {
             attackInProgress = false;
             yield break;
@@ -504,7 +650,7 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         }
 
         Debug.LogWarning(
-            $"{name}: Không tìm thấy Executor cho kiểu {attack.PatternType}. Vui lòng gắn Executor lên Boss Prefab.",
+            $"{name}: Không tìm thấy Executor cho kiểu bắn {attack.PatternType}.",
             this
         );
     }
@@ -526,72 +672,67 @@ public class PracticeBossAttackController : HaiMonoBehaviour
         return null;
     }
 
+    private void StopAttackLoop()
+    {
+        if (attackLoopCoroutine != null)
+        {
+            StopCoroutine(attackLoopCoroutine);
+            attackLoopCoroutine = null;
+        }
+
+        attackInProgress = false;
+    }
+
+    private bool CanContinueAttacking()
+    {
+        return bossHealth != null && !bossHealth.IsDead;
+    }
+
     private IEnumerator WaitUntilGameIsRunning()
     {
         while (gameStateController != null && !gameStateController.IsRunning)
         {
-            if (!CanContinueAttacking())
-            {
-                yield break;
-            }
-
             yield return null;
         }
     }
 
     private IEnumerator WaitUntilRunningForSeconds(float duration)
     {
-        if (duration <= 0f)
-        {
-            yield break;
-        }
+        float elapsed = 0f;
 
-        float elapsedTime = 0f;
-
-        while (elapsedTime < duration)
+        while (elapsed < duration)
         {
             if (!CanContinueAttacking())
             {
                 yield break;
             }
 
-            if (gameStateController != null && gameStateController.IsRunning)
+            if (gameStateController == null || gameStateController.IsRunning)
             {
-                elapsedTime += Time.deltaTime;
+                elapsed += Time.deltaTime;
             }
 
             yield return null;
         }
     }
 
-    private bool CanContinueAttacking()
+    private void SetTelegraphActive(bool isActive)
     {
-        if (!isActiveAndEnabled)
+        if (telegraphRenderer != null)
         {
-            return false;
+            telegraphRenderer.enabled = isActive;
         }
+    }
 
-        if (bossHealth == null || bossHealth.IsDead)
-        {
-            return false;
-        }
-
-        if (gameStateController == null)
-        {
-            return false;
-        }
-
-        if (gameStateController.IsGameOver || gameStateController.IsVictory)
-        {
-            return false;
-        }
-
-        return true;
+    private void ResetAttackPresentation()
+    {
+        SetTelegraphActive(false);
     }
 
     private void HandleBossDied()
     {
         StopAttackLoop();
+        StopPhaseTransitionRoutine();
         ResetAttackPresentation();
 
         if (clearBossProjectilesOnDeath)
@@ -601,54 +742,57 @@ public class PracticeBossAttackController : HaiMonoBehaviour
     }
 
     private void ClearActiveBossProjectiles()
-{
-    if (projectileContainer == null)
     {
-        return;
-    }
-
-    if (PracticeObjectPoolManager.Instance != null)
-    {
-        PracticeObjectPoolManager.Instance.DespawnAllActiveInContainer(projectileContainer);
-        return;
-    }
-
-    for (int i = projectileContainer.childCount - 1; i >= 0; i--)
-    {
-        Transform child = projectileContainer.GetChild(i);
-
-        if (child != null)
-        {
-            Destroy(child.gameObject);
-        }
-    }
-}
-
-    private void StopAttackLoop()
-    {
-        if (attackLoopCoroutine == null)
+        if (projectileContainer == null)
         {
             return;
         }
 
-        StopCoroutine(attackLoopCoroutine);
+        if (PracticeObjectPoolManager.Instance != null)
+        {
+            PracticeObjectPoolManager.Instance.DespawnAllActiveInContainer(projectileContainer);
+            return;
+        }
 
-        attackLoopCoroutine = null;
-        attackInProgress = false;
+        for (int i = projectileContainer.childCount - 1; i >= 0; i--)
+        {
+            Transform child = projectileContainer.GetChild(i);
+
+            if (child != null)
+            {
+                Destroy(child.gameObject);
+            }
+        }
     }
-
-    private void ResetAttackPresentation()
+    private void EvaluatePhaseTransition()
     {
-        SetTelegraphActive(false);
-    }
-
-    private void SetTelegraphActive(bool isActive)
-    {
-        if (telegraphRenderer == null)
+        if (phases == null || phases.Count == 0)
         {
             return;
         }
 
-        telegraphRenderer.enabled = isActive;
+        float normalizedHealth = GetNormalizedHealth();
+        int targetPhaseIndex = currentPhaseIndex;
+
+        for (int i = currentPhaseIndex + 1; i < phases.Count; i++)
+        {
+            PracticeBossPhaseDefinition candidatePhase = phases[i];
+
+            if (candidatePhase == null)
+            {
+                continue;
+            }
+
+            // Khi máu tụt xuống dưới ngưỡng HealthThreshold của Phase tiếp theo (ví dụ 0.5 cho Phase 2)
+            if (normalizedHealth <= candidatePhase.HealthThreshold)
+            {
+                targetPhaseIndex = i;
+            }
+        }
+
+        if (targetPhaseIndex != currentPhaseIndex && targetPhaseIndex >= 0)
+        {
+            SetPhase(targetPhaseIndex);
+        }
     }
 }

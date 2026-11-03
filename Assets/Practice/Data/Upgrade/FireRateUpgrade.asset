@@ -15,9 +15,9 @@ MonoBehaviour:
   upgradeId: upgrade_fire_rate
   category: 0
   displayName: Rapid Fire
-  description: "Gi\u1EA3m th\u1EDDi gian gi\u1EEFa 2 l\u1EA7n b\u1EAFn 0.1 gi\xE2y"
+  description: "Gi\u1EA3m th\u1EDDi gian gi\u1EEFa 2 l\u1EA7n b\u1EAFn (gi\xE2y)"
   icon: {fileID: 0}
   upgradeType: 1
-  baseValue: 0.5
-  valueIncreasePerLevel: 0.02
+  baseValue: 0.05
+  valueIncreasePerLevel: 0.01
   maxLevel: 5

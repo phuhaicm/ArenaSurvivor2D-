@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 914cc0936f1146a4593ea0eff16a6532, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 2
+  moveSpeed: 1.5
   stoppingDistance: 0.8
   targetSearchInterval: 0.5
   enemyRigidbody: {fileID: 6684418186157247156}
@@ -122,7 +122,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8afdec420a35eb042acb4cfd26519825, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 220
   currentHealth: 0
   isBossTarget: 0
   enemyCollider: {fileID: 1019942089556460235}

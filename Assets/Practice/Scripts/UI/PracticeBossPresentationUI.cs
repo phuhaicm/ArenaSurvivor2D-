@@ -187,7 +187,18 @@ public class PracticeBossPresentationUI : HaiMonoBehaviour
 
         SetBossHealthPanelActive(true);
 
-        PlayWarning(bossDisplayName);
+        string title = ResolveBossDisplayName();
+        PlayWarning(title);
+    }
+
+    private string ResolveBossDisplayName()
+    {
+        if (bossController != null && !string.IsNullOrWhiteSpace(bossController.CurrentBossTitle))
+        {
+            return bossController.CurrentBossTitle;
+        }
+
+        return string.IsNullOrWhiteSpace(bossDisplayName) ? "FINAL BOSS" : bossDisplayName;
     }
 
     // =========================================================
@@ -375,26 +386,37 @@ public class PracticeBossPresentationUI : HaiMonoBehaviour
         PracticeBossPhaseDefinition phaseDefinition
     )
     {
-        if (bossNameText == null ||
-            phaseDefinition == null)
+        if (bossNameText == null)
         {
             return;
         }
 
-        string phaseName =
-            phaseDefinition.PhaseName;
+        string title = ResolveBossDisplayName();
+
+        if (phaseDefinition == null)
+        {
+            bossNameText.text = title;
+            return;
+        }
+
+        string phaseName = phaseDefinition.PhaseName;
 
         if (string.IsNullOrWhiteSpace(phaseName))
         {
-            bossNameText.text =
-                bossDisplayName;
-
+            bossNameText.text = title;
             return;
         }
 
-        bossNameText.text =
-            $"{bossDisplayName} - " +
-            $"{phaseName.ToUpperInvariant()}";
+        if (activeBossAttackController != null && activeBossAttackController.MaxAllowedPhaseIndex > 0)
+        {
+            int currentNum = activeBossAttackController.CurrentPhaseIndex + 1;
+            int totalNum = activeBossAttackController.MaxAllowedPhaseIndex + 1;
+            bossNameText.text = $"{title} - {phaseName.ToUpperInvariant()} ({currentNum}/{totalNum})";
+        }
+        else
+        {
+            bossNameText.text = title;
+        }
     }
 
     private void ShowPhaseTransitionWarning(
@@ -429,8 +451,7 @@ public class PracticeBossPresentationUI : HaiMonoBehaviour
     {
         if (bossNameText != null)
         {
-            bossNameText.text =
-                bossDisplayName;
+            bossNameText.text = ResolveBossDisplayName();
         }
 
         RefreshBossHealth();

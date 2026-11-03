@@ -496,8 +496,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 145, y: -110}
+  m_SizeDelta: {x: 250, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &53913600
 MonoBehaviour:
@@ -3831,8 +3831,8 @@ MonoBehaviour:
   mainCamera: {fileID: 1910895553}
   playerTarget: {fileID: 1585446911}
   initalSpawnDelay: 1
-  spawnInterval: 10
-  maxAliveEnemies: 1
+  spawnInterval: 1.6
+  maxAliveEnemies: 6
   spawnPadding: 1.5
   miniumDistanceFromPlayer: 3
   maxiumSpawnAttemps: 8
@@ -4079,9 +4079,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   survivalTimer: {fileID: 2087182589}
   gameStateController: {fileID: 536344655}
-  runDuration: 30
+  enemySpawner: {fileID: 514465453}
   bossController: {fileID: 865544101}
-  killCounter: {fileID: 1598476128}
+  killCounter: {fileID: 0}
+  enableMultiWave: 1
+  wave1SurvivalDuration: 45
+  midBossHealthMultiplier: 0.5
+  wave2SurvivalDuration: 55
+  finalBossHealthMultiplier: 1
+  finalBossMaxPhaseIndex: 2
 --- !u!1 &571448162
 GameObject:
   m_ObjectHideFlags: 0
@@ -4865,8 +4871,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 0, y: 195}
+  m_SizeDelta: {x: 560, y: 68}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &746260690
 MonoBehaviour:
@@ -7864,7 +7870,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b03c01671a433d49bacd8a7162cd375, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 10000000
+  maxHealth: 10000
   currentHealth: 0
   invulnerabilityDuration: 1
 --- !u!114 &1142143052
@@ -10432,16 +10438,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c0718ebeddf1df4985740c515dd9115, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  difficultyInterval: 30
-  initialSpawnInterval: 2
-  spawnIntervalReduction: 0.2
-  minimunSpawnInterval: 0.5
-  initialMaxAliveEnemies: 5
-  maxAliveIncreasePerLevel: 2
-  maximunAliveEnemies: 30
+  difficultyInterval: 20
+  initialSpawnInterval: 1.6
+  spawnIntervalReduction: 0.12
+  minimunSpawnInterval: 0.4
+  initialMaxAliveEnemies: 6
+  maxAliveIncreasePerLevel: 3
+  maximunAliveEnemies: 45
   initialBatchSize: 1
   maxBatchIncreasePerLevel: 1
-  maximunBatchSize: 5
+  maximunBatchSize: 4
 --- !u!1 &1858757752
 GameObject:
   m_ObjectHideFlags: 0

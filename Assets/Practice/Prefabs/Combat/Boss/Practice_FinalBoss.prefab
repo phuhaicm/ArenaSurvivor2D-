@@ -198,7 +198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8afdec420a35eb042acb4cfd26519825, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 1800
   currentHealth: 0
   isBossTarget: 1
   enemyCollider: {fileID: 1019942089556460235}
@@ -369,6 +369,7 @@ MonoBehaviour:
   phases:
   - {fileID: 11400000, guid: b8bd13d7dbca26b48bf31d94a31099e6, type: 2}
   - {fileID: 11400000, guid: 6e5bb25e13a19e44cb1428dac24fab88, type: 2}
+  - {fileID: 11400000, guid: a2a90749feca496eba3709927a4c37ca, type: 2}
   fallbackAttackDefinition: {fileID: 11400000, guid: 1f0fdbe1c3174204587506c9fa870940,
     type: 2}
   clearBossProjectilesOnDeath: 1
