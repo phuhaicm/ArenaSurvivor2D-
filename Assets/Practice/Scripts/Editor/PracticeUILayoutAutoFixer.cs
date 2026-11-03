@@ -66,6 +66,17 @@ public static class PracticeUILayoutAutoFixer
         );
     }
 
+    [MenuItem("Tools/Practice/Configure Unity External Script Editor Args (Jump to Line)")]
+    public static void ConfigureExternalScriptEditorArgs()
+    {
+        EditorPrefs.SetString("kScriptEditorArgs", "-g \"$(File)\":$(Line):$(Column)");
+        Debug.Log(
+            "<color=#4CAF50><b>[Script Editor Setup]</b></color> " +
+            "Đã cấu hình External Script Editor Args: <b>-g \"$(File)\":$(Line):$(Column)</b>! " +
+            "Giờ đây khi double-click vào lỗi trong Console, IDE sẽ tự động nhảy thẳng đến đúng số dòng và cột bị lỗi."
+        );
+    }
+
     private static int FixActiveSceneInternal()
     {
         int fixedCount = 0;
@@ -238,9 +249,10 @@ public static class PracticeUILayoutAutoFixer
         {
             SerializedObject soDirector = new SerializedObject(runDirector);
             SerializedProperty propDuration = soDirector.FindProperty("runDuration");
+            // Chỉ cứu trường hợp quên chỉnh giá trị test (<= 5s). Giá trị chính thức là 180s (3 phút).
             if (propDuration != null && propDuration.floatValue <= 5f)
             {
-                propDuration.floatValue = 30f;
+                propDuration.floatValue = 180f;
             }
             PracticePlayerKillCounter killCounter =
                 Object.FindFirstObjectByType<PracticePlayerKillCounter>(FindObjectsInactive.Include);
@@ -1046,7 +1058,7 @@ public static class PracticeUILayoutAutoFixer
 
             EnsurePanelAnimatorOnModal(gameOverPanel.gameObject);
 
-            Transform goText = gameOverPanel.Find("GameOverText");
+            Transform goText = gameOverPanel.Find("GameOverText") ?? gameOverPanel.Find("GameOverTitleText");
             if (goText != null)
             {
                 ConfigureTextElement(
@@ -1123,7 +1135,7 @@ public static class PracticeUILayoutAutoFixer
                 );
             }
 
-            Transform mainMenuBtn = gameOverPanel.Find("MainMenuButton");
+            Transform mainMenuBtn = gameOverPanel.Find("MainMenuButton") ?? gameOverPanel.Find("GameOverMainMenuButton");
             if (mainMenuBtn != null)
             {
                 ConfigureButtonElement(
