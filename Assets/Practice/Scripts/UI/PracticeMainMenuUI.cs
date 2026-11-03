@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class PracticeMainMenuUI : HaiMonoBehaviour
@@ -29,7 +31,7 @@ public class PracticeMainMenuUI : HaiMonoBehaviour
         }
         sceneLoader = PracticeSceneLoader.Instance;
 
-        if(sceneLoader != null)
+        if (sceneLoader != null)
         {
             return;
         }
@@ -43,6 +45,7 @@ public class PracticeMainMenuUI : HaiMonoBehaviour
         base.OnEnable();
 
         LoadSceneLoader();
+        SanitizeAllButtons();
         SubscribeButtonEvents();
     }
 
@@ -58,6 +61,35 @@ public class PracticeMainMenuUI : HaiMonoBehaviour
         base.Start();
 
         Time.timeScale = 1f;
+    }
+
+    private void SanitizeAllButtons()
+    {
+        SanitizeButtonChildren(playButton);
+        SanitizeButtonChildren(quitButton);
+    }
+
+    private void SanitizeButtonChildren(Button parentButton)
+    {
+        if (parentButton == null) return;
+
+        Button[] childButtons = parentButton.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < childButtons.Length; i++)
+        {
+            if (childButtons[i] != null && childButtons[i] != parentButton)
+            {
+                childButtons[i].enabled = false;
+            }
+        }
+
+        TMP_Text[] childTexts = parentButton.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < childTexts.Length; i++)
+        {
+            if (childTexts[i] != null)
+            {
+                childTexts[i].raycastTarget = false;
+            }
+        }
     }
 
     // =========================================================
@@ -109,74 +141,46 @@ public class PracticeMainMenuUI : HaiMonoBehaviour
     // =========================================================
     // BUTTON HANDLERS
     // =========================================================
-    private void HandlePlayButtonClicked()
-{
-    PracticeAudioManager.Instance?.
-        PlayButtonClickSfx();
 
-    if (sceneLoader == null)
-    {
-        return;
-    }
-
-    sceneLoader.LoadScene(
-        PracticeSceneNames.GamePlay
-    );
-}
-private void HandleQuitButtonClicked()
-{
-    PracticeAudioManager.Instance?.
-        PlayButtonClickSfx();
-
-    Time.timeScale = 1f;
-    Application.Quit();
-}
     private void HandlePlayClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
         if (sceneLoader == null)
         {
-            Debug.LogError(
-                $"{name}: PracticeSceneLoader đang null.",
-                this
-            );
-
-            return;
+            LoadSceneLoader();
         }
 
-        Debug.Log(
-            $"{name}: Request loading scene " +
-            $"{PracticeSceneNames.GamePlay}.",
-            this
-        );
+        Time.timeScale = 1f;
 
-        bool loadingStarted =
-            sceneLoader.LoadScene(
-                PracticeSceneNames.GamePlay
-            );
-
-        if (!loadingStarted)
+        if (sceneLoader != null)
         {
-            Debug.LogWarning(
-                $"{name}: Loading request bị từ chối.",
-                this
-            );
+            bool loadingStarted =
+                sceneLoader.LoadScene(
+                    PracticeSceneNames.GamePlay
+                );
 
-            return;
+            if (loadingStarted)
+            {
+                if (playButton != null)
+                {
+                    playButton.interactable = false;
+                }
+
+                if (quitButton != null)
+                {
+                    quitButton.interactable = false;
+                }
+                return;
+            }
         }
 
-        if (playButton != null)
-        {
-            playButton.interactable = false;
-        }
-
-        if (quitButton != null)
-        {
-            quitButton.interactable = false;
-        }
+        SceneManager.LoadScene(PracticeSceneNames.GamePlay);
     }
 
     private void HandleQuitClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
         Time.timeScale = 1f;
         Application.Quit();
     }

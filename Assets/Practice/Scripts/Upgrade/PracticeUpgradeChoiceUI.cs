@@ -1,8 +1,7 @@
-//using System;
-using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
 using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
 {
@@ -13,27 +12,26 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
 
     [Header("Upgrade Choices")]
     [SerializeField] private PracticeUpgradeDefinition[] upgradePool;
+
     [Header("UI References")]
     [SerializeField] private GameObject upgradePanel;
-    [Header("Choice Âctions")]
+
+    [Header("Choice Actions")]
     [SerializeField] private Button rerollButton;
     [SerializeField] private Button skipButton;
+
     [Header("Reroll Settings")]
     [SerializeField, Min(0)] private int rerollPerChoices = 1;//lượt reroll
     [SerializeField] private int remainingRerolls;//số reroll hiện có
 
     [SerializeField] private TextMeshProUGUI titleText;
-    //[SerializeField] private Button damageButton;
-    //[SerializeField] private Button fireRateButton;
-    //[SerializeField] private Button projectileButton;
     [SerializeField] private Button[] choiceButtons;
 
     private int pendingUpgradeChoices;
-    private readonly List<PracticeUpgradeDefinition>
-    currentChoices = new();//choices hiện trên màn hình UI 3 choices
-    private readonly List<PracticeUpgradeDefinition>
-    availableChoice = new();// đây là mảng tạm cho upgrade
+    private readonly List<PracticeUpgradeDefinition> currentChoices = new();//choices hiện trên màn hình UI 3 choices
+    private readonly List<PracticeUpgradeDefinition> availableChoice = new();// đây là mảng tạm cho upgrade
     private readonly Dictionary<PracticeUpgradeDefinition, int> upgradeLevels = new();//lưu upgrade level run time
+
     protected override void LoadComponents()
     {
         base.LoadComponents();
@@ -45,6 +43,18 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
 
     protected virtual void LoadLevelSystem()
     {
+        PracticePlayerHealth playerHealth = FindFirstObjectByType<PracticePlayerHealth>();
+        if (playerHealth != null)
+        {
+            PracticePlayerLevelSystem playerLevel =
+                playerHealth.GetComponentInChildren<PracticePlayerLevelSystem>(true);
+            if (playerLevel != null)
+            {
+                levelSystem = playerLevel;
+                return;
+            }
+        }
+
         if (levelSystem != null) return;
 
         levelSystem = FindFirstObjectByType<PracticePlayerLevelSystem>();
@@ -52,10 +62,23 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
 
     protected virtual void LoadUpgradeApplier()
     {
+        PracticePlayerHealth playerHealth = FindFirstObjectByType<PracticePlayerHealth>();
+        if (playerHealth != null)
+        {
+            PracticeShooterUpgradeApplier playerApplier =
+                playerHealth.GetComponentInChildren<PracticeShooterUpgradeApplier>(true);
+            if (playerApplier != null)
+            {
+                upgradeApplier = playerApplier;
+                return;
+            }
+        }
+
         if (upgradeApplier != null) return;
 
         upgradeApplier = FindFirstObjectByType<PracticeShooterUpgradeApplier>();
     }
+
     protected virtual void LoadGameStateController()
     {
         if (gameStateController != null) return;
@@ -67,11 +90,11 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
     {
         base.Start();
 
-        //HidePanel();
-        if(upgradePanel != null)
+        if (upgradePanel != null && (gameStateController == null || !gameStateController.IsChoosingUpgrade))
         {
             upgradePanel.SetActive(false);
         }
+
         RefeshButtonTexts();
         RefeshRerollButton();
         RefeshSkipButton();
@@ -81,59 +104,109 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
     {
         base.OnEnable();
 
+        LoadLevelSystem();
+        LoadUpgradeApplier();
+        LoadGameStateController();
+
+        SanitizeAllButtons();
         SubscribeLevelEvents();
         SubscribeButtonEvents();
+        SubscribeGameStateEvents();
     }
 
     protected override void OnDisable()
     {
-        
         UnsubscribeLevelEvents();
         UnsubscribeButtonEvents();
+        UnSubscribeGameStateEvents();
         base.OnDisable();
     }
+
+    private void SanitizeAllButtons()
+    {
+        if (choiceButtons != null)
+        {
+            for (int i = 0; i < choiceButtons.Length; i++)
+            {
+                SanitizeButtonChildren(choiceButtons[i]);
+            }
+        }
+
+        SanitizeButtonChildren(rerollButton);
+        SanitizeButtonChildren(skipButton);
+    }
+
+    private void SanitizeButtonChildren(Button parentButton)
+    {
+        if (parentButton == null) return;
+
+        Button[] childButtons = parentButton.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < childButtons.Length; i++)
+        {
+            if (childButtons[i] != null && childButtons[i] != parentButton)
+            {
+                childButtons[i].enabled = false;
+            }
+        }
+
+        TMP_Text[] childTexts = parentButton.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < childTexts.Length; i++)
+        {
+            if (childTexts[i] != null)
+            {
+                childTexts[i].raycastTarget = false;
+            }
+        }
+    }
+
     protected void BuildAvailableChoices()//lúc nào cũng phải tạo 1 mảng tạm để làm việc ko đụng cái gốc trong inspector
     {
         availableChoice.Clear();
-        
-        foreach(PracticeUpgradeDefinition upgrade in upgradePool)
+
+        if (upgradePool == null) return;
+
+        foreach (PracticeUpgradeDefinition upgrade in upgradePool)
         {
-            if(upgrade == null) continue;
-            if(HasReachedMaxiumLevel(upgrade)) continue;
+            if (upgrade == null) continue;
+            if (HasReachedMaxiumLevel(upgrade)) continue;
             availableChoice.Add(upgrade);
         }
     }
+
     protected int GetUpgradeLevel(PracticeUpgradeDefinition upgrade)
     {
-        if(upgrade == null) return 0;
-        if(upgradeLevels.TryGetValue(upgrade, out int currentLevel))// trả 2 kết quả dictionary có chưa upgrade hay ko nếu có thì level hiện tại là bao nhiêu
+        if (upgrade == null) return 0;
+        if (upgradeLevels.TryGetValue(upgrade, out int currentLevel))// trả 2 kết quả dictionary có chưa upgrade hay ko nếu có thì level hiện tại là bao nhiêu
         {
             return currentLevel;
         }
         return 0;
     }
+
     protected bool HasReachedMaxiumLevel(PracticeUpgradeDefinition upgrade)
     {
-        if(upgrade == null) return true;
+        if (upgrade == null) return true;
         int currentLevel = GetUpgradeLevel(upgrade);
-        
+
         return currentLevel >= upgrade.MaxLevel;
     }
+
     protected void IncreaseUpgradeLevel(PracticeUpgradeDefinition upgrade)//nâng level run time
     {
-        if(upgrade == null) return;
+        if (upgrade == null) return;
         int currentLevel = GetUpgradeLevel(upgrade);
         int nextLevel = currentLevel + 1;
 
         upgradeLevels[upgrade] = nextLevel;
     }
+
     protected bool GenerateRandomChoices()
     {
         currentChoices.Clear();
         BuildAvailableChoices();
 
         int choiceCount = Mathf.Min(3, availableChoice.Count);
-        for(int i = 0; i < choiceCount; i++)//ko có = tại vì nếu choiceCount là 2 thì chỉ cần random 1 lần 
+        for (int i = 0; i < choiceCount; i++)//ko có = tại vì nếu choiceCount là 2 thì chỉ cần random 1 lần 
         {
             int randomIndex = Random.Range(0, availableChoice.Count);
             PracticeUpgradeDefinition selectedUpgrade = availableChoice[randomIndex];
@@ -143,10 +216,12 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
         }
         return currentChoices.Count > 0;
     }
+
     private void SubscribeLevelEvents()
     {
         if (levelSystem == null) return;
 
+        levelSystem.LevelChanged -= HandleLeveledUp;
         levelSystem.LevelChanged += HandleLeveledUp;
     }
 
@@ -159,73 +234,89 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
 
     private void SubscribeButtonEvents()
     {
-        if(choiceButtons == null || choiceButtons.Length < 3) return;
+        if (choiceButtons != null && choiceButtons.Length >= 3)
+        {
+            if (choiceButtons[0] != null)
+            {
+                choiceButtons[0].onClick.RemoveListener(HandleButtonChoice1Clicked);
+                choiceButtons[0].onClick.AddListener(HandleButtonChoice1Clicked);
+            }
+            if (choiceButtons[1] != null)
+            {
+                choiceButtons[1].onClick.RemoveListener(HandleButtonChoice2Clicked);
+                choiceButtons[1].onClick.AddListener(HandleButtonChoice2Clicked);
+            }
+            if (choiceButtons[2] != null)
+            {
+                choiceButtons[2].onClick.RemoveListener(HandleButtonChoice3Clicked);
+                choiceButtons[2].onClick.AddListener(HandleButtonChoice3Clicked);
+            }
+        }
 
-        if(choiceButtons[0] != null)
+        if (rerollButton != null)
         {
-            choiceButtons[0].onClick.AddListener(HandleButtonChoice1Clicked);
-        }
-        if(choiceButtons[1] != null)
-        {
-            choiceButtons[1].onClick.AddListener(HandleButtonChoice2Clicked);
-        }
-        if(choiceButtons[2] != null)
-        {
-            choiceButtons[2].onClick.AddListener(HandleButtonChoice3Clicked);
-        }
-        if(rerollButton != null)
-        {
+            rerollButton.onClick.RemoveListener(HandleRerollButtonClicked);
             rerollButton.onClick.AddListener(HandleRerollButtonClicked);
         }
-        if(skipButton != null)
+        if (skipButton != null)
         {
+            skipButton.onClick.RemoveListener(HandleSkipButtonClicked);
             skipButton.onClick.AddListener(HandleSkipButtonClicked);
         }
     }
+
     private void UnsubscribeButtonEvents()
     {
-        if(choiceButtons == null || choiceButtons.Length < 3) return;
+        if (choiceButtons != null && choiceButtons.Length >= 3)
+        {
+            if (choiceButtons[0] != null)
+            {
+                choiceButtons[0].onClick.RemoveListener(HandleButtonChoice1Clicked);
+            }
+            if (choiceButtons[1] != null)
+            {
+                choiceButtons[1].onClick.RemoveListener(HandleButtonChoice2Clicked);
+            }
+            if (choiceButtons[2] != null)
+            {
+                choiceButtons[2].onClick.RemoveListener(HandleButtonChoice3Clicked);
+            }
+        }
 
-        if(choiceButtons[0] != null)
-        {
-            choiceButtons[0].onClick.RemoveListener(HandleButtonChoice1Clicked);
-        }
-        if(choiceButtons[1] != null)
-        {
-            choiceButtons[1].onClick.RemoveListener(HandleButtonChoice2Clicked);
-        }
-        if(choiceButtons[2] != null)
-        {
-            choiceButtons[2].onClick.RemoveListener(HandleButtonChoice3Clicked);
-        }
-        if(rerollButton != null)
+        if (rerollButton != null)
         {
             rerollButton.onClick.RemoveListener(HandleRerollButtonClicked);
         }
-        if(skipButton != null)
+        if (skipButton != null)
         {
             skipButton.onClick.RemoveListener(HandleSkipButtonClicked);
         }
     }
+
     protected void SubscribeGameStateEvents()
     {
-        if(gameStateController == null) return;
+        if (gameStateController == null) return;
 
+        gameStateController.StateChanged -= HandleGameStateChanged;
         gameStateController.StateChanged += HandleGameStateChanged;
-        HandleGameStateChanged(gameStateController.CurrentState);
     }
+
     protected void UnSubscribeGameStateEvents()
     {
-        if(gameStateController == null) return;
+        if (gameStateController == null) return;
 
         gameStateController.StateChanged -= HandleGameStateChanged;
     }
+
     protected void HandleGameStateChanged(PracticeGameStates gameStates)
     {
-        bool shoulUpgradePanelMenu = gameStates == PracticeGameStates.Paused;
+        bool shouldShowUpgradePanel = gameStates == PracticeGameStates.UpgradeChoices;
 
-        SetUpgradePanelMenu(shoulUpgradePanelMenu);
-        if(gameStates != PracticeGameStates.GameOver) return;
+        SetUpgradePanelMenu(shouldShowUpgradePanel);
+        if (gameStates != PracticeGameStates.GameOver && gameStates != PracticeGameStates.Victory)
+        {
+            return;
+        }
 
         pendingUpgradeChoices = 0;
         currentChoices.Clear();
@@ -233,16 +324,20 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
         RefeshRerollButton();
         RefeshSkipButton();
     }
-    protected void SetUpgradePanelMenu(bool isPause)
-    {
-        if(upgradePanel == null) return;
 
-        upgradePanel.SetActive(isPause);
+    protected void SetUpgradePanelMenu(bool isChoosingUpgrade)
+    {
+        if (upgradePanel == null) return;
+
+        upgradePanel.SetActive(isChoosingUpgrade);
     }
+
     protected void HandleRerollButtonClicked()
     {
-        if(pendingUpgradeChoices <= 0) return;
-        if(remainingRerolls <= 0) return;
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
+        if (pendingUpgradeChoices <= 0) return;
+        if (remainingRerolls <= 0) return;
         remainingRerolls--;
 
         bool hasReroll = GenerateRandomChoices();
@@ -256,19 +351,23 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
         RefeshButtonTexts();
         RefeshRerollButton();
     }
+
     protected void HandleSkipButtonClicked()
     {
-        if(pendingUpgradeChoices <= 0) return;
-        Debug.Log($"{name}: upgrade choice skipped.",this);
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
+        if (pendingUpgradeChoices <= 0) return;
+        Debug.Log($"{name}: upgrade choice skipped.", this);
         CompleteOneChoice();
     }
+
     protected void RefeshRerollButton()
     {
-        if(rerollButton == null) return;
+        if (rerollButton == null) return;
         bool canReroll = pendingUpgradeChoices > 0 && remainingRerolls > 0 && currentChoices.Count > 0;
         rerollButton.interactable = canReroll;
 
-        SetButtonText(rerollButton, $"Reroll ({remainingRerolls})");
+        SetButtonText(rerollButton, $"REROLL ({remainingRerolls})");
     }
 
     private void HandleLeveledUp(float newLevel)
@@ -276,26 +375,27 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
         PracticeAudioManager.Instance?.PlayLevelUpSfx();
         pendingUpgradeChoices++;
 
-        if(titleText != null)
+        if (titleText != null)
         {
-            titleText.text = $"Level {newLevel} reached! Choose an upgrade:";
+            titleText.text = $"LEVEL {Mathf.RoundToInt(newLevel)} REACHED! CHOOSE AN UPGRADE:";
         }
-        if(pendingUpgradeChoices > 1) return;//nghĩa là đã có 1 lượt đang hiển thị chỉ ghi nhận thêm pending chứ ko thay đổi currentchoices
-        
+        if (pendingUpgradeChoices > 1) return;//nghĩa là đã có 1 lượt đang hiển thị chỉ ghi nhận thêm pending chứ ko thay đổi currentchoices
+
         bool prepareSuccesfull = PrepareNextChoices();
-        if(prepareSuccesfull) return; // có nghĩa là nếu thành công rồi thì xong tương đương == true
+        if (prepareSuccesfull) return; // có nghĩa là nếu thành công rồi thì xong tương đương == true
 
         pendingUpgradeChoices = 0;
         HidePanel();
 
-        Debug.Log($"{name}: Không còn upgrade hợp lệ",this);        
+        Debug.Log($"{name}: Không còn upgrade hợp lệ", this);
     }
+
     protected bool PrepareNextChoices()
     {
         remainingRerolls = rerollPerChoices;
         bool hasReroll = GenerateRandomChoices();
 
-        if(!hasReroll) return false;
+        if (!hasReroll) return false;
 
         RefeshButtonTexts();
         RefeshRerollButton();
@@ -308,24 +408,30 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
     {
         ApplyChoice(0);
     }
+
     private void HandleButtonChoice2Clicked()
     {
         ApplyChoice(1);
     }
+
     private void HandleButtonChoice3Clicked()
     {
         ApplyChoice(2);
-    } 
+    }
+
     private void ApplyChoice(int choiceIndex)
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
         if (!CanChooseUpgrade())
         {
-            Debug.LogWarning($"{name}: Cannot choose upgrade. ", this);
+            Debug.LogWarning($"{name}: Cannot choose upgrade.", this);
+            return;
         }
-        //if(upgradePool == null) return;
-        if(choiceIndex < 0 || choiceIndex >= currentChoices.Count)
+
+        if (choiceIndex < 0 || choiceIndex >= currentChoices.Count)
         {
-            Debug.LogWarning($"{name}: Upgrade choice index" + $"{choiceIndex}: không hợp lệ", this);
+            Debug.LogWarning($"{name}: Upgrade choice index {choiceIndex} không hợp lệ", this);
             return;
         }
 
@@ -334,112 +440,126 @@ public class PracticeUpgradeChoiceUI : HaiMonoBehaviour
         int nextUpgradeLevel = currentUpgradeLevel + 1;
         bool appliedSuccesfully = upgradeApplier.ApplyUpgrade(selectedUpgrade, nextUpgradeLevel);
 
-        if(!appliedSuccesfully) return;
+        if (!appliedSuccesfully) return;
         IncreaseUpgradeLevel(selectedUpgrade);
         CompleteOneChoice();
     }
+
     private bool CanChooseUpgrade()
     {
-        if(pendingUpgradeChoices <= 0) return false;
-        if(upgradeApplier == null ) return false;
+        if (pendingUpgradeChoices <= 0) return false;
+        if (upgradeApplier == null)
+        {
+            LoadUpgradeApplier();
+        }
+        if (upgradeApplier == null) return false;
 
         return true;
     }
+
     private void CompleteOneChoice()
     {
         pendingUpgradeChoices = Mathf.Max(0, pendingUpgradeChoices - 1);
 
-        if(pendingUpgradeChoices > 0)
+        if (pendingUpgradeChoices > 0)
         {
             bool hasRerollChoices = PrepareNextChoices();
 
-            if(hasRerollChoices) return;
+            if (hasRerollChoices) return;
             pendingUpgradeChoices = 0;
         }
         currentChoices.Clear();
         HidePanel();
     }
+
     protected void RefeshSkipButton()
     {
-        if(skipButton == null) return;
+        if (skipButton == null) return;
         skipButton.interactable = pendingUpgradeChoices > 0;
+        SetButtonText(skipButton, "SKIP");
     }
+
     private void ShowPanel()
     {
-        if(gameStateController == null) return;
+        if (gameStateController == null) return;
 
         bool stateChanged = gameStateController.RequestUpgradeChoices();
-        if(!stateChanged && !gameStateController.IsChoosingUpgrade) return;
+        if (!stateChanged && !gameStateController.IsChoosingUpgrade) return;
 
-        if(upgradePanel != null)
+        if (upgradePanel != null)
         {
             upgradePanel.SetActive(true);
         }
     }
-    private void HidePanel(){
-        if(upgradePanel != null)
+
+    private void HidePanel()
+    {
+        if (upgradePanel != null)
         {
             upgradePanel.SetActive(false);
         }
-        if(rerollButton != null)
+        if (rerollButton != null)
         {
             rerollButton.interactable = false;//thuộc gameObject với lại dùng interactable thì vẫn hiện thị button như ko bấm còn sài gameObject.SetActive(false) là vô hiệu hóa và mất nút luôn
         }
-        if(skipButton != null)
+        if (skipButton != null)
         {
             skipButton.interactable = false;
         }
-        if(gameStateController == null) return;
+        if (gameStateController == null) return;
 
         if (gameStateController.IsChoosingUpgrade)
         {
             gameStateController.RequestRunning();
         }
     }
+
     private void RefeshButtonTexts()
     {
-        if(choiceButtons == null) return;
-        for(int i = 0; i < choiceButtons.Length; i++)
+        if (choiceButtons == null) return;
+        for (int i = 0; i < choiceButtons.Length; i++)
         {
             Button button = choiceButtons[i];
 
-            if(button == null) continue;
-            if(i >= currentChoices.Count)
+            if (button == null) continue;
+            if (i >= currentChoices.Count)
             {
-            button.interactable = false;
-            SetButtonText(button, "No upgrade");
+                button.interactable = false;
+                SetButtonText(button, "MAX LEVEL REACHED");
 
-            continue;
+                continue;
             }
 
-        PracticeUpgradeDefinition selectedUpgrade = currentChoices[i];
+            PracticeUpgradeDefinition selectedUpgrade = currentChoices[i];
 
-        if(selectedUpgrade == null)
-        {
-            button.interactable = false;//button bị vô hiệu hóa player ko thể click onclick ko chạy 
-            SetButtonText(button, "Empty upgrade");
+            if (selectedUpgrade == null)
+            {
+                button.interactable = false;//button bị vô hiệu hóa player ko thể click onclick ko chạy 
+                SetButtonText(button, "EMPTY UPGRADE");
 
-            continue;
-        }
-        
-        button.interactable = true; 
-        int currentUpgradeLevel = GetUpgradeLevel(selectedUpgrade);
-        int nextUpgradeLevel = currentUpgradeLevel + 1;
-        float nextValue = selectedUpgrade.GetValuePerLevel(nextUpgradeLevel);
+                continue;
+            }
 
-        string content = $"{selectedUpgrade.DisplayName}\n" + $"{selectedUpgrade.Description}" + $"{selectedUpgrade.MaxLevel}" + $"value: {nextValue}" + $"Level: {nextUpgradeLevel}";
-        SetButtonText(button, content);
+            button.interactable = true;
+            int currentUpgradeLevel = GetUpgradeLevel(selectedUpgrade);
+            int nextUpgradeLevel = currentUpgradeLevel + 1;
+            float nextValue = selectedUpgrade.GetValuePerLevel(nextUpgradeLevel);
+
+            string content =
+                $"<b>{selectedUpgrade.DisplayName}</b>  [Lv.{currentUpgradeLevel} -> Lv.{nextUpgradeLevel}/{selectedUpgrade.MaxLevel}]\n" +
+                $"<size=85%>{selectedUpgrade.Description} (+{nextValue:0.##})</size>";
+            SetButtonText(button, content);
         }
     }
+
     private void SetButtonText(Button button, string content)
     {
-        if(button == null) return;
+        if (button == null) return;
 
-        TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+        TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>(true);
 
-        if(buttonText == null) return;
-        
+        if (buttonText == null) return;
+
         buttonText.text = content;
-        
     }
 }

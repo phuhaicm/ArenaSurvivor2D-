@@ -165,6 +165,7 @@ public class PracticeGameOverUI : HaiMonoBehaviour
         LoadRunSystems();
         LoadResultTextsFromPanel();
 
+        SanitizeAllButtons();
         SubscribePlayerEvents();
         SubscribeButtonEvents();
         SubscribeGameStateEvents();
@@ -185,6 +186,36 @@ public class PracticeGameOverUI : HaiMonoBehaviour
 
         isGameOverHandled = false;
         HideGameOverPanel();
+    }
+
+    private void SanitizeAllButtons()
+    {
+        SanitizeButtonChildren(restartButton);
+        SanitizeButtonChildren(quitButton);
+        SanitizeButtonChildren(mainMenuButton);
+    }
+
+    private void SanitizeButtonChildren(Button parentButton)
+    {
+        if (parentButton == null) return;
+
+        Button[] childButtons = parentButton.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < childButtons.Length; i++)
+        {
+            if (childButtons[i] != null && childButtons[i] != parentButton)
+            {
+                childButtons[i].enabled = false;
+            }
+        }
+
+        TMP_Text[] childTexts = parentButton.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < childTexts.Length; i++)
+        {
+            if (childTexts[i] != null)
+            {
+                childTexts[i].raycastTarget = false;
+            }
+        }
     }
 
     // =========================================================
@@ -333,7 +364,6 @@ public class PracticeGameOverUI : HaiMonoBehaviour
 
     protected void HandleGameStateChanged(PracticeGameStates gameStates)
     {
-        // SỬA LỖI: Chỉ hiện GameOverPanel khi trạng thái là GameOver (không phải Paused)
         bool shouldShowGameOverPanel = gameStates == PracticeGameStates.GameOver;
 
         if (shouldShowGameOverPanel)
@@ -391,43 +421,46 @@ public class PracticeGameOverUI : HaiMonoBehaviour
 
     protected void HandleMainMenuClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
         if (sceneLoader == null)
         {
             LoadSceneLoader();
         }
 
-        // SỬA LỖI: Chuyển về Scene MainMenu thay vì tải lại Scene hiện tại
-        if (sceneLoader != null)
+        Time.timeScale = 1f;
+
+        if (sceneLoader != null && sceneLoader.LoadScene(PracticeSceneNames.MainMenu))
         {
-            sceneLoader.LoadScene(PracticeSceneNames.MainMenu);
             return;
         }
 
-        Time.timeScale = 1f;
         SceneManager.LoadScene(PracticeSceneNames.MainMenu);
     }
 
     private void HandleRestartButtonClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
         if (sceneLoader == null)
         {
             LoadSceneLoader();
         }
 
         string currentSceneName = SceneManager.GetActiveScene().name;
+        Time.timeScale = 1f;
 
-        if (sceneLoader != null)
+        if (sceneLoader != null && sceneLoader.LoadScene(currentSceneName))
         {
-            sceneLoader.LoadScene(currentSceneName);
             return;
         }
 
-        Time.timeScale = 1f;
         SceneManager.LoadScene(currentSceneName);
     }
 
     private void HandleQuitButtonClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
         Time.timeScale = 1f;
         Application.Quit();
     }

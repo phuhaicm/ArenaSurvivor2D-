@@ -60,6 +60,17 @@ public class PracticeRunScore : HaiMonoBehaviour
 
     protected void LoadPlayerLevelSystem()
     {
+        if (playerHealth != null)
+        {
+            PracticePlayerLevelSystem playerLevel =
+                playerHealth.GetComponentInChildren<PracticePlayerLevelSystem>(true);
+            if (playerLevel != null)
+            {
+                playerLevelSystem = playerLevel;
+                return;
+            }
+        }
+
         if (playerLevelSystem != null) return;
         playerLevelSystem = FindFirstObjectByType<PracticePlayerLevelSystem>();
     }
@@ -161,7 +172,6 @@ public class PracticeRunScore : HaiMonoBehaviour
 
     private void HandleKillCountChanged(int newKillCount)
     {
-        if (isScore) return;
         RecalculateLiveScore();
     }
 
@@ -214,7 +224,6 @@ public class PracticeRunScore : HaiMonoBehaviour
         int timeScore = survivalSecond * pointPerSeconds;
         int killScore = currentKills * pointPerKills;
 
-        // Sửa từ phép nhân (*) sang phép cộng (+) để điểm số phản ánh đúng cả Thời gian sống + Số quái hạ gục
         finalScore = timeScore + killScore;
 
         ScoreCalculated?.Invoke(finalScore);
@@ -223,8 +232,6 @@ public class PracticeRunScore : HaiMonoBehaviour
     // Giữ nguyên tên hàm CalcutedScore() của bạn để tương thích 100%
     public void CalcutedScore()
     {
-        if (isScore) return;
-
         RecalculateLiveScore();
         isScore = true;
         ScoreCalculated?.Invoke(finalScore);

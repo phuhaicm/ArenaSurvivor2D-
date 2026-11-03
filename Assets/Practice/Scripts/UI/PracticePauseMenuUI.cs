@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -11,11 +12,14 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
     [Header("Pause UI")]
     [SerializeField]
     private GameObject pausePanel;
+
     [Header("Scene Loading")]
-    [SerializeField] protected PracticeSceneLoader sceneLoader;
+    [SerializeField]
+    protected PracticeSceneLoader sceneLoader;
 
     [SerializeField]
     private Button resumeButton;
+
     [SerializeField]
     private Button mainMenuButton;
 
@@ -32,13 +36,14 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
         LoadSceneLoader();
         LoadGameStateController();
     }
+
     protected void LoadSceneLoader()
     {
-        if(sceneLoader != null) return;
+        if (sceneLoader != null) return;
 
         sceneLoader = PracticeSceneLoader.Instance;
 
-        if(sceneLoader != null) return;
+        if (sceneLoader != null) return;
         sceneLoader = FindFirstObjectByType<PracticeSceneLoader>();
     }
 
@@ -58,6 +63,8 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
         base.OnEnable();
 
         LoadGameStateController();
+        LoadSceneLoader();
+        SanitizeAllButtons();
         SubscribeButtonEvents();
         SubscribeGameStateEvents();
     }
@@ -73,12 +80,43 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
     {
         base.Start();
 
-        if(gameStateController == null)
+        if (gameStateController == null)
         {
             SetPausePanelMenu(false);
             return;
         }
         HandleGameStateChanged(gameStateController.CurrentState);
+    }
+
+    private void SanitizeAllButtons()
+    {
+        SanitizeButtonChildren(resumeButton);
+        SanitizeButtonChildren(mainMenuButton);
+        SanitizeButtonChildren(restartButton);
+        SanitizeButtonChildren(quitButton);
+    }
+
+    private void SanitizeButtonChildren(Button parentButton)
+    {
+        if (parentButton == null) return;
+
+        Button[] childButtons = parentButton.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < childButtons.Length; i++)
+        {
+            if (childButtons[i] != null && childButtons[i] != parentButton)
+            {
+                childButtons[i].enabled = false;
+            }
+        }
+
+        TMP_Text[] childTexts = parentButton.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < childTexts.Length; i++)
+        {
+            if (childTexts[i] != null)
+            {
+                childTexts[i].raycastTarget = false;
+            }
+        }
     }
 
     private void Update()
@@ -100,21 +138,17 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
             return;
         }
 
-        // Game Over là trạng thái kết thúc.
-        if (gameStateController.IsGameOver)
+        if (gameStateController.IsGameOver || gameStateController.IsVictory)
         {
             return;
         }
 
-        // ESC lần hai dùng để Resume.
         if (gameStateController.IsPaused)
         {
             ResumeGame();
             return;
         }
 
-        // Chỉ được Pause từ Running.
-        // Nếu đang UpgradeChoice thì không can thiệp.
         if (!gameStateController.IsRunning)
         {
             return;
@@ -122,6 +156,7 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
 
         PauseGame();
     }
+
     private void PauseGame()
     {
         if (gameStateController == null)
@@ -129,15 +164,7 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
             return;
         }
 
-        bool pausedSuccessfully =
-            gameStateController.RequestPaused();
-
-        if (!pausedSuccessfully)
-        {
-            return;
-        }
-
-        //ShowPausePanel();
+        gameStateController.RequestPaused();
     }
 
     private void ResumeGame()
@@ -152,15 +179,7 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
             return;
         }
 
-        bool resumedSuccessfully =
-            gameStateController.RequestRunning();
-
-        if (!resumedSuccessfully)
-        {
-            return;
-        }
-
-        //HidePausePanel();
+        gameStateController.RequestRunning();
     }
 
     // =========================================================
@@ -201,33 +220,45 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
                 HandleQuitButtonClicked
             );
         }
-        if(mainMenuButton != null)
+
+        if (mainMenuButton != null)
         {
-            mainMenuButton.onClick.AddListener(HandleMainMenuClicked);
+            mainMenuButton.onClick.RemoveListener(
+                HandleMainMenuClicked
+            );
+
+            mainMenuButton.onClick.AddListener(
+                HandleMainMenuClicked
+            );
         }
     }
+
     protected void SubscribeGameStateEvents()
     {
-        if(gameStateController == null) return;
+        if (gameStateController == null) return;
 
+        gameStateController.StateChanged -= HandleGameStateChanged;
         gameStateController.StateChanged += HandleGameStateChanged;
         HandleGameStateChanged(gameStateController.CurrentState);
     }
+
     protected void UnSubscribeGameStateEvents()
     {
-        if(gameStateController == null) return;
+        if (gameStateController == null) return;
 
         gameStateController.StateChanged -= HandleGameStateChanged;
     }
+
     protected void HandleGameStateChanged(PracticeGameStates gameStates)
     {
-        bool shoulPausePanelMenu = gameStates == PracticeGameStates.Paused;
+        bool shouldShowPausePanel = gameStates == PracticeGameStates.Paused;
 
-        SetPausePanelMenu(shoulPausePanelMenu);
+        SetPausePanelMenu(shouldShowPausePanel);
     }
+
     protected void SetPausePanelMenu(bool isPause)
     {
-        if(pausePanel == null) return;
+        if (pausePanel == null) return;
 
         pausePanel.SetActive(isPause);
     }
@@ -254,21 +285,30 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
                 HandleQuitButtonClicked
             );
         }
-        if(mainMenuButton != null)
+
+        if (mainMenuButton != null)
         {
             mainMenuButton.onClick.RemoveListener(HandleMainMenuClicked);
         }
     }
+
     protected void HandleMainMenuClicked()
     {
         PracticeAudioManager.Instance?.PlayButtonClickSfx();
 
-        if(sceneLoader == null)
+        if (sceneLoader == null)
         {
             LoadSceneLoader();
+        }
+
+        Time.timeScale = 1f;
+
+        if (sceneLoader != null && sceneLoader.LoadScene(PracticeSceneNames.MainMenu))
+        {
             return;
         }
-        sceneLoader.LoadScene(PracticeSceneNames.MainMenu);//UI chỉ gửi yêu cầu tải main menu
+
+        SceneManager.LoadScene(PracticeSceneNames.MainMenu);
     }
 
     private void HandleResumeButtonClicked()
@@ -280,18 +320,26 @@ public class PracticePauseMenuUI : HaiMonoBehaviour
     private void HandleRestartButtonClicked()
     {
         PracticeAudioManager.Instance?.PlayButtonClickSfx();
-        if(sceneLoader == null)
+
+        if (sceneLoader == null)
         {
             LoadSceneLoader();
+        }
+
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        Time.timeScale = 1f;
+
+        if (sceneLoader != null && sceneLoader.LoadScene(currentSceneName))
+        {
             return;
         }
-        
-        string currentSceneName = SceneManager.GetActiveScene().name;//dòng này lấy scene hiện tại
-        sceneLoader.LoadScene(currentSceneName);
+
+        SceneManager.LoadScene(currentSceneName);
     }
 
     private void HandleQuitButtonClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
         Time.timeScale = 1f;
         Application.Quit();
     }

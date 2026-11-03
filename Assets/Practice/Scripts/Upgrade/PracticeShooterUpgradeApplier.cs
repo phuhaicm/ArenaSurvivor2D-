@@ -34,21 +34,42 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
 
     protected void LoadReceivers()
     {
-        if (shooter == null)
-        {
-            shooter = GetComponent<PracticeShooterWithDamage>();
-            if (shooter == null)
-            {
-                shooter = GetComponentInChildren<PracticeShooterWithDamage>(true);
-            }
-        }
-
         if (playerHealth == null)
         {
             playerHealth = GetComponent<PracticePlayerHealth>();
             if (playerHealth == null)
             {
                 playerHealth = GetComponentInParent<PracticePlayerHealth>();
+            }
+            if (playerHealth == null)
+            {
+                playerHealth = FindFirstObjectByType<PracticePlayerHealth>();
+            }
+        }
+
+        if (shooter == null || (playerHealth != null && shooter.gameObject != playerHealth.gameObject))
+        {
+            if (playerHealth != null)
+            {
+                PracticeShooterWithDamage playerShooter =
+                    playerHealth.GetComponentInChildren<PracticeShooterWithDamage>(true);
+                if (playerShooter != null)
+                {
+                    shooter = playerShooter;
+                }
+            }
+
+            if (shooter == null)
+            {
+                shooter = GetComponent<PracticeShooterWithDamage>();
+            }
+            if (shooter == null)
+            {
+                shooter = GetComponentInChildren<PracticeShooterWithDamage>(true);
+            }
+            if (shooter == null)
+            {
+                shooter = FindFirstObjectByType<PracticeShooterWithDamage>();
             }
         }
 
@@ -59,6 +80,14 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
             {
                 playerMovement = GetComponentInParent<PracticePlayerMovement>();
             }
+            if (playerMovement == null && playerHealth != null)
+            {
+                playerMovement = playerHealth.GetComponentInChildren<PracticePlayerMovement>(true);
+            }
+            if (playerMovement == null)
+            {
+                playerMovement = FindFirstObjectByType<PracticePlayerMovement>();
+            }
         }
 
         if (magnetDetector == null)
@@ -67,6 +96,10 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
             if (magnetDetector == null && playerHealth != null)
             {
                 magnetDetector = playerHealth.GetComponentInChildren<PracticeXPMagnetDetector>(true);
+            }
+            if (magnetDetector == null)
+            {
+                magnetDetector = FindFirstObjectByType<PracticeXPMagnetDetector>();
             }
         }
     }

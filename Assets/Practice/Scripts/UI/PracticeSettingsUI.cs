@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -28,10 +29,24 @@ public class PracticeSettingsUI : HaiMonoBehaviour
     [SerializeField]
     private Button backButton;
 
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadAudioSettings();
+    }
+
+    private void LoadAudioSettings()
+    {
+        if (audioSettings != null) return;
+        audioSettings = FindFirstObjectByType<PracticeAudioSettings>();
+    }
+
     protected override void OnEnable()
     {
         base.OnEnable();
 
+        LoadAudioSettings();
+        SanitizeAllButtons();
         SubscribeSliderEvents();
         SubscribeButtonEvents();
     }
@@ -51,6 +66,35 @@ public class PracticeSettingsUI : HaiMonoBehaviour
         ConfigureSliders();
         RefreshAllSliders();
         SetSettingsPanelActive(false);
+    }
+
+    private void SanitizeAllButtons()
+    {
+        SanitizeButtonChildren(openSettingsButton);
+        SanitizeButtonChildren(backButton);
+    }
+
+    private void SanitizeButtonChildren(Button parentButton)
+    {
+        if (parentButton == null) return;
+
+        Button[] childButtons = parentButton.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < childButtons.Length; i++)
+        {
+            if (childButtons[i] != null && childButtons[i] != parentButton)
+            {
+                childButtons[i].enabled = false;
+            }
+        }
+
+        TMP_Text[] childTexts = parentButton.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < childTexts.Length; i++)
+        {
+            if (childTexts[i] != null)
+            {
+                childTexts[i].raycastTarget = false;
+            }
+        }
     }
 
     // =========================================================
@@ -78,6 +122,11 @@ public class PracticeSettingsUI : HaiMonoBehaviour
 
     private void RefreshAllSliders()
     {
+        if (audioSettings == null)
+        {
+            LoadAudioSettings();
+        }
+
         if (audioSettings == null)
         {
             return;
@@ -265,12 +314,14 @@ public class PracticeSettingsUI : HaiMonoBehaviour
 
     private void HandleOpenSettingsClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
         RefreshAllSliders();
         SetSettingsPanelActive(true);
     }
 
     private void HandleBackClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
         SetSettingsPanelActive(false);
     }
 
