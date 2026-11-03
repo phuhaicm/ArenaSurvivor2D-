@@ -1541,6 +1541,7 @@ Transform:
   - {fileID: 571448163}
   - {fileID: 663807692}
   - {fileID: 1992527237}
+  - {fileID: 2052505209}
   m_Father: {fileID: 729398503}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &161812912
@@ -6739,6 +6740,7 @@ Transform:
   - {fileID: 203561440}
   - {fileID: 2103196727}
   - {fileID: 225376167}
+  - {fileID: 1005513547}
   m_Father: {fileID: 729398503}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &966891665
@@ -6952,6 +6954,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 985829321}
   m_CullTransparentMesh: 1
+--- !u!1 &1005513546
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1005513547}
+  m_Layer: 0
+  m_Name: RuntimeVFX
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1005513547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1005513546}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 948434524}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1015416410
 GameObject:
   m_ObjectHideFlags: 0
@@ -7839,7 +7872,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b03c01671a433d49bacd8a7162cd375, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100000
+  maxHealth: 10000000
   currentHealth: 0
   invulnerabilityDuration: 1
 --- !u!114 &1142143052
@@ -7856,6 +7889,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerHealth: {fileID: 1142143051}
   flashFeedback: {fileID: 1142143056}
+  hitShakeIntensity: 0.22
+  hitShakeDuration: 0.2
 --- !u!114 &1142143053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10904,6 +10939,7 @@ GameObject:
   - component: {fileID: 1910895554}
   - component: {fileID: 1910895553}
   - component: {fileID: 1910895552}
+  - component: {fileID: 1910895555}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -10985,6 +11021,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 204973507}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1910895555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1910895551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2807772adb45494ba41527a72a3aa30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  finalBossController: {fileID: 865544101}
+  gameStateController: {fileID: 536344655}
+  playerLevelSystem: {fileID: 917302778}
+  maxShakeOffset: 0.45
+  shakeFrequency: 28
 --- !u!1 &1972532481
 GameObject:
   m_ObjectHideFlags: 0
@@ -11585,6 +11638,60 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   runScore: {fileID: 1713121779}
   gameStateController: {fileID: 536344655}
+--- !u!1 &2052505208
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2052505209}
+  - component: {fileID: 2052505210}
+  m_Layer: 0
+  m_Name: PracticeVFXManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2052505209
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052505208}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 156297668}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2052505210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052505208}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6dd37038d3b6be4f9d74ce2c8ad3bed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  burstVfxPrefab: {fileID: 0}
+  vfxContainer: {fileID: 1005513547}
+  minHitVfxInterval: 0.035
+  minDeathVfxInterval: 0.025
+  maxActiveVfxInstances: 45
+  hitSparkColor: {r: 1, g: 0.92, b: 0.35, a: 1}
+  enemyDeathColor: {r: 1, g: 0.25, b: 0.55, a: 1}
+  playerHitColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  xpPickupColor: {r: 0.3, g: 0.95, b: 1, a: 1}
+  levelUpColor: {r: 1, g: 0.85, b: 0.2, a: 1}
 --- !u!1 &2062236205
 GameObject:
   m_ObjectHideFlags: 0

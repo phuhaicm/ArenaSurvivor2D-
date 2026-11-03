@@ -124,6 +124,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  isBossTarget: 0
   enemyCollider: {fileID: 1019942089556460235}
   enemyRigidbody: {fileID: 6684418186157247156}
 --- !u!114 &8659378148005791084
@@ -212,7 +213,7 @@ CircleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
@@ -248,7 +249,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyHealth: {fileID: 6169112465887158619}
   flashFeedback: {fileID: 8205562967837412687}
-  damageTextPrefab: {fileID: 0}
+  damageTextPrefab: {fileID: 1781613061235985134, guid: b7ee3b9d8d8e3bf4fac86f7139e0426a,
+    type: 3}
   damageTextContainer: {fileID: 0}
 --- !u!114 &-7105416588159321882
 MonoBehaviour:

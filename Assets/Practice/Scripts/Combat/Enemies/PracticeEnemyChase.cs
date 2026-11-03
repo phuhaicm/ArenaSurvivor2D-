@@ -4,6 +4,10 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class PracticeEnemyChase : HaiMonoBehaviour, IPracticePoolable
 {
+    // Lưu đệm Transform của Player ở cấp static để 1.000 con quái dùng chung ngay lập tức (O(1)),
+    // không phải gọi FindGameObjectWithTag("Player") 1.000 lần khi khởi tạo Pool.
+    private static Transform cachedPlayerTarget;
+
     [Header("Chase Settings")]
     [SerializeField, Min(0f)]
     private float moveSpeed = 2f;
@@ -53,7 +57,10 @@ public class PracticeEnemyChase : HaiMonoBehaviour, IPracticePoolable
     protected override void Start()
     {
         base.Start();
-        FindTarget();
+        if (target == null)
+        {
+            FindTarget();
+        }
     }
 
     protected void FixedUpdate()
@@ -78,10 +85,25 @@ public class PracticeEnemyChase : HaiMonoBehaviour, IPracticePoolable
 
     protected void FindTarget()
     {
+        if (cachedPlayerTarget != null)
+        {
+            target = cachedPlayerTarget;
+            return;
+        }
+
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
         if (playerObject != null)
         {
-            target = playerObject.transform;
+            cachedPlayerTarget = playerObject.transform;
+            target = cachedPlayerTarget;
+            return;
+        }
+
+        PracticePlayerHealth foundPlayer = FindFirstObjectByType<PracticePlayerHealth>();
+        if (foundPlayer != null)
+        {
+            cachedPlayerTarget = foundPlayer.transform;
+            target = cachedPlayerTarget;
         }
     }
 
@@ -93,13 +115,15 @@ public class PracticeEnemyChase : HaiMonoBehaviour, IPracticePoolable
         }
 
         Vector2 directionToTarget = (Vector2)target.position - enemyRigidbody.position;
-        float distanceTotarget = directionToTarget.magnitude;
+        float distanceSqr = directionToTarget.sqrMagnitude;
+        float stoppingDistanceSqr = stoppingDistance * stoppingDistance;
 
-        if (distanceTotarget > stoppingDistance)
+        if (distanceSqr > stoppingDistanceSqr)
         {
-            Vector2 moveDirection = directionToTarget.normalized;
+            float distanceToTarget = Mathf.Sqrt(distanceSqr);
+            Vector2 moveDirection = directionToTarget / distanceToTarget;
             float movementThisStep = moveSpeed * Time.fixedDeltaTime;
-            float maximumAllowedMovement = distanceTotarget - stoppingDistance;
+            float maximumAllowedMovement = distanceToTarget - stoppingDistance;
             float moveDistance = Mathf.Min(movementThisStep, maximumAllowedMovement);
 
             Vector2 displacement = moveDirection * moveDistance;

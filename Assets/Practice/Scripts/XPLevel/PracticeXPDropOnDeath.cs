@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class PracticeXPDropOnDeath : HaiMonoBehaviour
 {
+    // Lưu đệm Container ở cấp static để tránh gọi GameObject.Find("RuntimeXPOrbs") hàng trăm lần khi sinh quái
+    private static Transform cachedXpOrbContainer;
+
     [SerializeField]
     protected PracticeEnemyHealth enemyHealth;
 
@@ -30,11 +33,18 @@ public class PracticeXPDropOnDeath : HaiMonoBehaviour
     {
         if (xpOrbContainer != null) return;
 
+        if (cachedXpOrbContainer != null)
+        {
+            xpOrbContainer = cachedXpOrbContainer;
+            return;
+        }
+
         GameObject containerObject = GameObject.Find("RuntimeXPOrbs");
 
         if (containerObject != null)
         {
-            xpOrbContainer = containerObject.transform;
+            cachedXpOrbContainer = containerObject.transform;
+            xpOrbContainer = cachedXpOrbContainer;
         }
     }
 

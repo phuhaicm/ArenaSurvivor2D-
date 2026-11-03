@@ -124,6 +124,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 100
   currentHealth: 0
+  isBossTarget: 0
   enemyCollider: {fileID: -7406250859734991194}
   enemyRigidbody: {fileID: 6684418186157247156}
 --- !u!114 &8659378148005791084
@@ -248,7 +249,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyHealth: {fileID: 6169112465887158619}
   flashFeedback: {fileID: 1094219121685593531}
-  damageTextPrefab: {fileID: 0}
+  damageTextPrefab: {fileID: 1781613061235985134, guid: b7ee3b9d8d8e3bf4fac86f7139e0426a,
+    type: 3}
   damageTextContainer: {fileID: 0}
 --- !u!114 &6371671412522602351
 MonoBehaviour:

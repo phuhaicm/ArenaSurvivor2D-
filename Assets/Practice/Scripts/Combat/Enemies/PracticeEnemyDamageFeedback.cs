@@ -3,6 +3,10 @@ using UnityEngine;
 public class PracticeEnemyDamageFeedback
     : HaiMonoBehaviour
 {
+    // Lưu đệm Container ở cấp static để 1.000 con quái dùng chung ngay lập tức (O(1)),
+    // tránh gọi GameObject.Find("RuntimeDamageTexts") lặp lại hàng trăm lần khi mở rộng Pool.
+    private static Transform cachedDamageTextContainer;
+
     [Header("References")]
     [SerializeField]
     private PracticeEnemyHealth enemyHealth;
@@ -55,10 +59,17 @@ public class PracticeEnemyDamageFeedback
             return;
         }
 
+        if (cachedDamageTextContainer != null)
+        {
+            damageTextContainer = cachedDamageTextContainer;
+            return;
+        }
+
         GameObject containerObj = GameObject.Find("RuntimeDamageTexts");
         if (containerObj != null)
         {
-            damageTextContainer = containerObj.transform;
+            cachedDamageTextContainer = containerObj.transform;
+            damageTextContainer = cachedDamageTextContainer;
         }
     }
 
@@ -87,11 +98,11 @@ public class PracticeEnemyDamageFeedback
             return;
         }
 
-        enemyHealth.DamageTaken -=
-            HandleDamageTaken;
+        enemyHealth.DamageTaken -= HandleDamageTaken;
+        enemyHealth.DamageTaken += HandleDamageTaken;
 
-        enemyHealth.DamageTaken +=
-            HandleDamageTaken;
+        enemyHealth.Died -= HandleEnemyDied;
+        enemyHealth.Died += HandleEnemyDied;
     }
 
     private void UnsubscribeEnemyEvents()
@@ -101,16 +112,34 @@ public class PracticeEnemyDamageFeedback
             return;
         }
 
-        enemyHealth.DamageTaken -=
-            HandleDamageTaken;
+        enemyHealth.DamageTaken -= HandleDamageTaken;
+        enemyHealth.Died -= HandleEnemyDied;
     }
 
-    private void HandleDamageTaken(
-        float damageAmount
-    )
+    private void HandleDamageTaken(float damageAmount)
     {
         flashFeedback?.PlayFlash();
         SpawnFloatingDamageText(damageAmount);
+
+        // Phát tia lửa Hit Spark có giới hạn VFX Budget từ Object Pool
+        PracticeVFXManager.Instance?.SpawnHitSpark(transform.position);
+    }
+
+    private void HandleEnemyDied()
+    {
+        if (PracticeVFXManager.Instance == null)
+        {
+            return;
+        }
+
+        if (enemyHealth != null && enemyHealth.IsBossTarget)
+        {
+            PracticeVFXManager.Instance.SpawnBossDeathExplosion(transform.position);
+            PracticeCameraShake2D.Instance?.Shake(0.42f, 0.55f);
+            return;
+        }
+
+        PracticeVFXManager.Instance.SpawnEnemyDeathBurst(transform.position);
     }
 
     private void SpawnFloatingDamageText(float damageAmount)
