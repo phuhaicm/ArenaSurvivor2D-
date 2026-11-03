@@ -7,11 +7,13 @@ using UnityEngine.UI;
 
 public static class PracticeBenchmarkEditorTools
 {
-    [MenuItem("Tools/Practice/Setup Benchmark System & Optimize Physics2D")]
+    [MenuItem("Tools/Practice/Setup Benchmark, VFX, Camera Shake & Optimize Physics2D")]
     public static void SetupBenchmarkAndOptimizePhysics2D()
     {
         OptimizePhysics2DSettings();
+        OptimizeEnemyPrefabsForZeroLag();
         SetupBenchmarkInCurrentScene();
+        SetupVfxAndCameraShakeInCurrentScene();
     }
 
     [MenuItem("Tools/Practice/Optimize Physics2D Layer Matrix Only")]
@@ -58,18 +60,72 @@ public static class PracticeBenchmarkEditorTools
             }
         }
 
-        // - Enemy chỉ cần va chạm với Default (đạn Player), PlayerBody (gây sát thương tiếp xúc) và Enemy khác
+        // - QUAN TRỌNG NHẤT CHO BENCHMARK 1.000 QUÁI:
+        // Enemy chỉ cần va chạm với Default (Đạn Player - Layer 0) và PlayerBody (Layer 3).
+        // TẮT va chạm Enemy <-> Enemy để khi 1.000 con quái cùng tụ lại quanh Player không tạo ra
+        // 500.000 cặp va chạm O(N^2) làm nghẽn cứng Box2D & OnTriggerStay2D!
         if (enemyLayer >= 0)
         {
-            if (pickupLayer >= 0) Physics2D.IgnoreLayerCollision(enemyLayer, pickupLayer, true);
-            if (bossProjectileLayer >= 0) Physics2D.IgnoreLayerCollision(enemyLayer, bossProjectileLayer, true);
-            if (playerSensorLayer >= 0) Physics2D.IgnoreLayerCollision(enemyLayer, playerSensorLayer, true);
+            for (int i = 0; i < 32; i++)
+            {
+                bool shouldCollide = (i == defaultLayer || i == playerBodyLayer);
+                Physics2D.IgnoreLayerCollision(enemyLayer, i, !shouldCollide);
+            }
         }
 
         AssetDatabase.SaveAssets();
         Debug.Log(
-            "<color=#4CAF50><b>[Physics2D Optimizer]</b></color> Đã đặt Gravity = (0, 0) và tối ưu hóa Physics 2D Layer Collision Matrix!"
+            "<color=#4CAF50><b>[Physics2D Optimizer]</b></color> Đã đặt Gravity = (0, 0), tắt va chạm chồng chéo O(N^2) Enemy <-> Enemy và tối ưu toàn bộ Physics 2D Layer Matrix!"
         );
+    }
+
+    private static void OptimizeEnemyPrefabsForZeroLag()
+    {
+        string[] enemyPrefabPaths =
+        {
+            "Assets/Practice/Prefabs/Combat/Enemies/Practice_Enemy_Normal.prefab",
+            "Assets/Practice/Prefabs/Combat/Enemies/Practice_Enemy_Fast.prefab",
+            "Assets/Practice/Prefabs/Combat/Enemies/Practice_Enemy_Tank.prefab"
+        };
+
+        PracticeFloatingDamageText damageTextPrefab =
+            AssetDatabase.LoadAssetAtPath<PracticeFloatingDamageText>(
+                "Assets/Practice/Prefabs/Practice_FloatingDamageText.prefab"
+            );
+
+        for (int i = 0; i < enemyPrefabPaths.Length; i++)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(enemyPrefabPaths[i]);
+            if (prefab == null) continue;
+
+            bool modified = false;
+
+            CircleCollider2D circleCol = prefab.GetComponent<CircleCollider2D>();
+            if (circleCol != null && !circleCol.isTrigger)
+            {
+                circleCol.isTrigger = true;
+                modified = true;
+            }
+
+            PracticeEnemyDamageFeedback feedback = prefab.GetComponent<PracticeEnemyDamageFeedback>();
+            if (feedback != null && damageTextPrefab != null)
+            {
+                SerializedObject feedbackSo = new SerializedObject(feedback);
+                SerializedProperty dmgTextProp = feedbackSo.FindProperty("damageTextPrefab");
+                if (dmgTextProp != null && dmgTextProp.objectReferenceValue == null)
+                {
+                    dmgTextProp.objectReferenceValue = damageTextPrefab;
+                    feedbackSo.ApplyModifiedPropertiesWithoutUndo();
+                    modified = true;
+                }
+            }
+
+            if (modified)
+            {
+                EditorUtility.SetDirty(prefab);
+                PrefabUtility.SavePrefabAsset(prefab);
+            }
+        }
     }
 
     private static void SetupBenchmarkInCurrentScene()
@@ -130,6 +186,82 @@ public static class PracticeBenchmarkEditorTools
         );
     }
 
+    private static void SetupVfxAndCameraShakeInCurrentScene()
+    {
+        GameObject systemsRoot = GameObject.Find("PracticeGame/Systems");
+        if (systemsRoot == null)
+        {
+            systemsRoot = GameObject.Find("Systems");
+        }
+
+        GameObject gameplayRoot = GameObject.Find("PracticeGame/Gameplay");
+        if (gameplayRoot == null)
+        {
+            gameplayRoot = GameObject.Find("Gameplay");
+        }
+
+        if (systemsRoot == null)
+        {
+            return;
+        }
+
+        // 1. Đảm bảo có thùng chứa RuntimeVFX trong Gameplay
+        Transform vfxContainer = FindTransform("RuntimeVFX");
+        if (vfxContainer == null && gameplayRoot != null)
+        {
+            GameObject vfxContainerObj = new GameObject("RuntimeVFX");
+            Undo.RegisterCreatedObjectUndo(vfxContainerObj, "Create RuntimeVFX");
+            vfxContainerObj.transform.SetParent(gameplayRoot.transform, false);
+            vfxContainer = vfxContainerObj.transform;
+        }
+
+        // 2. Đảm bảo có PracticeVFXManager trong Systems
+        PracticeVFXManager vfxManager = Object.FindFirstObjectByType<PracticeVFXManager>();
+        if (vfxManager == null)
+        {
+            GameObject vfxObj = new GameObject("PracticeVFXManager");
+            Undo.RegisterCreatedObjectUndo(vfxObj, "Create PracticeVFXManager");
+            vfxObj.transform.SetParent(systemsRoot.transform, false);
+            vfxManager = vfxObj.AddComponent<PracticeVFXManager>();
+        }
+
+        if (vfxManager != null && vfxContainer != null)
+        {
+            SerializedObject vfxSo = new SerializedObject(vfxManager);
+            AssignObjectReference(vfxSo, "vfxContainer", vfxContainer);
+            vfxSo.ApplyModifiedProperties();
+            EditorUtility.SetDirty(vfxManager);
+        }
+
+        // 3. Đảm bảo Main Camera có gắn PracticeCameraShake2D
+        Camera mainCam = Camera.main;
+        if (mainCam != null)
+        {
+            PracticeCameraShake2D shake = mainCam.GetComponent<PracticeCameraShake2D>();
+            if (shake == null)
+            {
+                shake = Undo.AddComponent<PracticeCameraShake2D>(mainCam.gameObject);
+            }
+
+            if (shake != null)
+            {
+                SerializedObject shakeSo = new SerializedObject(shake);
+                AssignObjectReference(shakeSo, "finalBossController", Object.FindFirstObjectByType<PracticeFinalBossController>());
+                AssignObjectReference(shakeSo, "gameStateController", Object.FindFirstObjectByType<PracticeGameStateController>());
+                AssignObjectReference(shakeSo, "playerLevelSystem", Object.FindFirstObjectByType<PracticePlayerLevelSystem>());
+                shakeSo.ApplyModifiedProperties();
+                EditorUtility.SetDirty(shake);
+            }
+        }
+
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        EditorSceneManager.SaveOpenScenes();
+
+        Debug.Log(
+            "<color=#4CAF50><b>[VFX & Camera Shake Setup] HOÀN TẤT:</b></color> Đã cấu hình PracticeVFXManager, RuntimeVFX và PracticeCameraShake2D trên Main Camera!"
+        );
+    }
+
     private static TextMeshProUGUI EnsureBenchmarkOverlayUI()
     {
         GameObject existingObj = GameObject.Find("BenchmarkOverlayText");
@@ -175,7 +307,6 @@ public static class PracticeBenchmarkEditorTools
     private static void ConfigureOverlayTextComponent(TextMeshProUGUI tmp)
     {
         RectTransform rt = tmp.GetComponent<RectTransform>();
-        // Neo ở góc dưới bên trái (Bottom-Left) để không bao giờ đè lên Thanh máu, XP hay Điểm số ở phía trên
         rt.anchorMin = new Vector2(0f, 0f);
         rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot = new Vector2(0f, 0f);

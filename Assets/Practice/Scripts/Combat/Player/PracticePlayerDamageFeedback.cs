@@ -10,6 +10,13 @@ public class PracticePlayerDamageFeedback
     [SerializeField]
     private PracticeSpriteFlashFeedback flashFeedback;
 
+    [Header("Screen Shake Settings")]
+    [SerializeField, Min(0f)]
+    private float hitShakeIntensity = 0.22f;
+
+    [SerializeField, Min(0f)]
+    private float hitShakeDuration = 0.2f;
+
     protected override void LoadComponents()
     {
         base.LoadComponents();
@@ -87,5 +94,7 @@ public class PracticePlayerDamageFeedback
     )
     {
         flashFeedback?.PlayFlash();
+        PracticeCameraShake2D.Instance?.Shake(hitShakeIntensity, hitShakeDuration);
+        PracticeVFXManager.Instance?.SpawnPlayerHitBurst(transform.position);
     }
 }

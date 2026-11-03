@@ -53,6 +53,7 @@ public class PracticeXPPickup : HaiMonoBehaviour, IPracticePoolable
 
         hasBeenCollected = true;
         playerExperience.AddExperience(xpOrb.ExperienceAmount);
+        PracticeVFXManager.Instance?.SpawnXpCollectSparkle(transform.position);
 
         // Thu hồi hạt XP về Object Pool thay vì Destroy(gameObject)
         PracticeObjectPoolManager.DespawnOrDestroy(gameObject);
