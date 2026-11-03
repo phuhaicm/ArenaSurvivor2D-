@@ -139,6 +139,25 @@ public class PracticePlayerKillCounter : HaiMonoBehaviour
         EnsureBossKillCounted();
     }
 
+    public void RegisterKill(bool isBossKill = false)
+    {
+        if (!isCounting) return;
+
+        if (isBossKill)
+        {
+            EnsureBossKillCounted();
+            return;
+        }
+
+        currentKills++;
+        KillCountChanged?.Invoke(currentKills);
+    }
+
+    public void ResetBossKillCountedFlag()
+    {
+        hasCountedBossKill = false;
+    }
+
     public void EnsureBossKillCounted()
     {
         if (hasCountedBossKill)

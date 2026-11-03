@@ -18,6 +18,6 @@ MonoBehaviour:
   description: Increase movement speed
   icon: {fileID: 0}
   upgradeType: 4
-  baseValue: 0.75
-  valueIncreasePerLevel: 0.15
-  maxLevel: 5
+  baseValue: 0.3
+  valueIncreasePerLevel: 0.1
+  maxLevel: 4

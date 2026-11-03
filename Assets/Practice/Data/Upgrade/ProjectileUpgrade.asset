@@ -20,4 +20,4 @@ MonoBehaviour:
   upgradeType: 2
   baseValue: 1
   valueIncreasePerLevel: 0
-  maxLevel: 3
+  maxLevel: 2

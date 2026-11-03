@@ -15,10 +15,15 @@ public class PracticeBossPhaseDefinition : ScriptableObject
     private string phaseName = "Phase 1";
 
     [Header("Condition & Modifiers")]
-    [Tooltip("Ngưỡng máu tối đa để kích hoạt Phase này (1.0 = 100% máu, 0.5 = 50% máu).")]
+    [Tooltip("Ngưỡng máu tối đa để kích hoạt Phase này (dùng khi tắt chế độ Multi-Bar).")]
     [Range(0.05f, 1f)]
     [SerializeField]
     private float healthThreshold = 1f;
+
+    [Tooltip("Hệ số nhân máu tối đa của Boss khi bước vào Phase này (ví dụ Phase 1 = 1.0, Phase 2 = 1.4).")]
+    [Min(0.2f)]
+    [SerializeField]
+    private float phaseHealthMultiplier = 1f;
 
     [Tooltip("Hệ số nhân thời gian hồi chiêu (ví dụ 0.75 giúp Boss bắn nhanh hơn 25%).")]
     [Min(0.1f)]
@@ -40,6 +45,7 @@ public class PracticeBossPhaseDefinition : ScriptableObject
     public string PhaseId => phaseId;
     public string PhaseName => phaseName;
     public float HealthThreshold => healthThreshold;
+    public float PhaseHealthMultiplier => Mathf.Max(0.2f, phaseHealthMultiplier);
     public float CooldownMultiplier => Mathf.Max(0.1f, cooldownMultiplier);
     public Color PhaseTintColor => phaseTintColor;
     public Color TelegraphColor => telegraphColor;
