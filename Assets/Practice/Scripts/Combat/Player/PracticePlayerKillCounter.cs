@@ -10,6 +10,8 @@ public class PracticePlayerKillCounter : HaiMonoBehaviour
     [SerializeField] private int currentKills;
     [SerializeField] private bool isCounting;
 
+    private bool hasCountedBossKill;
+
     public event Action<int> KillCountChanged;
     public event Action<int> KillCountEnded;
 
@@ -78,6 +80,7 @@ public class PracticePlayerKillCounter : HaiMonoBehaviour
     {
         currentKills = 0;
         isCounting = true;
+        hasCountedBossKill = false;
 
         KillCountChanged?.Invoke(currentKills);
     }
@@ -105,8 +108,8 @@ public class PracticePlayerKillCounter : HaiMonoBehaviour
 
         if (bossController != null)
         {
-            bossController.BossDefeated -= HandleEnemyDefeated;
-            bossController.BossDefeated += HandleEnemyDefeated;
+            bossController.BossDefeated -= HandleBossDefeated;
+            bossController.BossDefeated += HandleBossDefeated;
         }
     }
 
@@ -119,7 +122,7 @@ public class PracticePlayerKillCounter : HaiMonoBehaviour
 
         if (bossController != null)
         {
-            bossController.BossDefeated -= HandleEnemyDefeated;
+            bossController.BossDefeated -= HandleBossDefeated;
         }
     }
 
@@ -127,6 +130,23 @@ public class PracticePlayerKillCounter : HaiMonoBehaviour
     {
         if (!isCounting) return;
 
+        currentKills++;
+        KillCountChanged?.Invoke(currentKills);
+    }
+
+    protected void HandleBossDefeated()
+    {
+        EnsureBossKillCounted();
+    }
+
+    public void EnsureBossKillCounted()
+    {
+        if (hasCountedBossKill)
+        {
+            return;
+        }
+
+        hasCountedBossKill = true;
         currentKills++;
         KillCountChanged?.Invoke(currentKills);
     }

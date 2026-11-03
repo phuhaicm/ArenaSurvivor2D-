@@ -1,5 +1,5 @@
-using UnityEngine;
 using System;
+using UnityEngine;
 
 public class PracticeRunDirector : HaiMonoBehaviour
 {
@@ -12,22 +12,23 @@ public class PracticeRunDirector : HaiMonoBehaviour
 
     [Header("Run Settings")]
     [SerializeField, Min(1f)]
-    private float runDuration = 5f;
+    private float runDuration = 60f;
+
     [SerializeField]
     private PracticeFinalBossController bossController;
+
+    [SerializeField]
+    private PracticePlayerKillCounter killCounter;
+
     private PracticeRunPhase currentPhase;
     public event Action<PracticeRunPhase> RunPhaseChanged;
-    public PracticeRunPhase CurrentPhase =>
-        currentPhase;
 
-    public bool IsBossPhase =>
-        currentPhase ==
-        PracticeRunPhase.BossFight;
+    public PracticeRunPhase CurrentPhase => currentPhase;
+    public bool IsBossPhase => currentPhase == PracticeRunPhase.BossFight;
 
     private bool victoryRequested;
 
-    public float RunDuration =>
-        runDuration;
+    public float RunDuration => runDuration;
 
     public float RemainingTime
     {
@@ -40,8 +41,7 @@ public class PracticeRunDirector : HaiMonoBehaviour
 
             return Mathf.Max(
                 0f,
-                runDuration -
-                survivalTimer.ElapsedTime
+                runDuration - survivalTimer.ElapsedTime
             );
         }
     }
@@ -52,6 +52,8 @@ public class PracticeRunDirector : HaiMonoBehaviour
 
         LoadSurvivalTimer();
         LoadGameStateController();
+        LoadBossController();
+        LoadKillCounter();
     }
 
     protected override void OnEnable()
@@ -61,6 +63,7 @@ public class PracticeRunDirector : HaiMonoBehaviour
         LoadSurvivalTimer();
         LoadGameStateController();
         LoadBossController();
+        LoadKillCounter();
 
         SubscribeBossEvents();
 
@@ -68,6 +71,7 @@ public class PracticeRunDirector : HaiMonoBehaviour
 
         SetRunPhase(PracticeRunPhase.Survival);
     }
+
     protected override void OnDisable()
     {
         UnsubscribeBossEvents();
@@ -100,10 +104,7 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        survivalTimer =
-            FindFirstObjectByType<
-                PracticeSurvivalTimer
-            >();
+        survivalTimer = FindFirstObjectByType<PracticeSurvivalTimer>();
 
         if (survivalTimer == null)
         {
@@ -113,6 +114,7 @@ public class PracticeRunDirector : HaiMonoBehaviour
             );
         }
     }
+
     private void LoadBossController()
     {
         if (bossController != null)
@@ -120,19 +122,25 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        bossController =
-            FindFirstObjectByType<
-                PracticeFinalBossController
-            >();
+        bossController = FindFirstObjectByType<PracticeFinalBossController>();
 
         if (bossController == null)
         {
             Debug.LogError(
-                $"{name}: Không tìm thấy " +
-                $"PracticeFinalBossController.",
+                $"{name}: Không tìm thấy PracticeFinalBossController.",
                 this
             );
         }
+    }
+
+    private void LoadKillCounter()
+    {
+        if (killCounter != null)
+        {
+            return;
+        }
+
+        killCounter = FindFirstObjectByType<PracticePlayerKillCounter>();
     }
 
     private void LoadGameStateController()
@@ -142,54 +150,17 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        gameStateController =
-            FindFirstObjectByType<
-                PracticeGameStateController
-            >();
+        gameStateController = FindFirstObjectByType<PracticeGameStateController>();
 
         if (gameStateController == null)
         {
             Debug.LogError(
-                $"{name}: Không tìm thấy " +
-                $"PracticeGameStateController.",
+                $"{name}: Không tìm thấy PracticeGameStateController.",
                 this
             );
         }
     }
 
-    private void CheckVictoryCondition()
-    {
-        if (victoryRequested)
-        {
-            return;
-        }
-
-        if (survivalTimer == null ||
-            gameStateController == null)
-        {
-            return;
-        }
-
-        if (!gameStateController.IsRunning)
-        {
-            return;
-        }
-
-        if (survivalTimer.ElapsedTime <
-            runDuration)
-        {
-            return;
-        }
-
-        Debug.Log(
-            $"{name}: Victory condition reached. " +
-            $"Elapsed = {survivalTimer.ElapsedTime}, " +
-            $"Required = {runDuration}.",
-            this
-        );
-
-        RequestVictory();
-    }
     private void SubscribeBossEvents()
     {
         if (bossController == null)
@@ -197,9 +168,10 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        bossController.BossDefeated +=
-            HandleBossDefeated;
+        bossController.BossDefeated -= HandleBossDefeated;
+        bossController.BossDefeated += HandleBossDefeated;
     }
+
     private void UnsubscribeBossEvents()
     {
         if (bossController == null)
@@ -207,13 +179,12 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        bossController.BossDefeated -=
-            HandleBossDefeated;
+        bossController.BossDefeated -= HandleBossDefeated;
     }
+
     private void CheckRunProgress()
     {
-        if (survivalTimer == null ||
-            gameStateController == null)
+        if (survivalTimer == null || gameStateController == null)
         {
             return;
         }
@@ -223,20 +194,19 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        if (currentPhase !=
-            PracticeRunPhase.Survival)
+        if (currentPhase != PracticeRunPhase.Survival)
         {
             return;
         }
 
-        if (survivalTimer.ElapsedTime <
-            runDuration)
+        if (survivalTimer.ElapsedTime < runDuration)
         {
             return;
         }
 
         StartBossPhase();
     }
+
     protected void StartBossPhase()
     {
         if (bossController == null) return;
@@ -250,12 +220,22 @@ public class PracticeRunDirector : HaiMonoBehaviour
 
         SetRunPhase(PracticeRunPhase.BossFight);
     }
+
     protected void HandleBossDefeated()
     {
         if (currentPhase != PracticeRunPhase.BossFight) return;
         if (gameStateController == null || !gameStateController.IsRunning)
         {
             return;
+        }
+
+        if (killCounter == null)
+        {
+            LoadKillCounter();
+        }
+        if (killCounter != null)
+        {
+            killCounter.EnsureBossKillCounted();
         }
 
         SetRunPhase(PracticeRunPhase.Completed);
@@ -283,8 +263,7 @@ public class PracticeRunDirector : HaiMonoBehaviour
 
         victoryRequested = true;
 
-        bool changedSuccessfully =
-            gameStateController.RequestVictory();
+        bool changedSuccessfully = gameStateController.RequestVictory();
 
         if (changedSuccessfully)
         {
@@ -292,12 +271,11 @@ public class PracticeRunDirector : HaiMonoBehaviour
         }
 
         Debug.LogWarning(
-            $"{name}: Victory request was rejected. " +
-            $"Current State = " +
-            $"{gameStateController.CurrentState}.",
+            $"{name}: Victory request was rejected. Current State = {gameStateController.CurrentState}.",
             this
         );
     }
+
     protected void SetRunPhase(PracticeRunPhase newPhase)
     {
         if (currentPhase == newPhase) return;

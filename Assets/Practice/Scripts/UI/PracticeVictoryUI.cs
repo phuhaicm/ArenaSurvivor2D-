@@ -66,6 +66,7 @@ public class PracticeVictoryUI : HaiMonoBehaviour
         LoadSceneLoader();
         LoadRunSystems();
 
+        SanitizeAllButtons();
         SubscribeGameStateEvents();
         SubscribeButtonEvents();
     }
@@ -85,6 +86,35 @@ public class PracticeVictoryUI : HaiMonoBehaviour
         RefreshFromCurrentState();
     }
 
+    private void SanitizeAllButtons()
+    {
+        SanitizeButtonChildren(restartButton);
+        SanitizeButtonChildren(mainMenuButton);
+    }
+
+    private void SanitizeButtonChildren(Button parentButton)
+    {
+        if (parentButton == null) return;
+
+        Button[] childButtons = parentButton.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < childButtons.Length; i++)
+        {
+            if (childButtons[i] != null && childButtons[i] != parentButton)
+            {
+                childButtons[i].enabled = false;
+            }
+        }
+
+        TMP_Text[] childTexts = parentButton.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < childTexts.Length; i++)
+        {
+            if (childTexts[i] != null)
+            {
+                childTexts[i].raycastTarget = false;
+            }
+        }
+    }
+
     // =========================================================
     // LOAD REFERENCES
     // =========================================================
@@ -97,9 +127,7 @@ public class PracticeVictoryUI : HaiMonoBehaviour
         }
 
         gameStateController =
-            FindFirstObjectByType<
-                PracticeGameStateController
-            >();
+            FindFirstObjectByType<PracticeGameStateController>();
     }
 
     private void LoadSceneLoader()
@@ -109,8 +137,7 @@ public class PracticeVictoryUI : HaiMonoBehaviour
             return;
         }
 
-        sceneLoader =
-            PracticeSceneLoader.Instance;
+        sceneLoader = PracticeSceneLoader.Instance;
 
         if (sceneLoader != null)
         {
@@ -118,9 +145,7 @@ public class PracticeVictoryUI : HaiMonoBehaviour
         }
 
         sceneLoader =
-            FindFirstObjectByType<
-                PracticeSceneLoader
-            >();
+            FindFirstObjectByType<PracticeSceneLoader>();
     }
 
     private void LoadRunSystems()
@@ -128,33 +153,25 @@ public class PracticeVictoryUI : HaiMonoBehaviour
         if (survivalTimer == null)
         {
             survivalTimer =
-                FindFirstObjectByType<
-                    PracticeSurvivalTimer
-                >();
+                FindFirstObjectByType<PracticeSurvivalTimer>();
         }
 
         if (killCounter == null)
         {
             killCounter =
-                FindFirstObjectByType<
-                    PracticePlayerKillCounter
-                >();
+                FindFirstObjectByType<PracticePlayerKillCounter>();
         }
 
         if (runScore == null)
         {
             runScore =
-                FindFirstObjectByType<
-                    PracticeRunScore
-                >();
+                FindFirstObjectByType<PracticeRunScore>();
         }
 
         if (bestScore == null)
         {
             bestScore =
-                FindFirstObjectByType<
-                    PracticeBestScore
-                >();
+                FindFirstObjectByType<PracticeBestScore>();
         }
     }
 
@@ -192,17 +209,14 @@ public class PracticeVictoryUI : HaiMonoBehaviour
     )
     {
         bool shouldShow =
-            newState ==
-            PracticeGameStates.Victory;
+            newState == PracticeGameStates.Victory;
 
         if (shouldShow)
         {
             RefreshVictoryResults();
         }
 
-        SetVictoryPanelActive(
-            shouldShow
-        );
+        SetVictoryPanelActive(shouldShow);
     }
 
     private void RefreshFromCurrentState()
@@ -225,6 +239,11 @@ public class PracticeVictoryUI : HaiMonoBehaviour
     private void RefreshVictoryResults()
     {
         LoadRunSystems();
+
+        if (killCounter != null)
+        {
+            killCounter.EnsureBossKillCounted();
+        }
 
         // Đảm bảo RunScore và BestScore đã chốt điểm xong trước khi UI đọc giá trị
         if (runScore != null)
@@ -254,12 +273,10 @@ public class PracticeVictoryUI : HaiMonoBehaviour
 
         if (survivalTimer != null)
         {
-            elapsedTime =
-                survivalTimer.ElapsedTime;
+            elapsedTime = survivalTimer.ElapsedTime;
         }
 
-        survivalTimeText.text =
-            FormatTime(elapsedTime);
+        survivalTimeText.text = FormatTime(elapsedTime);
     }
 
     private void RefreshKillCount()
@@ -273,12 +290,10 @@ public class PracticeVictoryUI : HaiMonoBehaviour
 
         if (killCounter != null)
         {
-            kills =
-                killCounter.CurrentKills;
+            kills = killCounter.CurrentKills;
         }
 
-        killCountText.text =
-            kills.ToString("N0");
+        killCountText.text = kills.ToString("N0");
     }
 
     private void RefreshFinalScore()
@@ -292,12 +307,10 @@ public class PracticeVictoryUI : HaiMonoBehaviour
 
         if (runScore != null)
         {
-            score =
-                runScore.FinalScore;
+            score = runScore.FinalScore;
         }
 
-        finalScoreText.text =
-            score.ToString("N0");
+        finalScoreText.text = score.ToString("N0");
     }
 
     private void RefreshBestScore()
@@ -311,12 +324,10 @@ public class PracticeVictoryUI : HaiMonoBehaviour
 
         if (bestScore != null)
         {
-            score =
-                bestScore.BestScore;
+            score = bestScore.BestScore;
         }
 
-        bestScoreText.text =
-            score.ToString("N0");
+        bestScoreText.text = score.ToString("N0");
     }
 
     private string FormatTime(float totalSeconds)
@@ -327,11 +338,8 @@ public class PracticeVictoryUI : HaiMonoBehaviour
                 Mathf.FloorToInt(totalSeconds)
             );
 
-        int minutes =
-            validSeconds / 60;
-
-        int seconds =
-            validSeconds % 60;
+        int minutes = validSeconds / 60;
+        int seconds = validSeconds % 60;
 
         return $"{minutes:00}:{seconds:00}";
     }
@@ -384,49 +392,43 @@ public class PracticeVictoryUI : HaiMonoBehaviour
 
     private void HandleRestartClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
         if (sceneLoader == null)
         {
             LoadSceneLoader();
-        }
-
-        if (sceneLoader == null)
-        {
-            Debug.LogError(
-                $"{name}: Scene Loader đang null.",
-                this
-            );
-
-            return;
         }
 
         string currentSceneName =
             SceneManager.GetActiveScene().name;
 
-        sceneLoader.LoadScene(
-            currentSceneName
-        );
+        Time.timeScale = 1f;
+
+        if (sceneLoader != null && sceneLoader.LoadScene(currentSceneName))
+        {
+            return;
+        }
+
+        SceneManager.LoadScene(currentSceneName);
     }
 
     private void HandleMainMenuClicked()
     {
+        PracticeAudioManager.Instance?.PlayButtonClickSfx();
+
         if (sceneLoader == null)
         {
             LoadSceneLoader();
         }
 
-        if (sceneLoader == null)
-        {
-            Debug.LogError(
-                $"{name}: Scene Loader đang null.",
-                this
-            );
+        Time.timeScale = 1f;
 
+        if (sceneLoader != null && sceneLoader.LoadScene(PracticeSceneNames.MainMenu))
+        {
             return;
         }
 
-        sceneLoader.LoadScene(
-            PracticeSceneNames.MainMenu
-        );
+        SceneManager.LoadScene(PracticeSceneNames.MainMenu);
     }
 
     // =========================================================
