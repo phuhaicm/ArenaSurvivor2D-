@@ -19,30 +19,43 @@ public class PracticeRunDirector : HaiMonoBehaviour
     [SerializeField]
     private PracticePlayerKillCounter killCounter;
 
-    [Header("Multi-Wave & Flow Settings")]
-    [Tooltip("Bật chế độ Multi-Wave: Sinh tồn Wave 1 -> Mid-Boss (1 cây máu) -> Sinh tồn Wave 2 -> Final Boss (Đa cây máu). Nếu tắt: Chạy 1 đợt thẳng tới Final Boss.")]
+    [Header("Multi-Wave & Flow Settings (5-Minute Standard Pacing)")]
+    [Tooltip("Bật chế độ Multi-Wave: Sinh tồn Wave 1 -> Mid-Boss (1 cây máu) -> Sinh tồn Wave 2 -> Final Boss (Đa cây máu).")]
     [SerializeField]
     private bool enableMultiWave = true;
 
-    [Tooltip("Thời gian sinh tồn của Wave 1 (giây) trước khi Mid-Boss xuất hiện.")]
+    [Tooltip("Thời gian sinh tồn của Wave 1 (giây) trước khi Mid-Boss xuất hiện (Chuẩn: 120s).")]
     [SerializeField, Min(10f)]
-    private float wave1SurvivalDuration = 45f;
+    private float wave1SurvivalDuration = 120f;
 
     [Tooltip("Hệ số máu của Mid-Boss (Boss Đợt 1). Boss này chỉ có 1 cây máu duy nhất.")]
     [SerializeField, Min(0.2f)]
-    private float midBossHealthMultiplier = 0.5f;
+    private float midBossHealthMultiplier = 0.6f;
 
-    [Tooltip("Thời gian sinh tồn của Wave 2 (giây) trước khi Final Boss xuất hiện.")]
+    [Tooltip("Thời gian sinh tồn của Wave 2 (giây) trước khi Final Boss xuất hiện (Chuẩn: 150s).")]
     [SerializeField, Min(10f)]
-    private float wave2SurvivalDuration = 55f;
+    private float wave2SurvivalDuration = 150f;
 
     [Tooltip("Hệ số máu của Final Boss (Boss Đợt 2).")]
     [SerializeField, Min(0.2f)]
-    private float finalBossHealthMultiplier = 1.0f;
+    private float finalBossHealthMultiplier = 1.2f;
 
     [Tooltip("Số Phase tối đa của Final Boss (1 = 2 Phase [0,1], 2 = 3 Phase [0,1,2]).")]
     [SerializeField, Range(0, 3)]
     private int finalBossMaxPhaseIndex = 2;
+
+    [Header("Dynamic Wave Events (Elite & Ambush Swarm)")]
+    [SerializeField]
+    private bool enableDynamicWaveEvents = true;
+
+    [SerializeField, Range(6, 36)]
+    private int wave1AmbushCount = 14;
+
+    [SerializeField, Range(8, 48)]
+    private int wave2AmbushCount = 22;
+
+    [SerializeField, Min(4f)]
+    private float ambushRingRadius = 7.5f;
 
     private PracticeRunPhase currentPhase;
     public event Action<PracticeRunPhase> RunPhaseChanged;
@@ -57,6 +70,11 @@ public class PracticeRunDirector : HaiMonoBehaviour
     private bool waveBossTriggered;
     private bool victoryRequested;
     private bool victoryPending;
+
+    // Cờ theo dõi các sự kiện đột kích giữa mỗi Wave (chỉ kích hoạt đúng 1 lần mỗi mốc)
+    private bool waveElite1Spawned;
+    private bool waveAmbushTriggered;
+    private bool waveElite2Spawned;
 
     public float RunDuration => CurrentWaveTargetDuration;
 
@@ -111,6 +129,7 @@ public class PracticeRunDirector : HaiMonoBehaviour
         waveBossTriggered = false;
         victoryRequested = false;
         victoryPending = false;
+        ResetWaveEventFlags();
 
         SetRunPhase(PracticeRunPhase.Survival);
     }
@@ -136,6 +155,13 @@ public class PracticeRunDirector : HaiMonoBehaviour
     private void Update()
     {
         CheckRunProgress();
+    }
+
+    private void ResetWaveEventFlags()
+    {
+        waveElite1Spawned = false;
+        waveAmbushTriggered = false;
+        waveElite2Spawned = false;
     }
 
     private void ResolveReferences()
@@ -208,6 +234,12 @@ public class PracticeRunDirector : HaiMonoBehaviour
         }
 
         float currentWaveElapsed = survivalTimer.ElapsedTime - currentWaveStartTime;
+        float targetDuration = CurrentWaveTargetDuration;
+
+        if (enableDynamicWaveEvents && targetDuration > 15f)
+        {
+            EvaluateDynamicWaveEvents(currentWaveElapsed, targetDuration);
+        }
 
         if (currentWaveIndex == 1 && enableMultiWave)
         {
@@ -218,14 +250,50 @@ public class PracticeRunDirector : HaiMonoBehaviour
         }
         else
         {
-            float targetDuration = enableMultiWave
-                ? wave2SurvivalDuration
-                : (wave1SurvivalDuration + wave2SurvivalDuration);
-
             if (currentWaveElapsed >= targetDuration)
             {
                 StartFinalBossPhase();
             }
+        }
+    }
+
+    private void EvaluateDynamicWaveEvents(float waveElapsed, float waveDuration)
+    {
+        if (enemySpawner == null) return;
+
+        float progressRatio = waveElapsed / waveDuration;
+
+        // Mốc 35% thời gian của Wave: Triệu hồi Quái Tinh Anh (Elite) đầu tiên
+        if (!waveElite1Spawned && progressRatio >= 0.35f)
+        {
+            waveElite1Spawned = true;
+            enemySpawner.SpawnEliteEnemy();
+            Debug.Log($"<color=#FF9100><b>[Wave {currentWaveIndex} Event]</b></color> ELITE ENEMY XUẤT HIỆN!", this);
+        }
+
+        // Mốc 60% thời gian của Wave: Kích hoạt Vòng Vây 360 Độ (Ambush Ring Swarm)
+        if (!waveAmbushTriggered && progressRatio >= 0.60f)
+        {
+            waveAmbushTriggered = true;
+            int ambushCount = currentWaveIndex == 1 ? wave1AmbushCount : wave2AmbushCount;
+            int spawned = enemySpawner.SpawnAmbushRing(ambushCount, ambushRingRadius);
+            Debug.Log(
+                $"<color=#FF1744><b>[Wave {currentWaveIndex} Event]</b></color> AMBUSH SWARM! {spawned} quái bao vây Player!",
+                this
+            );
+        }
+
+        // Mốc 80% thời gian của Wave: Triệu hồi Quái Tinh Anh (Elite) thứ hai để người chơi gom mưa XP trước khi gặp Boss
+        if (!waveElite2Spawned && progressRatio >= 0.80f)
+        {
+            waveElite2Spawned = true;
+            enemySpawner.SpawnEliteEnemy();
+            if (currentWaveIndex >= 2)
+            {
+                // Ở Wave 2 sinh liền 2 con Elite cùng lúc để tăng độ kịch tính
+                enemySpawner.SpawnEliteEnemy();
+            }
+            Debug.Log($"<color=#FF9100><b>[Wave {currentWaveIndex} Event]</b></color> ELITE REINFORCEMENT XUẤT HIỆN!", this);
         }
     }
 
@@ -246,7 +314,6 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        // Mid-Boss: tiêu đề "MID-BOSS", 1 cây máu duy nhất (allowedMaxPhaseIndex = 0)
         bool spawnedSuccessfully = bossController.SpawnBossEncounter(
             bossTitle: "MID-BOSS",
             healthMultiplier: midBossHealthMultiplier,
@@ -280,7 +347,6 @@ public class PracticeRunDirector : HaiMonoBehaviour
             return;
         }
 
-        // Final Boss: tiêu đề "FINAL BOSS", đa cây máu (allowedMaxPhaseIndex = finalBossMaxPhaseIndex)
         bool spawnedSuccessfully = bossController.SpawnBossEncounter(
             bossTitle: "FINAL BOSS",
             healthMultiplier: finalBossHealthMultiplier,
@@ -322,14 +388,12 @@ public class PracticeRunDirector : HaiMonoBehaviour
         }
         killCounter?.RegisterKill(isBossKill: true);
 
-        // Nếu vừa đánh bại Mid-Boss của Wave 1 trong chế độ Multi-Wave -> Chuyển sang Wave 2
         if (currentWaveIndex == 1 && enableMultiWave)
         {
             TransitionToWave2();
             return;
         }
 
-        // Đã đánh bại Final Boss -> Hoàn tất trận chiến
         SetRunPhase(PracticeRunPhase.Completed);
 
         if (!gameStateController.IsRunning)
@@ -346,8 +410,8 @@ public class PracticeRunDirector : HaiMonoBehaviour
         currentWaveIndex = 2;
         currentWaveStartTime = survivalTimer != null ? survivalTimer.ElapsedTime : 0f;
         waveBossTriggered = false;
+        ResetWaveEventFlags();
 
-        // Kích hoạt lại việc sinh quái cho Wave 2
         if (enemySpawner != null)
         {
             enemySpawner.SetSpawningEnabled(true);

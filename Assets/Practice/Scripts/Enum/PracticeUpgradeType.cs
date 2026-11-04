@@ -12,5 +12,7 @@ public enum PracticeUpgradeType // dùng enum thay cho string để tránh lỗi
     ProjectileCount = 2,
     MaxHealth = 3,
     MoveSpeed = 4,
-    MagnetRadius = 5
+    MagnetRadius = 5,
+    AuraDamage = 6,
+    AuraRadius = 7
 }
