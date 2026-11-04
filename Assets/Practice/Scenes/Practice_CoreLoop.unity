@@ -3825,6 +3825,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bbbbd210168e4f4468cc82e7b750d51a, type: 2}
   - {fileID: 11400000, guid: 9573055c2c7afa14984ab73041b30fd2, type: 2}
   - {fileID: 11400000, guid: dccc36d038fc34443ba138d1a1397f40, type: 2}
+  eliteEnemyPrefab: {fileID: 6169112465887158619, guid: 3c3993f775cf2a340977527c8f330765,
+    type: 3}
   enemyContainer: {fileID: 1508022804}
   playerHealth: {fileID: 1142143051}
   runDirector: {fileID: 554073481}
@@ -4083,11 +4085,15 @@ MonoBehaviour:
   bossController: {fileID: 865544101}
   killCounter: {fileID: 0}
   enableMultiWave: 1
-  wave1SurvivalDuration: 45
+  wave1SurvivalDuration: 120
   midBossHealthMultiplier: 0.5
-  wave2SurvivalDuration: 55
+  wave2SurvivalDuration: 150
   finalBossHealthMultiplier: 1
   finalBossMaxPhaseIndex: 2
+  enableDynamicWaveEvents: 1
+  wave1AmbushCount: 14
+  wave2AmbushCount: 22
+  ambushRingRadius: 7.5
 --- !u!1 &571448162
 GameObject:
   m_ObjectHideFlags: 0
@@ -4168,6 +4174,10 @@ MonoBehaviour:
   - prefab: {fileID: 2020878578798839251, guid: b7ee3b9d8d8e3bf4fac86f7139e0426a,
       type: 3}
     initialCount: 25
+    defaultContainer: {fileID: 225376167}
+  - prefab: {fileID: 3149481832146249845, guid: 3c3993f775cf2a340977527c8f330765,
+      type: 3}
+    initialCount: 4
     defaultContainer: {fileID: 225376167}
   fallbackContainer: {fileID: 0}
 --- !u!1 &584911413
@@ -4641,6 +4651,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: cbe8e1446b08b8a42b231af0dfc39ed7, type: 2}
   - {fileID: 11400000, guid: 93eeb271d5ea9dc4e9581ef99bc60d76, type: 2}
   - {fileID: 11400000, guid: 398f62d3c88941a4b8196087dffb7190, type: 2}
+  - {fileID: 11400000, guid: 56ac6f88028eaa3498063c1ca192c24c, type: 2}
+  - {fileID: 11400000, guid: 222f93f05d939ef46a386a6cce5d871c, type: 2}
   upgradePanel: {fileID: 178362882}
   rerollButton: {fileID: 120017114}
   skipButton: {fileID: 885304159}
@@ -7425,6 +7437,7 @@ MonoBehaviour:
   playerHealth: {fileID: 0}
   playerMovement: {fileID: 0}
   magnetDetector: {fileID: 0}
+  damageAura: {fileID: 0}
 --- !u!1 &1083382141
 GameObject:
   m_ObjectHideFlags: 0
@@ -7959,6 +7972,7 @@ MonoBehaviour:
   playerHealth: {fileID: 1142143051}
   playerMovement: {fileID: 1142143050}
   magnetDetector: {fileID: 889266235}
+  damageAura: {fileID: 1353769578}
 --- !u!114 &1142143058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8683,6 +8697,165 @@ MonoBehaviour:
   pressedColor: {r: 0.78, g: 0.84, b: 0.92, a: 1}
   selectedColor: {r: 0.92, g: 0.96, b: 1, a: 1}
   disabledColor: {r: 0.55, g: 0.55, b: 0.55, a: 0.6}
+--- !u!1 &1353769577
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1353769580}
+  - component: {fileID: 1353769579}
+  - component: {fileID: 1353769578}
+  m_Layer: 0
+  m_Name: DamageAura
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1353769578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1353769577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e889c2e4d5f33d941a9980b051e1974c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isAuraActive: 1
+  auraDamage: 8
+  auraRadius: 2.4
+  damageTickInterval: 0.45
+  ringLineRenderer: {fileID: 1353769579}
+  circleSegments: 48
+  ringLineWidth: 0.08
+  auraColor: {r: 0.18, g: 0.85, b: 1, a: 0.65}
+  pulseSpeed: 4
+  radiusPulseAmplitude: 0.05
+--- !u!120 &1353769579
+LineRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1353769577}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_Positions:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 1}
+  m_Parameters:
+    serializedVersion: 3
+    widthMultiplier: 1
+    widthCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    colorGradient:
+      serializedVersion: 2
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 65535
+      atime2: 0
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: -1
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 2
+    numCornerVertices: 0
+    numCapVertices: 0
+    alignment: 0
+    textureMode: 0
+    textureScale: {x: 1, y: 1}
+    shadowBias: 0.5
+    generateLightingData: 0
+  m_MaskInteraction: 0
+  m_UseWorldSpace: 1
+  m_Loop: 0
+  m_ApplyActiveColorSpace: 1
+--- !u!4 &1353769580
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1353769577}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1585446911}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1369684162
 GameObject:
   m_ObjectHideFlags: 0
@@ -9756,6 +9929,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1142143047}
+  - {fileID: 1353769580}
   m_Father: {fileID: 948434524}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1590505085
@@ -10452,16 +10626,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c0718ebeddf1df4985740c515dd9115, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  difficultyInterval: 20
+  difficultyInterval: 25
   initialSpawnInterval: 1.6
-  spawnIntervalReduction: 0.12
-  minimunSpawnInterval: 0.4
-  initialMaxAliveEnemies: 6
-  maxAliveIncreasePerLevel: 3
-  maximunAliveEnemies: 45
-  initialBatchSize: 1
+  spawnIntervalReduction: 0.15
+  minimunSpawnInterval: 0.35
+  initialMaxAliveEnemies: 10
+  maxAliveIncreasePerLevel: 6
+  maximunAliveEnemies: 80
+  initialBatchSize: 2
   maxBatchIncreasePerLevel: 1
-  maximunBatchSize: 4
+  maximunBatchSize: 8
 --- !u!1 &1858757752
 GameObject:
   m_ObjectHideFlags: 0

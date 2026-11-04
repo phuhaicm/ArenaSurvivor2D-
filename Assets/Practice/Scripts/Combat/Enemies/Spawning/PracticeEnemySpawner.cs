@@ -8,6 +8,8 @@ public class PracticeEnemySpawner : HaiMonoBehaviour
 {
     [Header("Enemy Type Reference")]
     [SerializeField] private PracticeEnemyTypeData[] enemyTypes;
+    [Tooltip("Prefab Quái Tinh Anh (Elite) to khỏe và nổ ra mưa hạt XP. Nếu để trống sẽ tự lấy quái cuối mảng enemyTypes.")]
+    [SerializeField] private PracticeEnemyHealth eliteEnemyPrefab;
     private readonly List<PracticeEnemyTypeData> availableEnemyTypes = new();
     private int currentDifficulyLevel = 1;
     [SerializeField] private Transform enemyContainer;
@@ -429,6 +431,125 @@ public class PracticeEnemySpawner : HaiMonoBehaviour
         spawnedEnemy.Died += HandleEnemyDied;
 
         return true;
+    }
+    public PracticeEnemyHealth SpawnEliteEnemy()
+    {
+        if (!HasValidSpawnSetup())
+        {
+            return null;
+        }
+
+        PracticeEnemyHealth prefabToSpawn = eliteEnemyPrefab;
+
+        if (prefabToSpawn == null && enemyTypes != null && enemyTypes.Length > 0)
+        {
+            // Fallback an toàn: lấy loại quái mạnh nhất ở cuối danh sách (thường là Tank)
+            for (int i = enemyTypes.Length - 1; i >= 0; i--)
+            {
+                if (enemyTypes[i] != null && enemyTypes[i].EnemyPrefab != null)
+                {
+                    prefabToSpawn = enemyTypes[i].EnemyPrefab;
+                    break;
+                }
+            }
+        }
+
+        if (prefabToSpawn == null)
+        {
+            return null;
+        }
+
+        if (!TryGetSpawnPosition(out Vector2 spawnPosition))
+        {
+            spawnPosition = GenerateSpawnPosition();
+        }
+
+        PracticeEnemyHealth spawnedElite =
+            PracticeObjectPoolManager.SpawnOrInstantiate(
+                prefabToSpawn,
+                spawnPosition,
+                Quaternion.identity,
+                enemyContainer
+            );
+
+        if (spawnedElite == null)
+        {
+            return null;
+        }
+
+        // Nếu dùng tạm Prefab thường chưa chỉnh dropCount trên Inspector, tự động cấu hình nổ 10 hạt XP
+        PracticeXPDropOnDeath xpDrop = spawnedElite.GetComponent<PracticeXPDropOnDeath>();
+        if (xpDrop != null && eliteEnemyPrefab == null)
+        {
+            xpDrop.ConfigureDropBurst(10, 1.25f);
+        }
+
+        RegisterSpawnedEnemy(spawnedElite);
+        return spawnedElite;
+    }
+
+    public int SpawnAmbushRing(int ringEnemyCount, float ringRadius = 7.5f)//lấy vị trí hiện tại của player
+    {
+        if (!HasValidSpawnSetup() || playerTarget == null)
+        {
+            return 0;
+        }
+
+        PracticeEnemyHealth ringPrefab = null;
+
+        if (enemyTypes != null && enemyTypes.Length > 0 && enemyTypes[0] != null)
+        {
+            ringPrefab = enemyTypes[0].EnemyPrefab;
+        }
+
+        if (ringPrefab == null)
+        {
+            return 0;
+        }
+
+        int validCount = Mathf.Clamp(ringEnemyCount, 4, 60);
+        float validRadius = Mathf.Max(3.5f, ringRadius);
+        float angleStep = 360f / validCount;
+        Vector2 center = playerTarget.position;
+        int spawnedCount = 0;
+
+        for (int i = 0; i < validCount; i++)
+        {
+            float angleRad = (angleStep * i) * Mathf.Deg2Rad;
+            Vector2 spawnPos = center + new Vector2(
+                Mathf.Cos(angleRad) * validRadius,
+                Mathf.Sin(angleRad) * validRadius
+            );
+
+            PracticeEnemyHealth enemy =
+                PracticeObjectPoolManager.SpawnOrInstantiate(
+                    ringPrefab,
+                    spawnPos,
+                    Quaternion.identity,
+                    enemyContainer
+                );
+
+            if (enemy != null)
+            {
+                RegisterSpawnedEnemy(enemy);
+                spawnedCount++;
+            }
+        }
+
+        return spawnedCount;
+    }
+
+    private void RegisterSpawnedEnemy(PracticeEnemyHealth spawnedEnemy)
+    {
+        if (spawnedEnemy == null) return;
+
+        if (!spawnedEnemies.Contains(spawnedEnemy))
+        {
+            spawnedEnemies.Add(spawnedEnemy);
+        }
+
+        spawnedEnemy.Died -= HandleEnemyDied;
+        spawnedEnemy.Died += HandleEnemyDied;
     }
 
     private bool TryGetSpawnPosition(out Vector2 spawnPosition)

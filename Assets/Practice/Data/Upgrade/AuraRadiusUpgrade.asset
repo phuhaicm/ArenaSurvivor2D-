@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35b7bdee59631024cb66822cf3d026ae, type: 3}
+  m_Name: AuraRadiusUpgrade
+  m_EditorClassIdentifier: 
+  upgradeId: upgrade_aura_radius
+  category: 2
+  displayName: Plasma Aura Size
+  description: Expand the radius of the protective Damage Aura.
+  icon: {fileID: 0}
+  upgradeType: 7
+  baseValue: 0.65
+  valueIncreasePerLevel: 0.15
+  maxLevel: 5

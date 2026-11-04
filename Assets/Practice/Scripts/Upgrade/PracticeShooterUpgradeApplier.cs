@@ -17,7 +17,10 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
     [SerializeField]
     private PracticeXPMagnetDetector magnetDetector;
 
-    private Dictionary<PracticeUpgradeType, Func<float, bool>> upgradeEffectHandlers;//là một kiểu Delegate (Con trỏ hàm) trong C# đại diện cho bất kỳ hàm nào nhận vào 1 tham số kiểu float (chính là value của nâng cấp) và trả về kết quả kiểu bool (true nếu nâng cấp thành công, false nếu thất bại).
+    [SerializeField]
+    private PracticePlayerDamageAura damageAura;
+
+    private Dictionary<PracticeUpgradeType, Func<float, bool>> upgradeEffectHandlers;
 
     protected override void LoadComponents()
     {
@@ -102,6 +105,19 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
                 magnetDetector = FindFirstObjectByType<PracticeXPMagnetDetector>();
             }
         }
+
+        if (damageAura == null)
+        {
+            damageAura = GetComponentInChildren<PracticePlayerDamageAura>(true);
+            if (damageAura == null && playerHealth != null)
+            {
+                damageAura = playerHealth.GetComponentInChildren<PracticePlayerDamageAura>(true);
+            }
+            if (damageAura == null)
+            {
+                damageAura = FindFirstObjectByType<PracticePlayerDamageAura>();
+            }
+        }
     }
 
     private void InitializeEffectHandlers()
@@ -113,7 +129,9 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
             { PracticeUpgradeType.ProjectileCount, ApplyProjectileCount },
             { PracticeUpgradeType.MaxHealth, ApplyMaxHealth },
             { PracticeUpgradeType.MoveSpeed, ApplyMoveSpeed },
-            { PracticeUpgradeType.MagnetRadius, ApplyMagnetRadius }
+            { PracticeUpgradeType.MagnetRadius, ApplyMagnetRadius },
+            { PracticeUpgradeType.AuraDamage, ApplyAuraDamage },
+            { PracticeUpgradeType.AuraRadius, ApplyAuraRadius }
         };
     }
 
@@ -246,6 +264,28 @@ public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
         }
 
         magnetDetector.AddMagnetRadius(value);
+        return true;
+    }
+
+    private bool ApplyAuraDamage(float value)
+    {
+        if (damageAura == null || value <= 0f)
+        {
+            return false;
+        }
+
+        damageAura.AddAuraDamage(value);
+        return true;
+    }
+
+    private bool ApplyAuraRadius(float value)
+    {
+        if (damageAura == null || value <= 0f)
+        {
+            return false;
+        }
+
+        damageAura.AddAuraRadius(value);
         return true;
     }
 }

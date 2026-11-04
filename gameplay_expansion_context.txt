@@ -1,0 +1,1517 @@
+=== 1. ENEMY SPAWNER FULL ===
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Random = UnityEngine.Random;
+
+public class PracticeEnemySpawner : HaiMonoBehaviour
+{
+    [Header("Enemy Type Reference")]
+    [SerializeField] private PracticeEnemyTypeData[] enemyTypes;
+    private readonly List<PracticeEnemyTypeData> availableEnemyTypes = new();
+    private int currentDifficulyLevel = 1;
+    [SerializeField] private Transform enemyContainer;
+
+    [Header("Player & Run References")]
+    [SerializeField] protected PracticePlayerHealth playerHealth;
+    [SerializeField] private PracticeRunDirector runDirector;
+
+    [Header("World References")]
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private Transform playerTarget;
+
+    [Header("Spawn Timing")]
+    [SerializeField, Min(0f)] private float initalSpawnDelay = 1f;
+    [SerializeField, Min(0.1f)] private float spawnInterval = 2f;
+
+    [Header("Spawn Limits")]
+    [SerializeField, Min(1)] private int maxAliveEnemies = 10;
+    [SerializeField, Min(0f)] private float spawnPadding = 1.5f;
+    [SerializeField, Min(0f)] private float miniumDistanceFromPlayer = 3f;
+    [SerializeField, Min(1)] private int maxiumSpawnAttemps = 8;
+
+    [Header("Difficulty Reference")]
+    [SerializeField] private PracticeDifficultySystem difficultySystem;
+
+    [Header("Debug")]
+    [SerializeField, Min(0.05f)] private float spawnPointGizmoRadius = 0.2f;
+    [SerializeField] private bool enableVerboseSpawnLogs = false;
+
+    private readonly List<PracticeEnemyHealth> spawnedEnemies = new();
+    private float nextSpawnTime;
+
+    [SerializeField, Min(1)] private int batchSize = 1;
+    [SerializeField, Min(0f)] private float delayBetweenBatchEnemies = 0.2f;
+    private Coroutine spawnBatchCoroutine;
+
+    public event Action EnemyDefeated;
+
+    private bool canSpawn = true;
+    private bool hasStarted;
+
+    public int AliveEnemyCount => spawnedEnemies.Count;
+    public int MaxAliveEnemies => maxAliveEnemies;
+    public float SpawnInterval => spawnInterval;
+    public int BatchSize => batchSize;
+    public Transform EnemyContainer => enemyContainer;
+    public bool CanSpawn => canSpawn;
+    public bool HasStarted => hasStarted;
+
+    protected override void Start()
+    {
+        base.Start();
+        canSpawn = runDirector == null || runDirector.CurrentPhase == PracticeRunPhase.Survival;
+        hasStarted = true;
+        nextSpawnTime = Time.time + initalSpawnDelay;
+    }
+
+    private void Update()
+    {
+        if (!canSpawn) return;
+        if (spawnBatchCoroutine != null) return;
+        if (Time.time < nextSpawnTime) return;
+
+        RemoveDestroyedEnemies();
+
+        if (spawnedEnemies.Count >= maxAliveEnemies) return;
+        spawnBatchCoroutine = StartCoroutine(SpawnBatchCoroutine());
+    }
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadPlayerHealth();
+        LoadRunDirector();
+        LoadWorldReferences();
+    }
+
+    protected void LoadPlayerHealth()
+    {
+        if (playerHealth != null) return;
+        playerHealth = FindFirstObjectByType<PracticePlayerHealth>();
+    }
+
+    private void LoadRunDirector()
+    {
+        if (runDirector != null) return;
+        runDirector = FindFirstObjectByType<PracticeRunDirector>();
+    }
+
+    private void LoadWorldReferences()
+    {
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+        }
+
+        if (playerTarget == null && playerHealth != null)
+        {
+            playerTarget = playerHealth.transform;
+        }
+
+        if (enemyContainer == null)
+        {
+            GameObject containerObj = GameObject.Find("RuntimeEnemies");
+            if (containerObj != null)
+            {
+                enemyContainer = containerObj.transform;
+            }
+        }
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        LoadPlayerHealth();
+        LoadRunDirector();
+        LoadWorldReferences();
+
+        LoadDifficultyEvents();
+        SubscribeAllEnemyEvents();
+        SubcribePlayerEvents();
+        SubscribeRunDirectorEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnLoadDifficultyEvents();
+        UnsubscribeAllEnemyEvents();
+        StopSpawnBatch();
+        UnSubcribePlayerEvents();
+        UnsubscribeRunDirectorEvents();
+        base.OnDisable();
+    }
+
+    protected void SubcribePlayerEvents()
+    {
+        if (playerHealth == null) return;
+        playerHealth.Died -= HandlePlayerDied;
+        playerHealth.Died += HandlePlayerDied;
+    }
+
+    protected void UnSubcribePlayerEvents()
+    {
+        if (playerHealth == null) return;
+        playerHealth.Died -= HandlePlayerDied;
+    }
+
+    private void SubscribeRunDirectorEvents()
+    {
+        if (runDirector == null) return;
+        runDirector.RunPhaseChanged -= HandleRunPhaseChanged;
+        runDirector.RunPhaseChanged += HandleRunPhaseChanged;
+    }
+
+    private void UnsubscribeRunDirectorEvents()
+    {
+        if (runDirector == null) return;
+        runDirector.RunPhaseChanged -= HandleRunPhaseChanged;
+    }
+
+    private void HandleRunPhaseChanged(PracticeRunPhase newPhase)
+    {
+        // Chỉ cho phép sinh quái thường khi đang ở pha Survival.
+        // Khi bước sang BossFight hoặc Completed, tự động khóa Spawner và ngắt Coroutine ngay lập tức.
+        SetSpawningEnabled(newPhase == PracticeRunPhase.Survival);
+    }
+
+    protected void LoadDifficultyEvents()
+    {
+        if (difficultySystem == null) return;
+        difficultySystem.DifficultyChanged -= HandleDifficultyChanged;
+        difficultySystem.DifficultyChanged += HandleDifficultyChanged;
+    }
+
+    protected void UnLoadDifficultyEvents()
+    {
+        if (difficultySystem != null)
+        {
+            difficultySystem.DifficultyChanged -= HandleDifficultyChanged;
+        }
+    }
+
+    protected void SubscribeAllEnemyEvents()
+    {
+        for (int i = 0; i < spawnedEnemies.Count; i++)
+        {
+            PracticeEnemyHealth enemy = spawnedEnemies[i];
+            if (enemy == null) continue;
+            enemy.Died -= HandleEnemyDied;
+            enemy.Died += HandleEnemyDied;
+        }
+    }
+
+    protected void UnsubscribeAllEnemyEvents()
+    {
+        for (int i = 0; i < spawnedEnemies.Count; i++)
+        {
+            PracticeEnemyHealth enemy = spawnedEnemies[i];
+            if (enemy == null) continue;
+            enemy.Died -= HandleEnemyDied;
+        }
+    }
+
+    protected void HandlePlayerDied()
+    {
+        SetSpawningEnabled(false);
+    }
+
+    private bool TrySelectEnemyType(out PracticeEnemyTypeData selectedEnemyType)
+    {
+        BuilAvailableEnemyTypes();
+
+        if (availableEnemyTypes.Count == 0)
+        {
+            selectedEnemyType = null;
+            return false;
+        }
+
+        float totalWeight = CalculateTotalWeight();
+
+        if (totalWeight <= 0f)
+        {
+            selectedEnemyType = null;
+            return false;
+        }
+
+        selectedEnemyType = SelectedEnemyTypeByWeight(totalWeight);
+
+        if (enableVerboseSpawnLogs && selectedEnemyType != null)
+        {
+            Debug.Log(
+                $"Selected Enemy Type: {selectedEnemyType.EnemyTypeName} | Weight: {selectedEnemyType.SpawnWeight}"
+            );
+        }
+
+        return selectedEnemyType != null;
+    }
+
+    private void BuilAvailableEnemyTypes()
+    {
+        availableEnemyTypes.Clear();
+
+        if (enemyTypes == null) return;
+
+        for (int i = 0; i < enemyTypes.Length; i++)
+        {
+            PracticeEnemyTypeData enemyType = enemyTypes[i];
+            if (enemyType == null) continue;
+            if (enemyType.EnemyPrefab == null) continue;
+
+            bool isUnlock = enemyType.UnlockDifficultyLevel <= currentDifficulyLevel;
+            if (!isUnlock) continue;
+
+            if (enemyType.SpawnWeight <= 0f) continue;
+
+            availableEnemyTypes.Add(enemyType);
+        }
+    }
+
+    private float CalculateTotalWeight()
+    {
+        float totalWeight = 0f;
+
+        for (int i = 0; i < availableEnemyTypes.Count; i++)
+        {
+            PracticeEnemyTypeData enemyType = availableEnemyTypes[i];
+            if (enemyType == null) continue;
+            totalWeight += enemyType.SpawnWeight;
+        }
+
+        return totalWeight;
+    }
+
+    private PracticeEnemyTypeData SelectedEnemyTypeByWeight(float totalWeight)
+    {
+        float randomIndex = Random.Range(0f, totalWeight);
+        float cucumlativeWeight = 0f;
+
+        for (int i = 0; i < availableEnemyTypes.Count; i++)
+        {
+            PracticeEnemyTypeData enemyType = availableEnemyTypes[i];
+            cucumlativeWeight += enemyType.SpawnWeight;
+
+            if (randomIndex <= cucumlativeWeight)
+            {
+                return enemyType;
+            }
+        }
+
+        return availableEnemyTypes[availableEnemyTypes.Count - 1];
+    }
+
+    private void StopSpawnBatch()
+    {
+        if (spawnBatchCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(spawnBatchCoroutine);
+        spawnBatchCoroutine = null;
+    }
+
+    private IEnumerator SpawnBatchCoroutine()
+    {
+        for (int i = 0; i < batchSize; i++)
+        {
+            if (!CanSpawn) break;
+
+            RemoveDestroyedEnemies();
+
+            if (spawnedEnemies.Count >= maxAliveEnemies) break;
+
+            bool spawnedSuccessfully = TrySpawnSingleEnemy();
+
+            if (!spawnedSuccessfully) break;
+
+            bool spawnEndBatch = i < batchSize - 1;
+
+            if (spawnEndBatch && delayBetweenBatchEnemies > 0f)
+            {
+                yield return new WaitForSeconds(delayBetweenBatchEnemies);
+            }
+        }
+
+        ScheduleNextSpawn();
+        spawnBatchCoroutine = null;
+    }
+
+    private void HandleDifficultyChanged(PracticeDifficultyData difficultyData)
+    {
+        currentDifficulyLevel = difficultyData.Level;
+        spawnInterval = difficultyData.SpawnInterval;
+        maxAliveEnemies = difficultyData.MaxAliveEnemies;
+        batchSize = difficultyData.BatchSize;
+
+        if (hasStarted)
+        {
+            nextSpawnTime = Time.time + spawnInterval;
+        }
+    }
+
+    protected void HandleEnemyDied()
+    {
+        PracticeAudioManager.Instance?.PlayEnemyDeathSfx();
+        EnemyDefeated?.Invoke();
+    }
+
+    private bool TrySpawnSingleEnemy()
+    {
+        return SpawnEnemyInternal(false, out _);
+    }
+
+    public PracticeEnemyHealth SpawnBenchmarkEnemy()
+    {
+        SpawnEnemyInternal(true, out PracticeEnemyHealth spawned);
+        return spawned;
+    }
+
+    private bool SpawnEnemyInternal(bool ignoreUnlockLevel, out PracticeEnemyHealth spawnedEnemy)
+    {
+        spawnedEnemy = null;
+
+        if (!HasValidSpawnSetup())
+        {
+            return false;
+        }
+
+        if (!TryGetSpawnPosition(out Vector2 spawnPosition))
+        {
+            spawnPosition = GenerateSpawnPosition();
+        }
+
+        PracticeEnemyTypeData selectedEnemyType = null;
+
+        if (ignoreUnlockLevel && enemyTypes != null && enemyTypes.Length > 0)
+        {
+            int randomIdx = Random.Range(0, enemyTypes.Length);
+            selectedEnemyType = enemyTypes[randomIdx];
+        }
+
+        if (selectedEnemyType == null || selectedEnemyType.EnemyPrefab == null)
+        {
+            if (!TrySelectEnemyType(out selectedEnemyType))
+            {
+                return false;
+            }
+        }
+
+        PracticeEnemyHealth selectedPrefab = selectedEnemyType.EnemyPrefab;
+
+        spawnedEnemy =
+            PracticeObjectPoolManager.SpawnOrInstantiate(
+                selectedPrefab,
+                spawnPosition,
+                Quaternion.identity,
+                enemyContainer
+            );
+
+        if (spawnedEnemy == null)
+        {
+            return false;
+        }
+
+        if (enableVerboseSpawnLogs)
+        {
+            Debug.Log(
+                $"SPAWN | Enemy: {spawnedEnemy.name} | Pos: {spawnPosition}",
+                spawnedEnemy
+            );
+        }
+
+        if (!spawnedEnemies.Contains(spawnedEnemy))
+        {
+            spawnedEnemies.Add(spawnedEnemy);
+        }
+
+        spawnedEnemy.Died -= HandleEnemyDied;
+        spawnedEnemy.Died += HandleEnemyDied;
+
+        return true;
+    }
+
+    private bool TryGetSpawnPosition(out Vector2 spawnPosition)
+    {
+        for (int attempt = 0; attempt < maxiumSpawnAttemps; attempt++)
+        {
+            Vector2 candidatePosition = GenerateSpawnPosition();
+            if (IsFarEnoughFromPlayer(candidatePosition))
+            {
+                spawnPosition = candidatePosition;
+                return true;
+            }
+        }
+
+        spawnPosition = Vector2.zero;
+        return false;
+    }
+
+    private Vector2 GenerateSpawnPosition()
+    {
+        float gamePlayPlaneZ = 0f;
+        float distanceFromCameraToPlane = Mathf.Abs(gamePlayPlaneZ - mainCamera.transform.position.z);
+
+        Vector3 bottomLeft = mainCamera.ViewportToWorldPoint(new Vector3(0f, 0f, distanceFromCameraToPlane));
+        Vector3 topRight = mainCamera.ViewportToWorldPoint(new Vector3(1f, 1f, distanceFromCameraToPlane));
+
+        float cameraleft = bottomLeft.x;
+        float cameraRight = topRight.x;
+        float cameraBottom = bottomLeft.y;
+        float cameraTop = topRight.y;
+
+        SpawnEdge selectedEdge = (SpawnEdge)Random.Range(0, 4);
+        switch (selectedEdge)
+        {
+            case SpawnEdge.Top:
+            {
+                float randomX = Random.Range(cameraleft, cameraRight);
+                return new Vector2(randomX, cameraTop + spawnPadding);
+            }
+            case SpawnEdge.Bottom:
+            {
+                float randomX = Random.Range(cameraleft, cameraRight);
+                return new Vector2(randomX, cameraBottom - spawnPadding);
+            }
+            case SpawnEdge.Left:
+            {
+                float randomY = Random.Range(cameraBottom, cameraTop);
+                return new Vector2(cameraleft - spawnPadding, randomY);
+            }
+            case SpawnEdge.Right:
+            {
+                float randomY = Random.Range(cameraBottom, cameraTop);
+                return new Vector2(cameraRight + spawnPadding, randomY);
+            }
+            default:
+                return Vector2.zero;
+        }
+    }
+
+    private bool IsFarEnoughFromPlayer(Vector2 spawnPosition)
+    {
+        if (playerTarget == null)
+        {
+            return true;
+        }
+
+        Vector2 offset = spawnPosition - (Vector2)playerTarget.position;
+        return offset.sqrMagnitude >= (miniumDistanceFromPlayer * miniumDistanceFromPlayer);
+    }
+
+    private void ScheduleNextSpawn()
+    {
+        nextSpawnTime = Time.time + spawnInterval;
+    }
+
+    public void RemoveDestroyedEnemies()
+    {
+        for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
+        {
+            PracticeEnemyHealth enemy = spawnedEnemies[i];
+
+            if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy)
+            {
+                if (enemy != null)
+                {
+                    enemy.Died -= HandleEnemyDied;
+                }
+
+                spawnedEnemies.RemoveAt(i);
+            }
+        }
+    }
+
+    private bool HasValidSpawnSetup()
+    {
+        if (enemyTypes == null || enemyTypes.Length == 0)
+        {
+            Debug.LogError($"{name}: Chua duoc gan enemy type data.", this);
+            return false;
+        }
+
+        if (mainCamera == null)
+        {
+            Debug.LogError($"{name}: chua co gan main Camera.", this);
+            return false;
+        }
+
+        if (playerTarget == null)
+        {
+            Debug.LogError($"{name}: chua co gan player target.", this);
+            return false;
+        }
+
+        return true;
+    }
+
+    public void SetSpawningEnabled(bool isEnabled)
+    {
+        canSpawn = isEnabled;
+
+        if (!canSpawn)
+        {
+            StopSpawnBatch();
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (mainCamera == null) return;
+
+        float gamePlayPlaneZ = 0f;
+        float distanceFromCameraToPlane = Mathf.Abs(gamePlayPlaneZ - mainCamera.transform.position.z);
+
+        Vector3 bottomLeft = mainCamera.ViewportToWorldPoint(new Vector3(0f, 0f, distanceFromCameraToPlane));
+        Vector3 topRight = mainCamera.ViewportToWorldPoint(new Vector3(1f, 1f, distanceFromCameraToPlane));
+
+        float left = bottomLeft.x - spawnPadding;
+        float right = topRight.x + spawnPadding;
+        float bottom = bottomLeft.y - spawnPadding;
+        float top = topRight.y + spawnPadding;
+
+        Vector3 spawnAreaCenter = new Vector3((left + right) * 0.5f, (bottom + top) * 0.5f, gamePlayPlaneZ);
+        Vector3 spawnAreaSize = new Vector3(right - left, top - bottom, 0f);
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireCube(spawnAreaCenter, spawnAreaSize);
+
+        Gizmos.DrawWireSphere(new Vector3(left, top, gamePlayPlaneZ), spawnPointGizmoRadius);
+        Gizmos.DrawWireSphere(new Vector3(right, top, gamePlayPlaneZ), spawnPointGizmoRadius);
+        Gizmos.DrawWireSphere(new Vector3(left, bottom, gamePlayPlaneZ), spawnPointGizmoRadius);
+        Gizmos.DrawWireSphere(new Vector3(right, bottom, gamePlayPlaneZ), spawnPointGizmoRadius);
+    }
+}=== 2. XP DROP SYSTEM ===
+using UnityEngine;
+
+public class PracticeXPDropOnDeath : HaiMonoBehaviour
+{
+    // Lưu đệm Container ở cấp static để tránh gọi GameObject.Find("RuntimeXPOrbs") hàng trăm lần khi sinh quái
+    private static Transform cachedXpOrbContainer;
+
+    [SerializeField]
+    protected PracticeEnemyHealth enemyHealth;
+
+    [SerializeField]
+    protected GameObject xpOrbPrefab;
+
+    [SerializeField]
+    protected Transform xpOrbContainer;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadEnemyHealth();
+        LoadXPOrbContainer();
+    }
+
+    protected virtual void LoadEnemyHealth()
+    {
+        if (enemyHealth != null) return;
+
+        enemyHealth = GetComponent<PracticeEnemyHealth>();
+    }
+
+    protected virtual void LoadXPOrbContainer()
+    {
+        if (xpOrbContainer != null) return;
+
+        if (cachedXpOrbContainer != null)
+        {
+            xpOrbContainer = cachedXpOrbContainer;
+            return;
+        }
+
+        GameObject containerObject = GameObject.Find("RuntimeXPOrbs");
+
+        if (containerObject != null)
+        {
+            cachedXpOrbContainer = containerObject.transform;
+            xpOrbContainer = cachedXpOrbContainer;
+        }
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        LoadEnemyHealth();
+        LoadXPOrbContainer();
+        SubscribeEvent();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribeEvent();
+
+        base.OnDisable();
+    }
+
+    protected virtual void SubscribeEvent()
+    {
+        if (enemyHealth == null) return;
+
+        enemyHealth.Died -= HandleEnemyDied;
+        enemyHealth.Died += HandleEnemyDied;
+    }
+
+    protected virtual void UnsubscribeEvent()
+    {
+        if (enemyHealth == null) return;
+
+        enemyHealth.Died -= HandleEnemyDied;
+    }
+
+    protected virtual void HandleEnemyDied()
+    {
+        DropXP();
+    }
+
+    protected virtual void DropXP()
+    {
+        if (xpOrbPrefab == null) return;
+
+        LoadXPOrbContainer();
+
+        PracticeObjectPoolManager.SpawnOrInstantiate(
+            xpOrbPrefab,
+            transform.position,
+            Quaternion.identity,
+            xpOrbContainer
+        );
+    }
+}
+using UnityEngine;
+
+public class PracticeXPOrb : HaiMonoBehaviour, IPracticePoolable
+{
+    [SerializeField] private int experienceAmount = 1;
+
+    [Header("Procedural Pulse Juice")]
+    [SerializeField] private bool enablePulseAnimation = true;
+    [SerializeField, Range(0f, 0.35f)] private float pulseAmplitude = 0.12f;
+    [SerializeField, Min(0.5f)] private float pulseSpeed = 4.5f;
+
+    private Vector3 initialScale = Vector3.one;
+    private bool hasCachedInitialScale;
+    private float pulsePhaseOffset;
+
+    public int ExperienceAmount => experienceAmount;
+
+    protected override void Awake()
+    {
+        base.Awake();
+        CacheInitialScale();
+        pulsePhaseOffset = Random.Range(0f, Mathf.PI * 2f);
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        CacheInitialScale();
+        transform.localScale = initialScale;
+    }
+
+    protected override void ResetValues()
+    {
+        base.ResetValues();
+        experienceAmount = 1;
+    }
+
+    private void CacheInitialScale()
+    {
+        if (hasCachedInitialScale)
+        {
+            return;
+        }
+
+        initialScale = transform.localScale;
+        if (initialScale.sqrMagnitude < 0.001f)
+        {
+            initialScale = Vector3.one;
+        }
+
+        hasCachedInitialScale = true;
+    }
+
+    private void Update()
+    {
+        if (!enablePulseAnimation)
+        {
+            return;
+        }
+
+        float scaleFactor = 1f + Mathf.Sin(Time.time * pulseSpeed + pulsePhaseOffset) * pulseAmplitude;
+        transform.localScale = initialScale * scaleFactor;
+    }
+
+    public void OnTakenFromPool()
+    {
+        CacheInitialScale();
+        transform.localScale = initialScale;
+    }
+
+    public void OnReturnedToPool()
+    {
+        CacheInitialScale();
+        transform.localScale = initialScale;
+    }
+
+    public void ResetRuntimeState()
+    {
+        CacheInitialScale();
+        transform.localScale = initialScale;
+    }
+}
+=== 3. RUN DIRECTOR & DIFFICULTY ===
+using System;
+using UnityEngine;
+
+public class PracticeRunDirector : HaiMonoBehaviour
+{
+    [Header("References")]
+    [SerializeField]
+    private PracticeSurvivalTimer survivalTimer;
+
+    [SerializeField]
+    private PracticeGameStateController gameStateController;
+
+    [SerializeField]
+    private PracticeEnemySpawner enemySpawner;
+
+    [SerializeField]
+    private PracticeFinalBossController bossController;
+
+    [SerializeField]
+    private PracticePlayerKillCounter killCounter;
+
+    [Header("Multi-Wave & Flow Settings")]
+    [Tooltip("Bật chế độ Multi-Wave: Sinh tồn Wave 1 -> Mid-Boss (1 cây máu) -> Sinh tồn Wave 2 -> Final Boss (Đa cây máu). Nếu tắt: Chạy 1 đợt thẳng tới Final Boss.")]
+    [SerializeField]
+    private bool enableMultiWave = true;
+
+    [Tooltip("Thời gian sinh tồn của Wave 1 (giây) trước khi Mid-Boss xuất hiện.")]
+    [SerializeField, Min(10f)]
+    private float wave1SurvivalDuration = 45f;
+
+    [Tooltip("Hệ số máu của Mid-Boss (Boss Đợt 1). Boss này chỉ có 1 cây máu duy nhất.")]
+    [SerializeField, Min(0.2f)]
+    private float midBossHealthMultiplier = 0.5f;
+
+    [Tooltip("Thời gian sinh tồn của Wave 2 (giây) trước khi Final Boss xuất hiện.")]
+    [SerializeField, Min(10f)]
+    private float wave2SurvivalDuration = 55f;
+
+    [Tooltip("Hệ số máu của Final Boss (Boss Đợt 2).")]
+    [SerializeField, Min(0.2f)]
+    private float finalBossHealthMultiplier = 1.0f;
+
+    [Tooltip("Số Phase tối đa của Final Boss (1 = 2 Phase [0,1], 2 = 3 Phase [0,1,2]).")]
+    [SerializeField, Range(0, 3)]
+    private int finalBossMaxPhaseIndex = 2;
+
+    private PracticeRunPhase currentPhase;
+    public event Action<PracticeRunPhase> RunPhaseChanged;
+    public event Action<int> WaveChanged;
+
+    public PracticeRunPhase CurrentPhase => currentPhase;
+    public bool IsBossPhase => currentPhase == PracticeRunPhase.BossFight;
+    public int CurrentWaveIndex => currentWaveIndex;
+
+    private int currentWaveIndex = 1;
+    private float currentWaveStartTime = 0f;
+    private bool waveBossTriggered;
+    private bool victoryRequested;
+    private bool victoryPending;
+
+    public float RunDuration => CurrentWaveTargetDuration;
+
+    public float CurrentWaveTargetDuration
+    {
+        get
+        {
+            if (!enableMultiWave)
+            {
+                return wave1SurvivalDuration + wave2SurvivalDuration;
+            }
+
+            return currentWaveIndex == 1 ? wave1SurvivalDuration : wave2SurvivalDuration;
+        }
+    }
+
+    public float RemainingTime
+    {
+        get
+        {
+            if (currentPhase == PracticeRunPhase.BossFight || currentPhase == PracticeRunPhase.Completed)
+            {
+                return 0f;
+            }
+
+            if (survivalTimer == null)
+            {
+                return CurrentWaveTargetDuration;
+            }
+
+            float waveElapsed = survivalTimer.ElapsedTime - currentWaveStartTime;
+            return Mathf.Max(0f, CurrentWaveTargetDuration - waveElapsed);
+        }
+    }
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        ResolveReferences();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        ResolveReferences();
+
+        SubscribeBossEvents();
+        SubscribeGameStateEvents();
+
+        currentWaveIndex = 1;
+        currentWaveStartTime = 0f;
+        waveBossTriggered = false;
+        victoryRequested = false;
+        victoryPending = false;
+
+        SetRunPhase(PracticeRunPhase.Survival);
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribeBossEvents();
+        UnsubscribeGameStateEvents();
+
+        base.OnDisable();
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        Debug.Log(
+            $"{name}: Run Director started. MultiWave = {enableMultiWave}, " +
+            $"Wave 1 = {wave1SurvivalDuration}s, Wave 2 = {wave2SurvivalDuration}s.",
+            this
+        );
+    }
+
+    private void Update()
+    {
+        CheckRunProgress();
+    }
+
+    private void ResolveReferences()
+    {
+        if (survivalTimer == null)
+        {
+            survivalTimer = FindFirstObjectByType<PracticeSurvivalTimer>();
+        }
+
+        if (gameStateController == null)
+        {
+            gameStateController = FindFirstObjectByType<PracticeGameStateController>();
+        }
+
+        if (enemySpawner == null)
+        {
+            enemySpawner = FindFirstObjectByType<PracticeEnemySpawner>();
+        }
+
+        if (bossController == null)
+        {
+            bossController = FindFirstObjectByType<PracticeFinalBossController>();
+        }
+
+        if (killCounter == null)
+        {
+            killCounter = FindFirstObjectByType<PracticePlayerKillCounter>();
+        }
+    }
+
+    private void SubscribeGameStateEvents()
+    {
+        if (gameStateController == null) return;
+        gameStateController.StateChanged -= HandleGameStateChanged;
+        gameStateController.StateChanged += HandleGameStateChanged;
+    }
+
+    private void UnsubscribeGameStateEvents()
+    {
+        if (gameStateController == null) return;
+        gameStateController.StateChanged -= HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged(PracticeGameStates newState)
+    {
+        if (!victoryPending || newState != PracticeGameStates.Running)
+        {
+            return;
+        }
+
+        victoryPending = false;
+        RequestVictory();
+    }
+
+    private void CheckRunProgress()
+    {
+        if (survivalTimer == null || gameStateController == null)
+        {
+            return;
+        }
+
+        if (!gameStateController.IsRunning)
+        {
+            return;
+        }
+
+        if (currentPhase != PracticeRunPhase.Survival || waveBossTriggered)
+        {
+            return;
+        }
+
+        float currentWaveElapsed = survivalTimer.ElapsedTime - currentWaveStartTime;
+
+        if (currentWaveIndex == 1 && enableMultiWave)
+        {
+            if (currentWaveElapsed >= wave1SurvivalDuration)
+            {
+                StartMidBossPhase();
+            }
+        }
+        else
+        {
+            float targetDuration = enableMultiWave
+                ? wave2SurvivalDuration
+                : (wave1SurvivalDuration + wave2SurvivalDuration);
+
+            if (currentWaveElapsed >= targetDuration)
+            {
+                StartFinalBossPhase();
+            }
+        }
+    }
+
+    protected void StartMidBossPhase()
+    {
+        if (waveBossTriggered) return;
+        waveBossTriggered = true;
+
+        if (enemySpawner != null)
+        {
+            enemySpawner.SetSpawningEnabled(false);
+            enemySpawner.RemoveDestroyedEnemies();
+        }
+
+        if (bossController == null)
+        {
+            Debug.LogError($"{name}: Không tìm thấy PracticeFinalBossController.", this);
+            return;
+        }
+
+        // Mid-Boss: tiêu đề "MID-BOSS", 1 cây máu duy nhất (allowedMaxPhaseIndex = 0)
+        bool spawnedSuccessfully = bossController.SpawnBossEncounter(
+            bossTitle: "MID-BOSS",
+            healthMultiplier: midBossHealthMultiplier,
+            allowedMaxPhaseIndex: 0
+        );
+
+        if (!spawnedSuccessfully)
+        {
+            Debug.LogWarning($"{name}: Không thể triệu hồi Mid-Boss. Chuyển tiếp sang Wave 2.", this);
+            TransitionToWave2();
+            return;
+        }
+
+        SetRunPhase(PracticeRunPhase.BossFight);
+    }
+
+    protected void StartFinalBossPhase()
+    {
+        if (waveBossTriggered) return;
+        waveBossTriggered = true;
+
+        if (enemySpawner != null)
+        {
+            enemySpawner.SetSpawningEnabled(false);
+            enemySpawner.RemoveDestroyedEnemies();
+        }
+
+        if (bossController == null)
+        {
+            Debug.LogError($"{name}: Không tìm thấy PracticeFinalBossController.", this);
+            return;
+        }
+
+        // Final Boss: tiêu đề "FINAL BOSS", đa cây máu (allowedMaxPhaseIndex = finalBossMaxPhaseIndex)
+        bool spawnedSuccessfully = bossController.SpawnBossEncounter(
+            bossTitle: "FINAL BOSS",
+            healthMultiplier: finalBossHealthMultiplier,
+            allowedMaxPhaseIndex: finalBossMaxPhaseIndex
+        );
+
+        if (!spawnedSuccessfully)
+        {
+            Debug.LogWarning($"{name}: Không thể bắt đầu Final Boss Phase. Chuyển sang Victory.", this);
+            RequestVictory();
+            return;
+        }
+
+        SetRunPhase(PracticeRunPhase.BossFight);
+    }
+
+    private void SubscribeBossEvents()
+    {
+        if (bossController == null) return;
+        bossController.BossDefeated -= HandleBossDefeated;
+        bossController.BossDefeated += HandleBossDefeated;
+    }
+
+    private void UnsubscribeBossEvents()
+    {
+        if (bossController == null) return;
+        bossController.BossDefeated -= HandleBossDefeated;
+    }
+
+    protected void HandleBossDefeated()
+    {
+        if (currentPhase != PracticeRunPhase.BossFight) return;
+        if (gameStateController == null) return;
+        if (gameStateController.IsGameOver) return;
+
+        if (killCounter == null)
+        {
+            killCounter = FindFirstObjectByType<PracticePlayerKillCounter>();
+        }
+        killCounter?.RegisterKill(isBossKill: true);
+
+        // Nếu vừa đánh bại Mid-Boss của Wave 1 trong chế độ Multi-Wave -> Chuyển sang Wave 2
+        if (currentWaveIndex == 1 && enableMultiWave)
+        {
+            TransitionToWave2();
+            return;
+        }
+
+        // Đã đánh bại Final Boss -> Hoàn tất trận chiến
+        SetRunPhase(PracticeRunPhase.Completed);
+
+        if (!gameStateController.IsRunning)
+        {
+            victoryPending = true;
+            return;
+        }
+
+        RequestVictory();
+    }
+
+    private void TransitionToWave2()
+    {
+        currentWaveIndex = 2;
+        currentWaveStartTime = survivalTimer != null ? survivalTimer.ElapsedTime : 0f;
+        waveBossTriggered = false;
+
+        // Kích hoạt lại việc sinh quái cho Wave 2
+        if (enemySpawner != null)
+        {
+            enemySpawner.SetSpawningEnabled(true);
+        }
+
+        killCounter?.ResetBossKillCountedFlag();
+        SetRunPhase(PracticeRunPhase.Survival);
+        WaveChanged?.Invoke(currentWaveIndex);
+
+        Debug.Log(
+            $"<color=#4CAF50><b>[Run Director]</b></color> MID-BOSS HẠ GỤC! " +
+            $"Bước vào WAVE 2: Sinh tồn {wave2SurvivalDuration}s trước Final Boss!",
+            this
+        );
+    }
+
+    protected void RequestVictory()
+    {
+        if (victoryRequested) return;
+
+        if (gameStateController == null)
+        {
+            Debug.LogError($"{name}: Không tìm thấy PracticeGameStateController.", this);
+            return;
+        }
+
+        victoryRequested = true;
+
+        bool victoryStarted = gameStateController.RequestVictory();
+        if (!victoryStarted && !gameStateController.IsVictory)
+        {
+            Debug.LogWarning($"{name}: Yêu cầu Victory bị từ chối.", this);
+        }
+    }
+
+    private void SetRunPhase(PracticeRunPhase newPhase)
+    {
+        if (currentPhase == newPhase) return;
+
+        currentPhase = newPhase;
+        RunPhaseChanged?.Invoke(currentPhase);
+    }
+}using System;
+using UnityEngine;
+
+public class PracticeDifficultySystem : HaiMonoBehaviour
+{
+    [Header("Difficulty Timing")] 
+    [SerializeField, Min(1f)] private float difficultyInterval = 30f;
+    [Header("Spawn Interval Difficulty")] 
+    [SerializeField, Min(0.1f)] private float initialSpawnInterval = 2f;
+    [SerializeField, Min(0f)] private float spawnIntervalReduction = 0.2f;// mỗi level giảm 0.2
+    [SerializeField, Min(0.05f)] private float minimunSpawnInterval = 0.5f;//giới hạn nhỏ nhất vì cứ giảm mãi thì sẽ bị âm
+    [Header("Max Alive Difficulty")] 
+    [SerializeField, Min(1f)] private int initialMaxAliveEnemies = 5;
+    [SerializeField, Min(0)] private int maxAliveIncreasePerLevel = 2;
+    [SerializeField, Min(1)] private int maximunAliveEnemies = 30;
+    [Header("Batch Difficulty")] 
+    [SerializeField, Min(1f)] private int initialBatchSize = 1;
+    [SerializeField, Min(0)] private int maxBatchIncreasePerLevel = 1;
+    [SerializeField, Min(1)] private int maximunBatchSize = 5;
+    private int currentDifficultyLevel = 1;
+    private float nextDifficultyTime;
+    public event Action<PracticeDifficultyData> DifficultyChanged;
+    public int CurrentDifficultyLevel => currentDifficultyLevel;
+
+    protected override void Start()
+    {
+        base.Start();
+        currentDifficultyLevel = 1;
+        nextDifficultyTime = Time.time + difficultyInterval;
+
+        PublishCurrentlyDifficulty();
+    }
+    private void Update() {
+        UpdateDifficultyOverTime();
+    }
+
+    private void UpdateDifficultyOverTime()
+    {
+        bool difficultyInCreased = false;
+        while(Time.time >= nextDifficultyTime)
+        {
+            currentDifficultyLevel++;
+            nextDifficultyTime += difficultyInterval;
+            difficultyInCreased = true;
+        }
+        if (difficultyInCreased)
+        {
+        PublishCurrentlyDifficulty();
+        }
+    }
+    private PracticeDifficultyData CreateCurrentDifficultyData()
+    {
+        int difficultyIncreaseCount = currentDifficultyLevel - 1;
+        float calculatedSpawnInterval = initialSpawnInterval - spawnIntervalReduction * difficultyIncreaseCount;
+        float currentSpawnInterval = Mathf.Max(minimunSpawnInterval, calculatedSpawnInterval);
+
+        int calculatedMaxAliveEnemies = initialMaxAliveEnemies + maxAliveIncreasePerLevel * difficultyIncreaseCount;
+        int currentMaxAliveEnemis = Mathf.Min(maximunAliveEnemies, calculatedMaxAliveEnemies);
+
+        int calculatedBatchSize = initialBatchSize + maxBatchIncreasePerLevel * difficultyIncreaseCount;
+        int currentBatchSize = Mathf.Min(maximunBatchSize, calculatedBatchSize);
+
+        return new PracticeDifficultyData(currentDifficultyLevel, currentSpawnInterval, currentMaxAliveEnemis, currentBatchSize);
+    }
+    private void PublishCurrentlyDifficulty()
+    {
+        PracticeDifficultyData difficultyData = CreateCurrentDifficultyData();
+
+        DifficultyChanged?.Invoke(difficultyData);
+        Debug.Log(
+            $"Difficulty Level: " + $"{difficultyData.Level} | " + $"Spawn Interval: " + $"{difficultyData.SpawnInterval:F2} | "
+            + $"Max Alive: " + $"{difficultyData.MaxAliveEnemies}" + $"Batch Size: " + $"{difficultyData.BatchSize}"
+        );
+    }
+    private void OnValidate()
+    {
+        if(minimunSpawnInterval < initialSpawnInterval)
+        {
+            Debug.Log(
+                $"{name}: Minium Spawn Interval " + "khong nen lon hon Spawn Interval. ", this
+            );
+        }
+        if(maximunAliveEnemies < initialMaxAliveEnemies)
+        {
+            Debug.Log(
+                $"{name}: Maxium Alive Enemies " + "khong nen nho hon initial alive enemies. ", this
+            );
+        }
+    }
+}
+=== 4. UPGRADE SYSTEM FOR AURA ===
+public enum PracticeUpgradeCategory
+{
+    Offensive = 0,
+    Defensive = 1,
+    Utility = 2
+}
+
+public enum PracticeUpgradeType // dùng enum thay cho string để tránh lỗi gõ sai ký tự (magic string)
+{
+    BulletDamage = 0,
+    FireRate = 1,
+    ProjectileCount = 2,
+    MaxHealth = 3,
+    MoveSpeed = 4,
+    MagnetRadius = 5
+}using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PracticeShooterUpgradeApplier : HaiMonoBehaviour
+{
+    [Header("Target Receivers")]
+    [SerializeField]
+    private PracticeShooterWithDamage shooter;
+
+    [SerializeField]
+    private PracticePlayerHealth playerHealth;
+
+    [SerializeField]
+    private PracticePlayerMovement playerMovement;
+
+    [SerializeField]
+    private PracticeXPMagnetDetector magnetDetector;
+
+    private Dictionary<PracticeUpgradeType, Func<float, bool>> upgradeEffectHandlers;//là một kiểu Delegate (Con trỏ hàm) trong C# đại diện cho bất kỳ hàm nào nhận vào 1 tham số kiểu float (chính là value của nâng cấp) và trả về kết quả kiểu bool (true nếu nâng cấp thành công, false nếu thất bại).
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadReceivers();
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+        LoadReceivers();
+        InitializeEffectHandlers();
+    }
+
+    protected void LoadReceivers()
+    {
+        if (playerHealth == null)
+        {
+            playerHealth = GetComponent<PracticePlayerHealth>();
+            if (playerHealth == null)
+            {
+                playerHealth = GetComponentInParent<PracticePlayerHealth>();
+            }
+            if (playerHealth == null)
+            {
+                playerHealth = FindFirstObjectByType<PracticePlayerHealth>();
+            }
+        }
+
+        if (shooter == null || (playerHealth != null && shooter.gameObject != playerHealth.gameObject))
+        {
+            if (playerHealth != null)
+            {
+                PracticeShooterWithDamage playerShooter =
+                    playerHealth.GetComponentInChildren<PracticeShooterWithDamage>(true);
+                if (playerShooter != null)
+                {
+                    shooter = playerShooter;
+                }
+            }
+
+            if (shooter == null)
+            {
+                shooter = GetComponent<PracticeShooterWithDamage>();
+            }
+            if (shooter == null)
+            {
+                shooter = GetComponentInChildren<PracticeShooterWithDamage>(true);
+            }
+            if (shooter == null)
+            {
+                shooter = FindFirstObjectByType<PracticeShooterWithDamage>();
+            }
+        }
+
+        if (playerMovement == null)
+        {
+            playerMovement = GetComponent<PracticePlayerMovement>();
+            if (playerMovement == null)
+            {
+                playerMovement = GetComponentInParent<PracticePlayerMovement>();
+            }
+            if (playerMovement == null && playerHealth != null)
+            {
+                playerMovement = playerHealth.GetComponentInChildren<PracticePlayerMovement>(true);
+            }
+            if (playerMovement == null)
+            {
+                playerMovement = FindFirstObjectByType<PracticePlayerMovement>();
+            }
+        }
+
+        if (magnetDetector == null)
+        {
+            magnetDetector = GetComponentInChildren<PracticeXPMagnetDetector>(true);
+            if (magnetDetector == null && playerHealth != null)
+            {
+                magnetDetector = playerHealth.GetComponentInChildren<PracticeXPMagnetDetector>(true);
+            }
+            if (magnetDetector == null)
+            {
+                magnetDetector = FindFirstObjectByType<PracticeXPMagnetDetector>();
+            }
+        }
+    }
+
+    private void InitializeEffectHandlers()
+    {
+        upgradeEffectHandlers = new Dictionary<PracticeUpgradeType, Func<float, bool>>
+        {
+            { PracticeUpgradeType.BulletDamage, ApplyBulletDamage },
+            { PracticeUpgradeType.FireRate, ApplyFireRate },
+            { PracticeUpgradeType.ProjectileCount, ApplyProjectileCount },
+            { PracticeUpgradeType.MaxHealth, ApplyMaxHealth },
+            { PracticeUpgradeType.MoveSpeed, ApplyMoveSpeed },
+            { PracticeUpgradeType.MagnetRadius, ApplyMagnetRadius }
+        };
+    }
+
+    public bool ApplyUpgrade(PracticeUpgradeDefinition upgrade, int upgradeLevel)
+    {
+        if (upgrade == null)
+        {
+            return false;
+        }
+
+        if (upgradeLevel <= 0)
+        {
+            return false;
+        }
+
+        LoadReceivers();
+
+        if (upgradeEffectHandlers == null)
+        {
+            InitializeEffectHandlers();
+        }
+
+        float value = upgrade.GetValuePerLevel(upgradeLevel);
+
+        if (!upgradeEffectHandlers.TryGetValue(
+                upgrade.UpgradeType,
+                out Func<float, bool> handler
+            ) || handler == null)
+        {
+            Debug.LogWarning(
+                $"{name}: Chưa có bộ xử lý cho loại nâng cấp {upgrade.UpgradeType}.",
+                this
+            );
+            return false;
+        }
+
+        bool appliedSuccessfully = handler.Invoke(value);
+
+        if (appliedSuccessfully)
+        {
+            Debug.Log(
+                $"Applied Upgrade: {upgrade.DisplayName} (Lv.{upgradeLevel}) | Value: {value}",
+                this
+            );
+        }
+
+        return appliedSuccessfully;
+    }
+
+    private bool ApplyBulletDamage(float value)
+    {
+        if (shooter == null)
+        {
+            return false;
+        }
+
+        int bulletDamage = Mathf.RoundToInt(value);
+        if (bulletDamage <= 0)
+        {
+            return false;
+        }
+
+        shooter.AddBulletDamage(bulletDamage);
+        return true;
+    }
+
+    private bool ApplyFireRate(float value)
+    {
+        if (shooter == null || value <= 0f)
+        {
+            return false;
+        }
+
+        shooter.ReduceShootInterval(value);
+        return true;
+    }
+
+    private bool ApplyProjectileCount(float value)
+    {
+        if (shooter == null)
+        {
+            return false;
+        }
+
+        int projectileBonus = Mathf.RoundToInt(value);
+        if (projectileBonus <= 0)
+        {
+            return false;
+        }
+
+        int previousProjectileCount = shooter.ProjectileCount;
+        shooter.AddProjectileCount(projectileBonus);
+
+        Debug.Log(
+            $"{name}: Projectile Count changed from {previousProjectileCount} " +
+            $"to {shooter.ProjectileCount}. Bonus = {projectileBonus}.",
+            this
+        );
+
+        return true;
+    }
+
+    private bool ApplyMaxHealth(float value)
+    {
+        if (playerHealth == null || value <= 0f)
+        {
+            return false;
+        }
+
+        playerHealth.AddMaxHealth(value, true);
+        return true;
+    }
+
+    private bool ApplyMoveSpeed(float value)
+    {
+        if (playerMovement == null || value <= 0f)
+        {
+            return false;
+        }
+
+        playerMovement.AddMoveSpeed(value);
+        return true;
+    }
+
+    private bool ApplyMagnetRadius(float value)
+    {
+        if (magnetDetector == null || value <= 0f)
+        {
+            return false;
+        }
+
+        magnetDetector.AddMagnetRadius(value);
+        return true;
+    }
+}
