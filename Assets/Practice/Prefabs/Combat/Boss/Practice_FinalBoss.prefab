@@ -364,8 +364,10 @@ MonoBehaviour:
   projectileContainer: {fileID: 0}
   attackExecutors:
   - {fileID: 3650833511638541392}
-  - {fileID: 3650833511638541392}
+  - {fileID: 2984622068220272823}
   initialCombatDelay: 1.25
+  useSeparateHealthBarPerPhase: 1
+  phaseTransitionDuration: 1.25
   phases:
   - {fileID: 11400000, guid: b8bd13d7dbca26b48bf31d94a31099e6, type: 2}
   - {fileID: 11400000, guid: 6e5bb25e13a19e44cb1428dac24fab88, type: 2}
