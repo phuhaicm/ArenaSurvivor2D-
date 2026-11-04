@@ -124,6 +124,8 @@ public class PracticeEnemyHealth : PracticeHealthBase, IPracticePoolable
             enemyCollider.enabled = false;
         }
 
+        PracticeAudioManager.Instance?.PlayEnemyDeathSfx();
+
         base.Die();
 
         PracticeObjectPoolManager.DespawnOrDestroy(gameObject);

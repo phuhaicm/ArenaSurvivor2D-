@@ -96,5 +96,6 @@ public class PracticePlayerDamageFeedback
         flashFeedback?.PlayFlash();
         PracticeCameraShake2D.Instance?.Shake(hitShakeIntensity, hitShakeDuration);
         PracticeVFXManager.Instance?.SpawnPlayerHitBurst(transform.position);
+        PracticeAudioManager.Instance?.PlayPlayerHitSfx();
     }
 }
