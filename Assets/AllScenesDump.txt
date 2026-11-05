@@ -1,0 +1,696 @@
+﻿==================================================
+=== SCENE: PracticeMainMenu (Assets/Practice/Scenes/PracticeMainMenu.unity) ===
+==================================================
+[GO] Main Camera (Active: True, Tag: MainCamera, Layer: Default)
+   - Component: Transform
+   - Component: Camera
+   - Component: AudioListener
+[GO] Canvas (Active: True, Tag: Untagged, Layer: UI)
+   - Component: RectTransform
+   - Component: Canvas
+   - Component: CanvasScaler
+   - Component: GraphicRaycaster
+  [GO] SettingsUIController (Active: True, Tag: Untagged, Layer: UI)
+     - Component: RectTransform
+    [GO] PracticeSettingsUI (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: PracticeSettingsUI
+  [GO] MainMenuUIController (Active: True, Tag: Untagged, Layer: UI)
+     - Component: RectTransform
+    [GO] PracticeMainMenuUI (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: PracticeMainMenuUI
+  [GO] MainMenuPanel (Active: True, Tag: Untagged, Layer: UI)
+     - Component: RectTransform
+     - Component: CanvasRenderer
+     - Component: Image
+    [GO] GameTitleText (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: TextMeshProUGUI
+    [GO] PlayButton (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: Image
+       - Component: Button
+      [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+    [GO] QuitButton (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: Image
+       - Component: Button
+      [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+    [GO] SettingsButton (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: Image
+       - Component: Button
+      [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+  [GO] SettingsPanel (Active: True, Tag: Untagged, Layer: UI)
+     - Component: RectTransform
+     - Component: CanvasRenderer
+     - Component: Image
+    [GO] SettingsTitleText (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: TextMeshProUGUI
+    [GO] MasterVolumeSlider (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: Slider
+      [GO] Background (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: Image
+      [GO] Fill Area (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] Fill (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+      [GO] Handle Slide Area (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] Handle (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+    [GO] MusicVolumeSlider (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: Slider
+      [GO] Background (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: Image
+      [GO] Fill Area (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] Fill (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+      [GO] Handle Slide Area (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] Handle (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+    [GO] SfxVolumeSlider (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: Slider
+      [GO] Background (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: Image
+      [GO] Fill Area (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] Fill (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+      [GO] Handle Slide Area (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] Handle (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+    [GO] BackButton (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: Image
+       - Component: Button
+      [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+[GO] EventSystem (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+   - Component: EventSystem
+   - Component: StandaloneInputModule
+[GO] SceneLoaderRoot (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+   - Component: PracticeSceneLoader
+  [GO] PracticeSceneLoader (Active: True, Tag: Untagged, Layer: UI)
+     - Component: RectTransform
+  [GO] LoadingCanvas (Active: True, Tag: Untagged, Layer: Default)
+     - Component: RectTransform
+     - Component: Canvas
+     - Component: CanvasScaler
+     - Component: GraphicRaycaster
+     - Component: CanvasGroup
+    [GO] LoadingPanel (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: Image
+      [GO] LoadingTitleText (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+      [GO] ProgressSlider (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: Slider
+        [GO] Background (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+        [GO] Fill Area (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+          [GO] Fill (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+        [GO] Handle Slide Area (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+          [GO] Handle (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+      [GO] ProgressText (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+[GO] PracticeAudioRoot (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+   - Component: PracticeAudioManager
+   - Component: PracticeAudioSettings
+  [GO] MusicSource (Active: True, Tag: Untagged, Layer: Default)
+     - Component: Transform
+    [GO] Audio Source (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: AudioSource
+  [GO] SfxSource (Active: True, Tag: Untagged, Layer: Default)
+     - Component: Transform
+    [GO] Audio Source (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: AudioSource
+[GO] MusicClips (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+
+==================================================
+=== SCENE: Practice_CoreLoop (Assets/Practice/Scenes/Practice_CoreLoop.unity) ===
+==================================================
+[GO] PracticeGame (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+  [GO] Systems (Active: True, Tag: Untagged, Layer: Default)
+     - Component: Transform
+    [GO] PracticeDifficultySystem (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticeDifficultySystem
+    [GO] PracticePlayerlLevelSystem (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticePlayerLevelSystem
+    [GO] PracticeSurvivalTimer (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticeSurvivalTimer
+    [GO] PracticeKillCounter (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticePlayerKillCounter
+    [GO] PracticeRunScore (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticeRunScore
+    [GO] PracticeBestScore (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticeBestScore
+    [GO] PracticeGameStateController (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticeGameStateController
+    [GO] PracticeRunDirector (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: PracticeRunDirector
+  [GO] Gameplay (Active: True, Tag: Untagged, Layer: Default)
+     - Component: Transform
+    [GO] BossSystem (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+      [GO] FinalBossController (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+         - Component: PracticeFinalBossController
+      [GO] BossSpawnPoint (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+    [GO] Player (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+      [GO] Practice_Player (Active: True, Tag: Player, Layer: PlayerBody)
+         - Component: Transform
+         - Component: SpriteRenderer
+         - Component: PracticePlayerExperience
+         - Component: CapsuleCollider2D
+         - Component: Rigidbody2D
+         - Component: PracticePlayerLevelSystem
+         - Component: PracticeLevelUpListener
+         - Component: PracticePlayerMovement
+         - Component: PracticePlayerHealth
+         - Component: PracticePlayerDamageFeedback
+         - Component: PracticeShooterWithDamage
+         - Component: PracticePlayerDeathController
+         - Component: PracticeSpriteFlashFeedback
+        [GO] XPMagnetArea (Active: True, Tag: Untagged, Layer: PlayerSensor)
+           - Component: Transform
+           - Component: CircleCollider2D
+           - Component: PracticeXPMagnetDetector
+        [GO] XPPickupArea (Active: True, Tag: Untagged, Layer: PlayerSensor)
+           - Component: Transform
+           - Component: CircleCollider2D
+           - Component: PracticeXPPickupReceiver
+    [GO] Combat (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+      [GO] Practice_Shooter (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+         - Component: PracticeShooterWithDamage
+         - Component: PracticeShooterUpgradeApplier
+        [GO] FirePoint (Active: True, Tag: Untagged, Layer: Default)
+           - Component: Transform
+    [GO] EnemySystem (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+      [GO] PracticeEnemySpawner (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+         - Component: PracticeEnemySpawner
+    [GO] RuntimeEnemies (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+    [GO] RuntimeBosses (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+    [GO] SpawnPoints (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+      [GO] SpawnPoint_Top (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+      [GO] SpawnPoint_Bottom (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+      [GO] SpawnPoint_Left (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+      [GO] SpawnPoint_Right (Active: True, Tag: Untagged, Layer: Default)
+         - Component: Transform
+  [GO] UI (Active: True, Tag: Untagged, Layer: Default)
+     - Component: Transform
+    [GO] Canvas (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: Canvas
+       - Component: CanvasScaler
+       - Component: GraphicRaycaster
+      [GO] Controller (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] PauseUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticePauseMenuUI
+          [GO] PauseMainMenuButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+        [GO] UpgradeUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+          [GO] PracticeUpgradeUIController (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: PracticeUpgradeChoiceUI
+        [GO] GameOverUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticeGameOverUI
+        [GO] SurvivalTimerUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticeSurvivalTimerUI
+        [GO] KillCounterUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+          [GO] PracticeKillCounterUI (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: PracticeKillCounterUI
+        [GO] RunScoreUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticeRunScoreUI
+        [GO] BestScoreUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticeBestScoreUI
+        [GO] PracticeGameOverController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticeGameOverController
+        [GO] VictoryUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticeVictoryUI
+        [GO] BossPresentationUIController (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: PracticeBossPresentationUI
+      [GO] HUD (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] HealthUI (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+        [GO] ExperienceUI (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+        [GO] SurvivalTimerText (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: TextMeshProUGUI
+        [GO] KillCountText (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: TextMeshProUGUI
+      [GO] Panel (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+        [GO] VictoryPanel (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+          [GO] BackgroundOverlay (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+          [GO] VictoryCard (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+            [GO] AccentTop (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: Image
+            [GO] VictoryTitleText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] SubtitleText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] Divider (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: Image
+               - Component: LayoutElement
+            [GO] LabelText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] ValueText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+               - Component: LayoutElement
+            [GO] LabelText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] ValueText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+               - Component: LayoutElement
+            [GO] LabelText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] ValueText (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] LabelBestScore (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] LabelBestScoreValue (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+            [GO] DividerBottom (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: Image
+            [GO] RestartButton (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: Image
+               - Component: Button
+              [GO] ButtonText (Active: True, Tag: Untagged, Layer: UI)
+                 - Component: RectTransform
+                 - Component: CanvasRenderer
+                 - Component: TextMeshProUGUI
+            [GO] MainMenuButton (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: Image
+               - Component: Button
+               - Component: LayoutElement
+              [GO] MainMenu (Active: True, Tag: Untagged, Layer: UI)
+                 - Component: RectTransform
+                 - Component: CanvasRenderer
+                 - Component: TextMeshProUGUI
+        [GO] PracticeUpgradePanel (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+           - Component: VerticalLayoutGroup
+          [GO] UpgradeTitleText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+             - Component: LayoutElement
+          [GO] ChoiceButton1 (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+             - Component: LayoutElement
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] ChoiceButton2 (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+             - Component: LayoutElement
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] ChoiceButton3 (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+             - Component: LayoutElement
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] RerollButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] SkipButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+        [GO] PracticeGameOverPanel (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+          [GO] GameOverTitleText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+          [GO] RestartButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] QuitButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] FinalTimeText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+          [GO] FinalKillCountText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+          [GO] FinalScoreText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+          [GO] BestScoreText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+          [GO] GameOverMainMenuButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+        [GO] PausePanel (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+          [GO] PauseTitleText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+          [GO] ResumeButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] RestartButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+          [GO] QuitButton (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+             - Component: Button
+            [GO] Text (TMP) (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: TextMeshProUGUI
+        [GO] BossHealthPanel (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+          [GO] BossNameText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+          [GO] BossHealthSlider (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: Slider
+            [GO] Background (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+               - Component: CanvasRenderer
+               - Component: Image
+            [GO] Fill Area (Active: True, Tag: Untagged, Layer: UI)
+               - Component: RectTransform
+              [GO] Fill (Active: True, Tag: Untagged, Layer: UI)
+                 - Component: RectTransform
+                 - Component: CanvasRenderer
+                 - Component: Image
+          [GO] BossHealthText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+        [GO] BossWarningPanel (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+           - Component: CanvasGroup
+          [GO] WarningBackground (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+          [GO] WarningTopLine (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+          [GO] WarningBottomLine (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+          [GO] WarningText (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: TextMeshProUGUI
+    [GO] EventSystem (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: EventSystem
+       - Component: StandaloneInputModule
+[GO] Environment (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+  [GO] Main Camera (Active: True, Tag: MainCamera, Layer: Default)
+     - Component: Transform
+     - Component: Camera
+     - Component: AudioListener
+[GO] SceneLoaderRoot (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+   - Component: PracticeSceneLoader
+  [GO] PracticeSceneLoader (Active: True, Tag: Untagged, Layer: UI)
+     - Component: RectTransform
+  [GO] LoadingCanvas (Active: True, Tag: Untagged, Layer: Default)
+     - Component: RectTransform
+     - Component: Canvas
+     - Component: CanvasScaler
+     - Component: GraphicRaycaster
+     - Component: CanvasGroup
+    [GO] LoadingPanel (Active: True, Tag: Untagged, Layer: UI)
+       - Component: RectTransform
+       - Component: CanvasRenderer
+       - Component: Image
+      [GO] LoadingTitleText (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+      [GO] ProgressSlider (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: Slider
+        [GO] Background (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+           - Component: CanvasRenderer
+           - Component: Image
+        [GO] Fill Area (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+          [GO] Fill (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+        [GO] Handle Slide Area (Active: True, Tag: Untagged, Layer: UI)
+           - Component: RectTransform
+          [GO] Handle (Active: True, Tag: Untagged, Layer: UI)
+             - Component: RectTransform
+             - Component: CanvasRenderer
+             - Component: Image
+      [GO] ProgressText (Active: True, Tag: Untagged, Layer: UI)
+         - Component: RectTransform
+         - Component: CanvasRenderer
+         - Component: TextMeshProUGUI
+[GO] PracticeAudioRoot (Active: True, Tag: Untagged, Layer: Default)
+   - Component: Transform
+   - Component: PracticeAudioManager
+   - Component: PracticeAudioSettings
+  [GO] MusicSource (Active: True, Tag: Untagged, Layer: Default)
+     - Component: Transform
+    [GO] Audio Source (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: AudioSource
+  [GO] SfxSource (Active: True, Tag: Untagged, Layer: Default)
+     - Component: Transform
+    [GO] Audio Source (Active: True, Tag: Untagged, Layer: Default)
+       - Component: Transform
+       - Component: AudioSource
+

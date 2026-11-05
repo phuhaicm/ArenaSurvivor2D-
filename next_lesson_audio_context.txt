@@ -1,0 +1,619 @@
+==> Assets/Practice/Scripts/Audio/PracticeAudioLibrary.cs <==
+using UnityEngine;
+
+[CreateAssetMenu(
+    fileName = "PracticeAudioLibrary",
+    menuName = "Practice/Audio/Audio Library"
+)]
+public class PracticeAudioLibrary : ScriptableObject
+{
+    [Header("Background Music (BGM)")]
+    [SerializeField]
+    private AudioClip menuBgm;
+
+    [SerializeField]
+    private AudioClip gameplayBgm;
+
+    [SerializeField]
+    private AudioClip bossBgm;
+
+    [Header("Gameplay SFX")]
+    [SerializeField]
+    private AudioClip shootSfx;
+
+    [SerializeField]
+    private AudioClip enemyDeathSfx;
+
+    [SerializeField]
+    private AudioClip playerHitSfx;
+
+    [SerializeField]
+    private AudioClip levelUpSfx;
+
+    [Header("UI & Result SFX")]
+    [SerializeField]
+    private AudioClip buttonClickSfx;
+
+    [SerializeField]
+    private AudioClip upgradePickSfx;
+
+    [SerializeField]
+    private AudioClip bossWarningSfx;
+
+    [SerializeField]
+    private AudioClip gameOverSfx;
+
+    [SerializeField]
+    private AudioClip victorySfx;
+
+    public AudioClip MenuBgm => menuBgm;
+    public AudioClip GameplayBgm => gameplayBgm;
+    public AudioClip BossBgm => bossBgm != null ? bossBgm : gameplayBgm;
+
+    public AudioClip ShootSfx => shootSfx;
+    public AudioClip EnemyDeathSfx => enemyDeathSfx;
+    public AudioClip PlayerHitSfx => playerHitSfx;
+    public AudioClip LevelUpSfx => levelUpSfx != null ? levelUpSfx : upgradePickSfx;
+
+    public AudioClip ButtonClickSfx => buttonClickSfx;
+    public AudioClip UpgradePickSfx => upgradePickSfx != null ? upgradePickSfx : levelUpSfx;
+    public AudioClip BossWarningSfx => bossWarningSfx;
+    public AudioClip GameOverSfx => gameOverSfx;
+    public AudioClip VictorySfx => victorySfx != null ? victorySfx : levelUpSfx;
+}
+==> Assets/Practice/Scripts/Audio/PracticeAudioManager.cs <==
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class PracticeAudioManager : HaiMonoBehaviour
+{
+    protected static PracticeAudioManager instance;
+    public static PracticeAudioManager Instance => instance;
+
+    [Header("Audio Sources")]
+    [SerializeField]
+    protected AudioSource musicSource;
+
+    [SerializeField]
+    protected AudioSource sfxSource;
+
+    [Header("Data-Driven Audio Library (Optional)")]
+    [SerializeField]
+    protected PracticeAudioLibrary audioLibrary;
+
+    [Header("Music Clips (Direct Inspector Fallback)")]
+    [SerializeField]
+    protected AudioClip mainMenuMusic;
+
+    [SerializeField]
+    protected AudioClip gameplayMusic;
+
+    [SerializeField]
+    protected AudioClip bossMusic;
+
+    [Header("Gameplay SFX (Direct Inspector Fallback)")]
+    [SerializeField]
+    protected AudioClip shootSfx;
+
+    [SerializeField]
+    protected AudioClip enemyDeathSfx;
+
+    [SerializeField]
+    protected AudioClip playerHitSfx;
+
+    [SerializeField]
+    protected AudioClip levelUpSfx;
+
+    [Header("UI & Result SFX (Direct Inspector Fallback)")]
+    [SerializeField]
+    protected AudioClip buttonClickSfx;
+
+    [SerializeField]
+    protected AudioClip upgradePickSfx;
+
+    [SerializeField]
+    protected AudioClip gameOverSfx;
+
+    [SerializeField]
+    protected AudioClip victorySfx;
+
+    [Header("Voice Budget & Persistence")]
+    [SerializeField]
+    protected bool persistAcrossScenes = true;
+
+    [SerializeField, Min(0.01f)]
+    protected float minSfxRepeatInterval = 0.045f;
+
+    private readonly Dictionary<AudioClip, float> lastSfxPlayTimes =
+        new Dictionary<AudioClip, float>();
+
+    public PracticeAudioLibrary Library => audioLibrary;
+    public AudioSource MusicSource => musicSource;
+    public AudioSource SfxSource => sfxSource;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadAudioSources();
+    }
+
+    protected override void Awake()
+    {
+        if (instance != null && instance != this)
+        {
+            gameObject.SetActive(false);
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+
+        if (persistAcrossScenes)
+        {
+            Transform rootTransform = transform.root != null ? transform.root : transform;
+            DontDestroyOnLoad(rootTransform.gameObject);
+        }
+
+        base.Awake();
+        LoadAudioSources();
+        ConfigureAudioSources();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    protected override void OnDisable()
+    {
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+        base.OnDisable();
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        ConfigureAudioSources();
+        PlayMusicForCurrentScene();
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+
+==> Assets/Practice/Scripts/Audio/PracticeAudioSettings.cs <==
+using System;
+using UnityEngine;
+using UnityEngine.Audio;
+
+public class PracticeAudioSettings : HaiMonoBehaviour
+{
+    private const string MasterVolumeKey =
+        "PracticeMasterVolume";
+
+    private const string MusicVolumeKey =
+        "PracticeMusicVolume";
+
+    private const string SfxVolumeKey =
+        "PracticeSfxVolume";
+
+    private const string MasterVolumeParameter =
+        "MasterVolume";
+
+    private const string MusicVolumeParameter =
+        "MusicVolume";
+
+    private const string SfxVolumeParameter =
+        "SfxVolume";
+
+    private const float MinimumLinearVolume = 0.0001f;
+
+    [Header("Audio Mixer")]
+    [SerializeField]
+    private AudioMixer audioMixer;
+
+    [Header("Default Volume")]
+    [SerializeField, Range(0f, 1f)]
+    private float defaultMasterVolume = 1f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float defaultMusicVolume = 0.8f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float defaultSfxVolume = 1f;
+
+    private float masterVolume;
+    private float musicVolume;
+    private float sfxVolume;
+
+    public event Action<float> MasterVolumeChanged;
+    public event Action<float> MusicVolumeChanged;
+    public event Action<float> SfxVolumeChanged;
+
+    public float MasterVolume => masterVolume;
+    public float MusicVolume => musicVolume;
+    public float SfxVolume => sfxVolume;
+
+    protected override void Start()
+    {
+        base.Start();
+
+        LoadSettings();
+        ApplyAllVolumes();
+        NotifyAllVolumeChanged();
+    }
+
+    // =========================================================
+    // PUBLIC SETTERS
+    // =========================================================
+
+    public void SetMasterVolume(float newVolume)
+    {
+        masterVolume =
+            Mathf.Clamp01(newVolume);
+
+        ApplyVolume(
+            MasterVolumeParameter,
+            masterVolume
+        );
+
+        PlayerPrefs.SetFloat(
+            MasterVolumeKey,
+            masterVolume
+        );
+
+        PlayerPrefs.Save();
+
+        MasterVolumeChanged?.
+            Invoke(masterVolume);
+    }
+
+    public void SetMusicVolume(float newVolume)
+    {
+        musicVolume =
+            Mathf.Clamp01(newVolume);
+
+        ApplyVolume(
+            MusicVolumeParameter,
+            musicVolume
+        );
+
+        PlayerPrefs.SetFloat(
+            MusicVolumeKey,
+            musicVolume
+        );
+
+        PlayerPrefs.Save();
+
+        MusicVolumeChanged?.
+            Invoke(musicVolume);
+    }
+
+    public void SetSfxVolume(float newVolume)
+    {
+        sfxVolume =
+            Mathf.Clamp01(newVolume);
+
+        ApplyVolume(
+            SfxVolumeParameter,
+            sfxVolume
+        );
+
+        PlayerPrefs.SetFloat(
+            SfxVolumeKey,
+            sfxVolume
+
+==> Assets/Practice/Scripts/Audio/PracticeSceneAudioTrigger.cs <==
+using UnityEngine;
+
+public class PracticeSceneAudioTrigger : HaiMonoBehaviour
+{
+    [Header("Gameplay System References")]
+    [SerializeField]
+    private PracticeGameStateController gameStateController;
+
+    [SerializeField]
+    private PracticeRunDirector runDirector;
+
+    [SerializeField]
+    private PracticeFinalBossController finalBossController;
+
+    private bool hasTriggeredBossMusic;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadGameplaySystems();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        hasTriggeredBossMusic = false;
+        LoadGameplaySystems();
+        SubscribeEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribeEvents();
+        base.OnDisable();
+    }
+
+    private void LoadGameplaySystems()
+    {
+        if (gameStateController == null)
+        {
+            gameStateController = FindFirstObjectByType<PracticeGameStateController>();
+        }
+
+        if (runDirector == null)
+        {
+            runDirector = FindFirstObjectByType<PracticeRunDirector>();
+        }
+
+        if (finalBossController == null)
+        {
+            finalBossController = FindFirstObjectByType<PracticeFinalBossController>();
+        }
+    }
+
+    private void SubscribeEvents()
+    {
+        if (gameStateController != null)
+        {
+            gameStateController.StateChanged -= HandleGameStateChanged;
+            gameStateController.StateChanged += HandleGameStateChanged;
+        }
+
+        if (runDirector != null)
+        {
+            runDirector.RunPhaseChanged -= HandleRunPhaseChanged;
+            runDirector.RunPhaseChanged += HandleRunPhaseChanged;
+        }
+
+        if (finalBossController != null)
+        {
+            finalBossController.BossSpawned -= HandleBossSpawned;
+            finalBossController.BossSpawned += HandleBossSpawned;
+        }
+    }
+
+    private void UnsubscribeEvents()
+    {
+        if (gameStateController != null)
+        {
+            gameStateController.StateChanged -= HandleGameStateChanged;
+        }
+
+        if (runDirector != null)
+        {
+            runDirector.RunPhaseChanged -= HandleRunPhaseChanged;
+        }
+
+        if (finalBossController != null)
+        {
+            finalBossController.BossSpawned -= HandleBossSpawned;
+        }
+    }
+
+    private void HandleRunPhaseChanged(PracticeRunPhase newPhase)
+    {
+        if (newPhase == PracticeRunPhase.BossFight)
+        {
+            TriggerBossMusicOnce();
+        }
+    }
+
+    private void HandleBossSpawned()
+    {
+        TriggerBossMusicOnce();
+    }
+
+    private void TriggerBossMusicOnce()
+    {
+        if (hasTriggeredBossMusic)
+        {
+            return;
+        }
+
+        hasTriggeredBossMusic = true;
+        PracticeAudioManager.Instance?.PlayBossMusic();
+    }
+
+    private void HandleGameStateChanged(PracticeGameStates newState)
+    {
+
+==> Assets/Practice/Scripts/Combat/Player/PracticePlayerAudioFeedback.cs <==
+using UnityEngine;
+
+public class PracticePlayerAudioFeedback : HaiMonoBehaviour
+{
+    [SerializeField]
+    protected PracticePlayerHealth playerHealth;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+
+        LoadPlayerHealth();
+    }
+
+    private void LoadPlayerHealth()
+    {
+        if (playerHealth != null)
+        {
+            return;
+        }
+
+        playerHealth =
+            GetComponent<PracticePlayerHealth>();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+
+        LoadPlayerHealth();
+        SubscribePlayerEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribePlayerEvents();
+
+        base.OnDisable();
+    }
+
+    private void SubscribePlayerEvents()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        playerHealth.DamageTaken +=
+            HandlePlayerDamageTaken;
+    }
+
+    private void UnsubscribePlayerEvents()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        playerHealth.DamageTaken -=
+            HandlePlayerDamageTaken;
+    }
+
+    private void HandlePlayerDamageTaken(float damageAmount)
+    {
+        PracticeAudioManager.Instance?.
+            PlayPlayerHitSfx();
+    }
+}
+==> Assets/Practice/Scripts/VFX/PracticeCameraShake2D.cs <==
+using UnityEngine;
+
+public class PracticeCameraShake2D : HaiMonoBehaviour
+{
+    public static PracticeCameraShake2D Instance { get; private set; }
+
+    [Header("References")]
+    [SerializeField] private PracticeFinalBossController finalBossController;
+    [SerializeField] private PracticeGameStateController gameStateController;
+    [SerializeField] private PracticePlayerLevelSystem playerLevelSystem;
+
+    [Header("Shake Settings")]
+    [SerializeField, Min(0f)] private float maxShakeOffset = 0.45f;
+    [SerializeField, Min(1f)] private float shakeFrequency = 28f;
+
+    private Vector3 initialLocalPosition;
+    private bool hasCachedInitialPosition;
+    private float remainingShakeTime;
+    private float currentShakeDuration;
+    private float currentShakeMagnitude;
+    private float noiseSeed;
+
+    protected override void LoadComponents()
+    {
+        base.LoadComponents();
+        LoadSceneSystems();
+    }
+
+    protected override void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+
+        Instance = this;
+        base.Awake();
+
+        CacheInitialPosition();
+        noiseSeed = Random.Range(0f, 100f);
+        LoadSceneSystems();
+    }
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        CacheInitialPosition();
+        LoadSceneSystems();
+        SubscribeEvents();
+    }
+
+    protected override void OnDisable()
+    {
+        UnsubscribeEvents();
+        ResetCameraPosition();
+        base.OnDisable();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void CacheInitialPosition()
+    {
+        if (hasCachedInitialPosition)
+        {
+            return;
+        }
+
+        initialLocalPosition = transform.localPosition;
+        hasCachedInitialPosition = true;
+    }
+
+    private void LoadSceneSystems()
+    {
+        if (finalBossController == null)
+        {
+            finalBossController = FindFirstObjectByType<PracticeFinalBossController>();
+        }
+
+        if (gameStateController == null)
+        {
+            gameStateController = FindFirstObjectByType<PracticeGameStateController>();
+        }
+
+        if (playerLevelSystem == null)
+        {
+            playerLevelSystem = FindFirstObjectByType<PracticePlayerLevelSystem>();
+        }
+    }
+
+    private void SubscribeEvents()
+    {
+        if (finalBossController != null)
+        {
+            finalBossController.BossSpawned -= HandleBossSpawned;
+            finalBossController.BossSpawned += HandleBossSpawned;
+
+            finalBossController.BossDefeated -= HandleBossDefeated;
+            finalBossController.BossDefeated += HandleBossDefeated;
+        }
+
+        if (gameStateController != null)
+        {
+            gameStateController.StateChanged -= HandleGameStateChanged;
+            gameStateController.StateChanged += HandleGameStateChanged;
+        }
+
+        if (playerLevelSystem != null)
+        {
+            playerLevelSystem.LevelChanged -= HandlePlayerLevelUp;
+            playerLevelSystem.LevelChanged += HandlePlayerLevelUp;
+        }
+    }
+
