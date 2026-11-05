@@ -111,6 +111,6 @@ public class PracticeRunScoreUI : HaiMonoBehaviour
         }
 
         finalScoreText.text =
-            $"Final Score: {score:N0}";
+            $"Score: {score:N0}";
     }
 }

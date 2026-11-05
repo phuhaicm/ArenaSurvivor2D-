@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -34,6 +35,7 @@ public static class PracticeVisualSkinningAutoFixer
     private const string XpSmallPrefabPath = "Assets/Practice/Prefabs/XPOrb/Practice_XPOrb_Small.prefab";
     private const string XpMediumPrefabPath = "Assets/Practice/Prefabs/XPOrb/Practice_XPOrb_Medium.prefab";
     private const string XpLargePrefabPath = "Assets/Practice/Prefabs/XPOrb/Practice_XPOrb_Large.prefab";
+    private const string FloatingDamageTextPrefabPath = "Assets/Practice/Prefabs/Practice_FloatingDamageText.prefab";
 
     [MenuItem("Tools/Practice/Apply Complete Visual Skinning & Space Art Polish")]
     public static void ApplyCompleteVisualSkinning()
@@ -44,10 +46,10 @@ public static class PracticeVisualSkinningAutoFixer
         actions += StandardizeTextureImporters();
         AssetDatabase.Refresh();
 
-        // 2. Skinning toàn bộ Prefab quái vật, Boss, Đạn, Hạt kinh nghiệm
+        // 2. Skinning toàn bộ Prefab quái vật, Boss, Đạn, Hạt kinh nghiệm và Damage Text
         actions += SkinAllPrefabs();
 
-        // 3. Nâng cấp Scene Gameplay (Player Ship, Cosmic Background, Planets)
+        // 3. Nâng cấp Scene Gameplay (Player Ship, Cosmic Background, Planets, HUD, Damage Aura)
         actions += PolishCoreLoopScene();
 
         // 4. Nâng cấp Scene Main Menu (Cosmic Space Background)
@@ -57,7 +59,7 @@ public static class PracticeVisualSkinningAutoFixer
 
         Debug.Log(
             $"<color=#00E676><b>[Visual Skinning & Art Polish] HOÀN TẤT TOÀN DIỆN:</b></color> " +
-            $"Đã lột xác đồ họa thành công với <b>{actions}</b> thao tác nâng cấp Sprite 2D, VFX và không gian vũ trụ!"
+            $"Đã lột xác đồ họa thành công với <b>{actions}</b> thao tác nâng cấp Sprite 2D, VFX, HUD và không gian vũ trụ!"
         );
     }
 
@@ -95,6 +97,11 @@ public static class PracticeVisualSkinningAutoFixer
             if (importer.filterMode != FilterMode.Bilinear)
             {
                 importer.filterMode = FilterMode.Bilinear;
+                modified = true;
+            }
+            if (importer.maxTextureSize < 512)
+            {
+                importer.maxTextureSize = 512;
                 modified = true;
             }
 
@@ -185,24 +192,24 @@ public static class PracticeVisualSkinningAutoFixer
             new Vector3(0.65f, 0.65f, 1f)
         );
 
-        // 8. XP Orb Small (Hạt ngọc năng lượng lục bảo)
+        // 8. XP Orb Small (Hạt ngọc năng lượng lục bảo sáng rõ, xoay đều)
         count += ConfigurePrefabSprite(
             XpSmallPrefabPath,
             xpSprite,
             "Bonus",
             0,
             new Color(0.2f, 1f, 0.45f, 1f),
-            new Vector3(0.55f, 0.55f, 1f)
+            new Vector3(0.85f, 0.85f, 1f)
         );
 
-        // 9. XP Orb Medium (Hạt ngọc năng lượng lam ngọc)
+        // 9. XP Orb Medium (Hạt ngọc năng lượng lam ngọc điện quang)
         count += ConfigurePrefabSprite(
             XpMediumPrefabPath,
             xpSprite,
             "Bonus",
             0,
             new Color(0.25f, 0.7f, 1f, 1f),
-            new Vector3(0.8f, 0.8f, 1f)
+            new Vector3(1.15f, 1.15f, 1f)
         );
 
         // 10. XP Orb Large (Hạt ngọc năng lượng hoàng kim mặt trời)
@@ -212,8 +219,11 @@ public static class PracticeVisualSkinningAutoFixer
             "Bonus",
             0,
             new Color(1f, 0.85f, 0.15f, 1f),
-            new Vector3(1.1f, 1.1f, 1f)
+            new Vector3(1.5f, 1.5f, 1f)
         );
+
+        // 11. Floating Damage Text Prefab (World Space Canvas & Compact Font)
+        count += PolishFloatingDamageTextPrefab();
 
         return count;
     }
@@ -241,6 +251,47 @@ public static class PracticeVisualSkinningAutoFixer
         sr.sortingOrder = sortingOrder;
 
         prefab.transform.localScale = localScale;
+
+        EditorUtility.SetDirty(prefab);
+        PrefabUtility.SavePrefabAsset(prefab);
+        return 1;
+    }
+
+    private static int PolishFloatingDamageTextPrefab()
+    {
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FloatingDamageTextPrefabPath);
+        if (prefab == null) return 0;
+
+        Canvas canvas = prefab.GetComponent<Canvas>();
+        if (canvas == null)
+        {
+            canvas = prefab.AddComponent<Canvas>();
+        }
+
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.overrideSorting = true;
+        canvas.sortingLayerName = "VFX";
+        canvas.sortingOrder = 100;
+        canvas.additionalShaderChannels = AdditionalCanvasShaderChannels.TexCoord1 |
+                                          AdditionalCanvasShaderChannels.Normal |
+                                          AdditionalCanvasShaderChannels.Tangent;
+
+        RectTransform rt = prefab.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.localScale = new Vector3(0.014f, 0.014f, 1f);
+            rt.sizeDelta = new Vector2(60f, 25f);
+        }
+
+        TextMeshProUGUI tmp = prefab.GetComponent<TextMeshProUGUI>();
+        if (tmp != null)
+        {
+            tmp.fontSize = 20f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = new Color(1f, 0.92f, 0.23f, 1f);
+            tmp.enableWordWrapping = false;
+        }
 
         EditorUtility.SetDirty(prefab);
         PrefabUtility.SavePrefabAsset(prefab);
@@ -357,9 +408,129 @@ public static class PracticeVisualSkinningAutoFixer
         planet2Sr.sortingLayerName = "Planets";
         planet2Sr.sortingOrder = -50;
 
+        // 4. Căn chỉnh UI HUD góc trên bên phải (Kills, Score, Best Score) tránh đè chữ
+        actions += PolishHUD();
+
+        // 5. Nâng cấp hiệu ứng vòng hào quang sát thương Plasma Damage Aura (Dual Ring & Electric Edge)
+        actions += PolishDamageAuraInScene();
+
         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
         return actions + 4;
+    }
+
+    private static int PolishHUD()
+    {
+        int count = 0;
+
+        // 1. Kills Text (Dòng 1: y = -25)
+        GameObject killTextGo = GameObject.Find("KillCountText");
+        if (killTextGo != null)
+        {
+            RectTransform rt = killTextGo.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = new Vector2(1f, 1f);
+                rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(1f, 1f);
+                rt.anchoredPosition = new Vector2(-28f, -25f);
+                rt.sizeDelta = new Vector2(360f, 36f);
+                count++;
+            }
+        }
+
+        // 2. Score Text (Dòng 2: y = -55)
+        GameObject runScoreTextGo = GameObject.Find("RunScoreText");
+        if (runScoreTextGo != null)
+        {
+            RectTransform rt = runScoreTextGo.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = new Vector2(1f, 1f);
+                rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(1f, 1f);
+                rt.anchoredPosition = new Vector2(-28f, -55f);
+                rt.sizeDelta = new Vector2(360f, 36f);
+                count++;
+            }
+            TextMeshProUGUI tmp = runScoreTextGo.GetComponent<TextMeshProUGUI>();
+            if (tmp != null)
+            {
+                tmp.fontSize = 24f;
+                tmp.fontStyle = FontStyles.Bold;
+                tmp.alignment = TextAlignmentOptions.Right;
+                tmp.enableWordWrapping = false;
+            }
+        }
+
+        // 3. Best Score Text (Dòng 3: y = -85)
+        GameObject bestScoreTextGo = GameObject.Find("BestScoreText");
+        if (bestScoreTextGo != null)
+        {
+            RectTransform rt = bestScoreTextGo.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = new Vector2(1f, 1f);
+                rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(1f, 1f);
+                rt.anchoredPosition = new Vector2(-28f, -85f);
+                rt.sizeDelta = new Vector2(360f, 36f);
+                count++;
+            }
+            TextMeshProUGUI tmp = bestScoreTextGo.GetComponent<TextMeshProUGUI>();
+            if (tmp != null)
+            {
+                tmp.fontSize = 24f;
+                tmp.fontStyle = FontStyles.Bold;
+                tmp.alignment = TextAlignmentOptions.Right;
+                tmp.enableWordWrapping = false;
+            }
+        }
+
+        return count;
+    }
+
+    private static int PolishDamageAuraInScene()
+    {
+        PracticePlayerDamageAura aura = Object.FindFirstObjectByType<PracticePlayerDamageAura>();
+        if (aura == null) return 0;
+
+        LineRenderer lr = aura.GetComponent<LineRenderer>();
+        if (lr != null)
+        {
+            lr.sortingLayerName = "VFX";
+            lr.sortingOrder = 10;
+        }
+
+        Sprite ringSprite = AssetDatabase.LoadAssetAtPath<Sprite>(XpPowerUpRingSpritePath);
+        if (ringSprite != null)
+        {
+            // Outer Ring
+            Transform outerTr = aura.transform.Find("AuraShieldOuter");
+            GameObject outerGo = outerTr != null ? outerTr.gameObject : new GameObject("AuraShieldOuter");
+            outerGo.transform.SetParent(aura.transform, false);
+            outerGo.transform.localPosition = Vector3.zero;
+            SpriteRenderer outerSr = outerGo.GetComponent<SpriteRenderer>();
+            if (outerSr == null) outerSr = outerGo.AddComponent<SpriteRenderer>();
+            outerSr.sprite = ringSprite;
+            outerSr.color = new Color(0.2f, 0.92f, 1f, 0.75f);
+            outerSr.sortingLayerName = "VFX";
+            outerSr.sortingOrder = 9;
+
+            // Inner Ring
+            Transform innerTr = aura.transform.Find("AuraShieldInner");
+            GameObject innerGo = innerTr != null ? innerTr.gameObject : new GameObject("AuraShieldInner");
+            innerGo.transform.SetParent(aura.transform, false);
+            innerGo.transform.localPosition = Vector3.zero;
+            SpriteRenderer innerSr = innerGo.GetComponent<SpriteRenderer>();
+            if (innerSr == null) innerSr = innerGo.AddComponent<SpriteRenderer>();
+            innerSr.sprite = ringSprite;
+            innerSr.color = new Color(0.15f, 0.65f, 1f, 0.45f);
+            innerSr.sortingLayerName = "VFX";
+            innerSr.sortingOrder = 8;
+        }
+
+        return 1;
     }
 
     private static int PolishMainMenuScene()
@@ -430,4 +601,3 @@ public static class PracticeVisualSkinningAutoFixer
     }
 }
 #endif
-

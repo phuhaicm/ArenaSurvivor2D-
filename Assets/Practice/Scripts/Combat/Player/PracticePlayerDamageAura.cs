@@ -17,24 +17,56 @@ public class PracticePlayerDamageAura : HaiMonoBehaviour
     [SerializeField, Min(0.1f)]
     private float damageTickInterval = 0.45f;
 
-    [Header("Procedural Ring Visuals")]
+    [Header("Procedural Electric Plasma Edge")]
     [SerializeField]
     private LineRenderer ringLineRenderer;
 
     [SerializeField, Range(24, 96)]
-    private int circleSegments = 48;
+    private int circleSegments = 54;
 
     [SerializeField, Min(0.02f)]
-    private float ringLineWidth = 0.08f;
+    private float ringLineWidth = 0.12f;
 
     [SerializeField]
-    private Color auraColor = new Color(0.18f, 0.85f, 1f, 0.65f);
+    private Color auraColor = new Color(0.25f, 0.95f, 1f, 0.9f);
 
     [SerializeField, Min(0.5f)]
     private float pulseSpeed = 4f;
 
     [SerializeField, Range(0f, 0.15f)]
     private float radiusPulseAmplitude = 0.05f;
+
+    [Header("Electric Wave Noise")]
+    [SerializeField]
+    private bool enablePlasmaWave = true;
+
+    [SerializeField]
+    private float waveFrequency = 6f;
+
+    [SerializeField]
+    private float waveSpeed = 8f;
+
+    [SerializeField]
+    private float waveAmplitude = 0.05f;
+
+    [Header("Dual Rotating Plasma Shield Rings")]
+    [SerializeField]
+    private SpriteRenderer outerRingRenderer;
+
+    [SerializeField]
+    private SpriteRenderer innerRingRenderer;
+
+    [SerializeField]
+    private Sprite plasmaRingSprite;
+
+    [SerializeField]
+    private float outerRotationSpeed = 60f;
+
+    [SerializeField]
+    private float innerRotationSpeed = 42f;
+
+    [SerializeField]
+    private float spriteBaseUnitDiameter = 0.853f; // 512px / 600 PPU
 
     private float nextDamageTickTime;
     private float lastDrawnRadius = -1f;
@@ -47,12 +79,14 @@ public class PracticePlayerDamageAura : HaiMonoBehaviour
     {
         base.LoadComponents();
         LoadLineRenderer();
+        EnsurePlasmaVisuals();
     }
 
     protected override void Awake()
     {
         base.Awake();
         LoadLineRenderer();
+        EnsurePlasmaVisuals();
         ConfigureLineRenderer();
         UpdateCircleVertices(auraRadius);
     }
@@ -71,6 +105,27 @@ public class PracticePlayerDamageAura : HaiMonoBehaviour
         ringLineRenderer = GetComponent<LineRenderer>();
     }
 
+    private void EnsurePlasmaVisuals()
+    {
+        if (outerRingRenderer == null)
+        {
+            Transform outerChild = transform.Find("AuraShieldOuter");
+            if (outerChild != null)
+            {
+                outerRingRenderer = outerChild.GetComponent<SpriteRenderer>();
+            }
+        }
+
+        if (innerRingRenderer == null)
+        {
+            Transform innerChild = transform.Find("AuraShieldInner");
+            if (innerChild != null)
+            {
+                innerRingRenderer = innerChild.GetComponent<SpriteRenderer>();
+            }
+        }
+    }
+
     private void ConfigureLineRenderer()
     {
         if (ringLineRenderer == null) return;
@@ -82,7 +137,8 @@ public class PracticePlayerDamageAura : HaiMonoBehaviour
         ringLineRenderer.endWidth = ringLineWidth;
         ringLineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         ringLineRenderer.receiveShadows = false;
-        ringLineRenderer.sortingOrder = 1;
+        ringLineRenderer.sortingLayerName = "VFX";
+        ringLineRenderer.sortingOrder = 10;
 
         // Sử dụng shader Sprites/Default có sẵn của Unity để hiển thị màu sắc trong suốt đẹp mắt
         if (ringLineRenderer.sharedMaterial == null)
@@ -116,14 +172,35 @@ public class PracticePlayerDamageAura : HaiMonoBehaviour
 
     private void AnimateAuraRing()
     {
-        if (ringLineRenderer == null) return;
-
         float pulseOffset = Mathf.Sin(Time.time * pulseSpeed) * radiusPulseAmplitude;
         float animatedRadius = Mathf.Max(0.2f, auraRadius + pulseOffset);
 
-        if (Mathf.Abs(animatedRadius - lastDrawnRadius) > 0.005f)
+        // Luôn cập nhật viền điện plasma mỗi frame để sóng điện rung rinh
+        if (ringLineRenderer != null && ringLineRenderer.enabled)
         {
             UpdateCircleVertices(animatedRadius);
+        }
+
+        float baseDiameter = spriteBaseUnitDiameter > 0.05f ? spriteBaseUnitDiameter : 1f;
+
+        // Vòng ngoài quay theo chiều kim đồng hồ
+        if (outerRingRenderer != null && outerRingRenderer.enabled)
+        {
+            outerRingRenderer.transform.Rotate(0f, 0f, -outerRotationSpeed * Time.deltaTime);
+            float outerDiameter = (animatedRadius * 2f) / baseDiameter;
+            outerRingRenderer.transform.localScale = new Vector3(outerDiameter, outerDiameter, 1f);
+        }
+
+        // Vòng trong quay ngược chiều và nhấp nháy nhịp thở năng lượng
+        if (innerRingRenderer != null && innerRingRenderer.enabled)
+        {
+            innerRingRenderer.transform.Rotate(0f, 0f, innerRotationSpeed * Time.deltaTime);
+            float innerDiameter = (animatedRadius * 1.55f) / baseDiameter;
+            innerRingRenderer.transform.localScale = new Vector3(innerDiameter, innerDiameter, 1f);
+
+            Color c = innerRingRenderer.color;
+            c.a = 0.35f + Mathf.Sin(Time.time * (pulseSpeed * 1.5f)) * 0.15f;
+            innerRingRenderer.color = c;
         }
     }
 
@@ -138,13 +215,24 @@ public class PracticePlayerDamageAura : HaiMonoBehaviour
         }
 
         float angleStep = (Mathf.PI * 2f) / circleSegments;
+        float time = Time.time;
 
         for (int i = 0; i < circleSegments; i++)
         {
             float angle = angleStep * i;
+            float r = radius;
+
+            if (enablePlasmaWave)
+            {
+                // Sóng điện tích plasma đa hài biến thiên liên tục, tạo viền điện giật sống động
+                float ripple = Mathf.Sin(angle * waveFrequency + time * waveSpeed) * waveAmplitude
+                             + Mathf.Cos(angle * (waveFrequency * 2f) - time * (waveSpeed * 1.4f)) * (waveAmplitude * 0.5f);
+                r += ripple;
+            }
+
             Vector3 localPos = new Vector3(
-                Mathf.Cos(angle) * radius,
-                Mathf.Sin(angle) * radius,
+                Mathf.Cos(angle) * r,
+                Mathf.Sin(angle) * r,
                 0f
             );
             ringLineRenderer.SetPosition(i, localPos);
@@ -210,6 +298,16 @@ public class PracticePlayerDamageAura : HaiMonoBehaviour
         if (ringLineRenderer != null)
         {
             ringLineRenderer.enabled = isAuraActive;
+        }
+
+        if (outerRingRenderer != null)
+        {
+            outerRingRenderer.enabled = isAuraActive;
+        }
+
+        if (innerRingRenderer != null)
+        {
+            innerRingRenderer.enabled = isAuraActive;
         }
     }
 

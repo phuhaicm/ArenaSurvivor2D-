@@ -23,23 +23,45 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
     [SerializeField]
     protected float projectileSpreadAngle = 12f;
 
+    [Header("Ship Aiming & Rotation")]
+    [Tooltip("Tự động xoay mũi tàu và nòng súng về hướng quái gần nhất khi có quái, hoặc theo hướng di chuyển WASD.")]
+    [SerializeField]
+    protected bool autoRotateShip = true;
+
+    [Tooltip("Tốc độ xoay đầu tàu (độ/giây) đảm bảo phản hồi tức thì và mượt mà.")]
+    [SerializeField, Min(180f)]
+    protected float rotationSpeed = 900f;
+
+    [SerializeField]
+    protected PracticePlayerMovement playerMovement;
+
     protected float nextShootTime;
 
     public int BulletDamage => bulletDamage;
     public float ShootInterval => shootInterval;
     public int ProjectileCount => projectileCount;
+    public bool AutoRotateShip => autoRotateShip;
+    public float RotationSpeed => rotationSpeed;
 
     protected override void LoadComponents()
     {
         base.LoadComponents();
         LoadBulletContainer();
+        LoadPlayerMovement();
     }
 
     protected override void Awake()
     {
         base.Awake();
         LoadBulletContainer();
+        LoadPlayerMovement();
         nextShootTime = Time.time;
+    }
+
+    private void LoadPlayerMovement()
+    {
+        if (playerMovement != null) return;
+        playerMovement = GetComponent<PracticePlayerMovement>();
     }
 
     protected override void ResetValues()
@@ -48,6 +70,8 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
         shootInterval = 0.5f;
         projectileCount = 1;
         projectileSpreadAngle = 12f;
+        autoRotateShip = true;
+        rotationSpeed = 900f;
     }
 
     private void LoadBulletContainer()
@@ -67,12 +91,41 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
 
     private void Update()
     {
-        if (!CanShoot()) return;
-
         PracticeEnemyHealth target = FindTarget();
+
+        if (autoRotateShip)
+        {
+            UpdateShipRotation(target);
+        }
+
+        if (!CanShoot()) return;
         if (target == null) return;
 
         ShootAt(target);
+    }
+
+    private void UpdateShipRotation(PracticeEnemyHealth target)
+    {
+        Vector2 aimDirection = Vector2.zero;
+
+        // Ưu tiên 1: Hướng về kẻ địch gần nhất trong tầm ngắm
+        if (target != null && !target.IsDead && target.gameObject.activeInHierarchy)
+        {
+            aimDirection = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
+        }
+        // Ưu tiên 2: Khi không có quái, hướng mũi tàu theo hướng đang lái (WASD)
+        else if (playerMovement != null && playerMovement.MovementInput.sqrMagnitude > 0.01f)
+        {
+            aimDirection = playerMovement.MovementInput.normalized;
+        }
+
+        if (aimDirection.sqrMagnitude > 0.001f)
+        {
+            // Trục Y của Sprite tàu (Short-Lazer-Ship) hướng lên trên, nên trừ 90 độ để đầu tàu xoay chính xác về hướng mục tiêu
+            float targetAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
+            Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
     }
 
     protected virtual bool CanShoot()

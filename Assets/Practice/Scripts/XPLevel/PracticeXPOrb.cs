@@ -9,6 +9,10 @@ public class PracticeXPOrb : HaiMonoBehaviour, IPracticePoolable
     [SerializeField, Range(0f, 0.35f)] private float pulseAmplitude = 0.12f;
     [SerializeField, Min(0.5f)] private float pulseSpeed = 4.5f;
 
+    [Header("Procedural Spin Juice")]
+    [SerializeField] private bool enableRotation = true;
+    [SerializeField] private float rotationSpeed = 75f;
+
     private Vector3 initialScale = Vector3.one;
     private bool hasCachedInitialScale;
     private float pulsePhaseOffset;
@@ -33,6 +37,11 @@ public class PracticeXPOrb : HaiMonoBehaviour, IPracticePoolable
     {
         base.ResetValues();
         experienceAmount = 1;
+        enablePulseAnimation = true;
+        pulseAmplitude = 0.12f;
+        pulseSpeed = 4.5f;
+        enableRotation = true;
+        rotationSpeed = 75f;
     }
 
     private void CacheInitialScale()
@@ -53,6 +62,11 @@ public class PracticeXPOrb : HaiMonoBehaviour, IPracticePoolable
 
     private void Update()
     {
+        if (enableRotation)
+        {
+            transform.Rotate(0f, 0f, rotationSpeed * Time.deltaTime);
+        }
+
         if (!enablePulseAnimation)
         {
             return;

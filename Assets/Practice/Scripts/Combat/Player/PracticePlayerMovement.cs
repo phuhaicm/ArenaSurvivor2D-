@@ -22,6 +22,7 @@ public class PracticePlayerMovement : HaiMonoBehaviour
     private Vector2 movementInput;
 
     public float MoveSpeed => moveSpeed;
+    public Vector2 MovementInput => movementInput;
 
     protected override void LoadComponents()
     {
