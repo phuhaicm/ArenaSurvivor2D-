@@ -16,6 +16,7 @@ public class PracticeBulletMovement : HaiMonoBehaviour, IPracticePoolable
     private void Update()
     {
         transform.position += (Vector3)(moveDirection * moveSpeed * Time.deltaTime);
+        //bay thẳng theo hướng đã chọn
     }
 
     public void SetDirection(Vector2 direction)
@@ -23,6 +24,8 @@ public class PracticeBulletMovement : HaiMonoBehaviour, IPracticePoolable
         moveDirection = direction.normalized;
 
         float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
+        //đổi vector hướng thành góc độ phải là 0, lên trên  là 90 trái là 180 toán học góc xoay
+
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 

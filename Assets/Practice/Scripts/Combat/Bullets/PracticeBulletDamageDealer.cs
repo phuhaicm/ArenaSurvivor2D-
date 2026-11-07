@@ -66,6 +66,8 @@ public class PracticeBulletDamageDealer : HaiMonoBehaviour, IPracticePoolable
         if (bulletCollider != null)
         {
             bulletCollider.enabled = false;
+            //phải có cái này và hasDealtDamage bởi vì nếu 2 con quái đứng sát nhau khi viên đạn chạm vào ranh giới
+            // sẽ kích hoạt 2 lần liên tiếp sinh ra đạn ma
         }
 
         enemyHealth.TakeDamage(damageAmount);
