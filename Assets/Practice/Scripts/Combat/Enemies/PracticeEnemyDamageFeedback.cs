@@ -14,12 +14,33 @@ public class PracticeEnemyDamageFeedback
     [SerializeField]
     private PracticeSpriteFlashFeedback flashFeedback;
 
+    [Header("Hit Feedback Presentation Options")]
+    [Tooltip("Bật/tắt hiển thị số sát thương nổi lên đầu quái.")]
+    [SerializeField]
+    private bool showFloatingDamageText = true;
+
+    [Tooltip("Bật/tắt hiệu ứng tia lửa nổ va chạm Hit Spark bùng sáng bùm bùm khi trúng đạn.")]
+    [SerializeField]
+    private bool showHitExplosionVFX = true;
+
     [Header("Floating Damage Text (Optional)")]
     [SerializeField]
     private PracticeFloatingDamageText damageTextPrefab;
 
     [SerializeField]
     private Transform damageTextContainer;
+
+    public bool ShowFloatingDamageText
+    {
+        get => showFloatingDamageText;
+        set => showFloatingDamageText = value;
+    }
+
+    public bool ShowHitExplosionVFX
+    {
+        get => showHitExplosionVFX;
+        set => showHitExplosionVFX = value;
+    }
 
     protected override void LoadComponents()
     {
@@ -119,10 +140,17 @@ public class PracticeEnemyDamageFeedback
     private void HandleDamageTaken(float damageAmount)
     {
         flashFeedback?.PlayFlash();
-        SpawnFloatingDamageText(damageAmount);
 
-        // Phát tia lửa Hit Spark có giới hạn VFX Budget từ Object Pool
-        PracticeVFXManager.Instance?.SpawnHitSpark(transform.position);
+        if (showFloatingDamageText)
+        {
+            SpawnFloatingDamageText(damageAmount);
+        }
+
+        if (showHitExplosionVFX)
+        {
+            // Phát hiệu ứng tia lửa nổ va chạm Hit Spark rực rỡ bùm bùm từ Object Pool
+            PracticeVFXManager.Instance?.SpawnHitSpark(transform.position);
+        }
     }
 
     private void HandleEnemyDied()

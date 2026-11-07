@@ -14,7 +14,7 @@ public class PracticeVFXManager : HaiMonoBehaviour
     [SerializeField, Min(5)] private int maxActiveVfxInstances = 45;
 
     [Header("Palette Colors")]
-    [SerializeField] private Color hitSparkColor = new Color(1f, 0.92f, 0.35f, 1f);
+    [SerializeField] private Color hitSparkColor = new Color(1f, 0.82f, 0.25f, 1f);
     [SerializeField] private Color enemyDeathColor = new Color(1f, 0.25f, 0.55f, 1f);
     [SerializeField] private Color playerHitColor = new Color(1f, 0.2f, 0.2f, 1f);
     [SerializeField] private Color xpPickupColor = new Color(0.3f, 0.95f, 1f, 1f);
@@ -106,7 +106,7 @@ public class PracticeVFXManager : HaiMonoBehaviour
         }
 
         lastHitVfxTime = Time.unscaledTime;
-        SpawnBurstInternal(position, hitSparkColor, 6, 0.75f, 0.28f);
+        SpawnBurstInternal(position, hitSparkColor, 14, 1.15f, 0.32f);
     }
 
     public void SpawnEnemyDeathBurst(Vector3 position, Color? customColor = null)
@@ -123,7 +123,7 @@ public class PracticeVFXManager : HaiMonoBehaviour
 
         lastDeathVfxTime = Time.unscaledTime;
         Color burstColor = customColor.HasValue ? customColor.Value : enemyDeathColor;
-        SpawnBurstInternal(position, burstColor, 14, 1.0f, 0.45f);
+        SpawnBurstInternal(position, burstColor, 28, 1.5f, 0.52f);
     }
 
     public void SpawnPlayerHitBurst(Vector3 position)
@@ -221,11 +221,11 @@ public class PracticeVFXManager : HaiMonoBehaviour
         main.playOnAwake = false;
         main.duration = 0.45f;
         main.startLifetime = new ParticleSystem.MinMaxCurve(0.18f, 0.38f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(2.2f, 5.8f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.09f, 0.22f);
+        main.startSpeed = new ParticleSystem.MinMaxCurve(3.5f, 7.5f);
+        main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.28f);
         main.gravityModifier = 0f;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.maxParticles = 64;
+        main.maxParticles = 128;
 
         ParticleSystem.EmissionModule emission = ps.emission;
         emission.enabled = false;
@@ -233,7 +233,7 @@ public class PracticeVFXManager : HaiMonoBehaviour
         ParticleSystem.ShapeModule shape = ps.shape;
         shape.enabled = true;
         shape.shapeType = ParticleSystemShapeType.Circle;
-        shape.radius = 0.12f;
+        shape.radius = 0.18f;
 
         ParticleSystem.SizeOverLifetimeModule sizeOverLifetime = ps.sizeOverLifetime;
         sizeOverLifetime.enabled = true;
