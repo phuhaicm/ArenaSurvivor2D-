@@ -29,7 +29,7 @@ public class PracticeBulletLifetime : HaiMonoBehaviour, IPracticePoolable
     {
         if (Time.time >= destroyTime)
         {
-            PracticeObjectPoolManager.DespawnOrDestroy(gameObject);
+            PracticeObjectPoolManager.DespawnOrDestroy(gameObject);// bộ đếm 2s thu hồi về kho
         }
     }
 

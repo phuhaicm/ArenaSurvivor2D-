@@ -125,6 +125,8 @@ public class PracticeShooterWithDamage : HaiMonoBehaviour
             float targetAngle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg - 90f;
             Quaternion targetRotation = Quaternion.Euler(0f, 0f, targetAngle);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            //phải có rotatetoward để tàu xoay mượt mà ko bị lỗi animation khi 2 enemy để hướng tới
+            
         }
     }
 

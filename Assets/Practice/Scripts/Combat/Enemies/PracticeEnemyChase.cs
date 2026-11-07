@@ -152,7 +152,8 @@ public class PracticeEnemyChase : HaiMonoBehaviour, IPracticePoolable
     {
         if (enemyRigidbody != null)
         {
-            enemyRigidbody.velocity = Vector2.zero;
+            enemyRigidbody.velocity = Vector2.zero;//phải có cái này để reset quái hồi sinh từ pool ko tiếp tục trôi dạt về phía sau theo quán tính nữa
+
             enemyRigidbody.angularVelocity = 0f;
         }
     }

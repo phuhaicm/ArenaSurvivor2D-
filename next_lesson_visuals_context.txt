@@ -1,0 +1,15 @@
+total 66
+drwxr-xr-x 1 Admin 197121     0 Nov  2 09:40 ./
+drwxr-xr-x 1 Admin 197121     0 Nov  1 19:52 ../
+drwxr-xr-x 1 Admin 197121     0 Nov  3 16:08 Audio/
+-rw-r--r-- 1 Admin 197121   180 Nov  1 18:04 Audio.meta
+drwxr-xr-x 1 Admin 197121     0 Oct 23 18:57 Combat/
+-rw-r--r-- 1 Admin 197121   172 Sep 10 10:56 Combat.meta
+-rw-r--r-- 1 Admin 197121  5967 Nov  1 19:44 Practice_Bullet.prefab
+-rw-r--r-- 1 Admin 197121   154 May 17 16:33 Practice_Bullet.prefab.meta
+-rw-r--r-- 1 Admin 197121  5123 Nov  2 09:40 Practice_FloatingDamageText.prefab
+-rw-r--r-- 1 Admin 197121   161 Nov  2 09:40 Practice_FloatingDamageText.prefab.meta
+-rw-r--r-- 1 Admin 197121 28541 Oct 15 16:38 SceneLoaderRoot.prefab
+-rw-r--r-- 1 Admin 197121   161 Oct 15 16:38 SceneLoaderRoot.prefab.meta
+drwxr-xr-x 1 Admin 197121     0 Nov  2 09:40 XPOrb/
+-rw-r--r-- 1 Admin 197121   180 Nov  1 19:08 XPOrb.meta

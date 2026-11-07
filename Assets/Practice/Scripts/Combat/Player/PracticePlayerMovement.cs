@@ -57,7 +57,7 @@ public class PracticePlayerMovement : HaiMonoBehaviour
         Move();
     }
 
-    private void ReadMovementInput()
+    private void ReadMovementInput()//vì update chạy theo từng frame hìnhnên tốc độ di chuyển sẽ tùy thuộc vào tốc độ máy tính ảnh 
     {
         float horizontalInput = Input.GetAxisRaw("Horizontal");
         float verticalInput = Input.GetAxisRaw("Vertical");
